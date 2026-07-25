@@ -25,7 +25,7 @@ export function createObserverServer(kernel, sim, snap, history, config) {
     try {
       // ── Static files ──
       if (req.method === "GET" && (!url.pathname.startsWith("/api/") || url.pathname === "/")) {
-        let filePath = url.pathname === "/" ? "/index.html" : url.pathname;
+        let filePath = url.pathname === "/" ? "/game.html" : url.pathname;
         const fullPath = path.join(__dirname, "public", filePath);
         if (fs.existsSync(fullPath)) {
           const ext = path.extname(fullPath);

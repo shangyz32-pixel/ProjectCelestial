@@ -28,6 +28,9 @@ export const MATERIALS = {
   crystal_shard:{ name:"水晶碎片", grade:3, source:"cave",    rarity:"rare",      value:150 },
   jade_essence: { name:"玉髓",     grade:4, source:"spirit_vein",rarity:"epic",   value:600 },
   immortal_jade: { name:"仙玉",    grade:6, source:"heaven",  rarity:"mythic",    value:10000 },
+  shadow_essence: { name:"暗影精华", grade:3, source:"cave",    rarity:"rare",      value:200 },
+  magma_core:     { name:"熔岩之核", grade:4, source:"volcano", rarity:"epic",      value:500 },
+  star_fragment:  { name:"星辰碎片", grade:5, source:"celestial",rarity:"legendary",value:2000 },
 };
 
 // ══════════════════════════════════════
@@ -73,6 +76,26 @@ export const CRAFTING_RECIPES = {
     name:"制灵符", skillReq:3, output:"spirit_amulet",
     materials:["jade_essence","crystal_shard","spirit_wood"], quantities:[1,1,1],
     successRate:0.55, qualityChance:{ rare:0.3, epic:0.08 },
+  },
+  forge_shadow_blade: {
+    name:"锻暗影刃", skillReq:4, output:"blade",
+    materials:["shadow_essence","iron_ore","crystal_shard"], quantities:[1,2,1],
+    successRate:0.5, qualityChance:{ rare:0.4, epic:0.1 },
+  },
+  forge_magma_armor: {
+    name:"铸熔岩甲", skillReq:5, output:"spirit_vest",
+    materials:["magma_core","silver_ore","beast_hide"], quantities:[1,3,2],
+    successRate:0.45, qualityChance:{ epic:0.3, legendary:0.05 },
+  },
+  forge_star_ring: {
+    name:"铸星戒", skillReq:6, output:"dragon_ring",
+    materials:["star_fragment","jade_essence","crystal_shard"], quantities:[1,2,1],
+    successRate:0.35, qualityChance:{ epic:0.5, legendary:0.1 },
+  },
+  forge_celestial_bow: {
+    name:"铸星辰弓", skillReq:5, output:"bow",
+    materials:["star_fragment","spirit_wood","ancient_wood"], quantities:[1,2,1],
+    successRate:0.4, qualityChance:{ epic:0.3, legendary:0.08 },
   },
 };
 

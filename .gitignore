@@ -5,6 +5,14 @@ coverage/
 logs/
 cache/
 *.log
-data/snapshots/
-runtime/data/snapshots/
+
+# Runtime data — generated at runtime, not source
+data/
+runtime/data/
+
+# Keep test fixtures
+!runtime/tests/fixtures/
+
+# OS files
 .DS_Store
+Thumbs.db

@@ -1,0 +1,119 @@
+# Narrative Engine Runtime Specification
+#
+# Phase 4, Module 8: Narrative Engine Runtime
+# 因果链 → 故事。不创造事件。叙述因果。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+narrative_engine:
+
+  description: >
+    模拟事件的终点。因果链的叙事渲染器。
+    故事不是写的。故事是检测出来然后叙述的。
+
+  # ==========================================================
+  # Pipeline
+  # ==========================================================
+
+  pipeline:
+
+    1_detect_chains:
+      engine: causal_chain (compiled)
+      input: "Step 8 的 validated_events"
+      output: "new LED_TO edges + extended chains"
+      rules:
+        - "resource: A 改变资源 → B 响应资源变化"
+        - "location: A 移动实体 → B 在该位置发生"
+        - "relation: A 改变 KG 边 → B 由新关系驱动"
+        - "info: A 产生信息 → B 获知后行动"
+      confidence_threshold: 0.6
+
+    2_form_arcs:
+      engine: narrative_arc (compiled)
+      condition: "chain.length >= 3 AND total_importance >= 15"
+      output: "Arc objects"
+      lifecycle: [emerging, active, climax, resolution, completed]
+
+    3_assign_perspectives:
+      rules:
+        root_cause: "全知视角（建立全局视野）"
+        npc_core: "该 NPC 视角（个人记忆 → 内心活动）"
+        faction: "势力视角（组织年鉴 → 官方叙事）"
+        player_visible: "玩家视角（仅可感知信息）"
+
+    4_generate_scenes:
+      engine: narrative_schema.scene_template
+      compose:
+        opening: "时间 + 地点 + 氛围 (atmosphere_to_prose)"
+        perspectives: "对每个参与者: what_they_see + what_they_remember + what_they_feel"
+        action: "behavior_decision → action_to_narrative pattern"
+        resolution: "outcome + state_changes + hook"
+
+    5_trace_sources:
+      requirement: "每句话标注来源"
+      source_types:
+        - "event_id: 事件描述"
+        - "memory_id: 内心独白 / 闪回"
+        - "kg_edge: 关系描述"
+        - "decision_trace: 行为动机"
+        - "registry: 世界观信息"
+
+  # ==========================================================
+  # Module Integration
+  # ==========================================================
+
+  module_usage:
+
+    canon_loader:
+      usage: "世界观常量"
+      example: "'灵气浓度降至危险线以下' → qi_density < 60"
+
+    registry_compiler:
+      usage: "可读名称"
+      example: "realm_id=3 → '金丹境'"
+
+    kg_runtime:
+      usage: "关系链"
+      example: "'矿脉枯竭 → 资源减少' → KG.PRODUCES 边输出下降"
+
+    entity_memory:
+      usage: "NPC 内心活动"
+      example: "memory_id=103 → '三年前那一幕闪过...'"
+
+    decision_engine:
+      usage: "行为动机"
+      example: "selected: revenge → '他压低斗笠,缀了上去'"
+
+  # ==========================================================
+  # Narrative Output Format
+  # ==========================================================
+
+  output:
+
+    scene:
+      format: markdown
+      sections: [opening, perspective_N, action, resolution, hook]
+      annotations: "source tags inline"
+
+    arc_overview:
+      format: "时间线 + 每章摘要"
+      fields: [arc_id, title, chain_length, total_importance, status]
+
+    source_map:
+      format: "table mapping text → source"
+      columns: [paragraph, source_type, source_id, description]
+
+  # ==========================================================
+  # Quality Rules
+  # ==========================================================
+
+  quality:
+    - "每句心理描写 → 对应 memory_id"
+    - "每个动作描写 → 对应 behavior_decision"
+    - "每段环境描写 → 对应 atmosphere_to_prose"
+    - "无来源的描写 → 标记 [narrator_fill] 并删除"
+    - "禁止: '他觉得...' 无对应 memory"
+    - "禁止: 预知未来事件"

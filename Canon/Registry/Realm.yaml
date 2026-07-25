@@ -1,0 +1,131 @@
+# Realm Registry
+# Single Source of Truth — 所有境界定义只在这里
+
+realms:
+  - id: mortal
+    name: 凡人
+    order: 0
+    lifespan: 100
+    breakthrough_to: qi_refining
+    description: 未踏入修炼之门的普通人
+
+  - id: qi_refining
+    name: 炼气
+    order: 1
+    lifespan: 150
+    breakthrough_to: foundation
+    breakthrough_rate: 0.80
+    description: 引气入体，打通经脉
+
+  - id: foundation
+    name: 筑基
+    order: 2
+    lifespan: 300
+    breakthrough_to: golden_core
+    breakthrough_rate: 0.55
+    description: 丹田液化，道基初成
+
+  - id: golden_core
+    name: 金丹
+    order: 3
+    lifespan: 600
+    breakthrough_to: nascent_soul
+    breakthrough_rate: 0.30
+    description: 凝结金丹，灵海初开
+
+  - id: nascent_soul
+    name: 元婴
+    order: 4
+    lifespan: 1200
+    breakthrough_to: spirit_severing
+    breakthrough_rate: 0.15
+    description: 神魂具象，元婴诞生
+
+  - id: spirit_severing
+    name: 化神
+    order: 5
+    lifespan: 2500
+    breakthrough_to: void_refining
+    breakthrough_rate: 0.05
+    description: 神魂与灵海融合
+
+  - id: void_refining
+    name: 炼虚
+    order: 6
+    lifespan: 5000
+    breakthrough_to: integration
+    breakthrough_rate: 0.02
+    description: 炼化虚空之力
+
+  - id: integration
+    name: 合体
+    order: 7
+    lifespan: 8000
+    breakthrough_to: great_vehicle
+    breakthrough_rate: 0.01
+    description: 身与道合
+
+  - id: great_vehicle
+    name: 大乘
+    order: 8
+    lifespan: 12000
+    breakthrough_to: tribulation
+    breakthrough_rate: 0.005
+    description: 参悟本源大道
+
+  - id: tribulation
+    name: 渡劫
+    order: 9
+    lifespan: 20000
+    breakthrough_to: true_immortal
+    breakthrough_rate: 0.001
+    description: 历劫蜕变，半步飞升
+
+  - id: true_immortal
+    name: 真仙
+    order: 10
+    lifespan: null
+    breakthrough_to: golden_immortal
+    description: 飞升仙界，寿元无限（受大道约束）
+
+  - id: golden_immortal
+    name: 金仙
+    order: 11
+    lifespan: null
+    breakthrough_to: immortal_king
+    description: 金身不坏
+
+  - id: immortal_king
+    name: 仙王
+    order: 12
+    lifespan: null
+    breakthrough_to: immortal_venerable
+    description: 一方仙域之主
+
+  - id: immortal_venerable
+    name: 仙尊
+    order: 13
+    lifespan: null
+    breakthrough_to: immortal_emperor
+    description: 万仙之尊
+
+  - id: immortal_emperor
+    name: 仙帝
+    order: 14
+    lifespan: null
+    breakthrough_to: transcendence
+    description: 仙界至尊
+
+  - id: transcendence
+    name: 超脱
+    order: 15
+    lifespan: null
+    breakthrough_to: null
+    description: 超越大道，不可知
+
+# 铁律
+# - 境界只能逐级而上，不可跳跃
+# - 寿元耗尽 → 死亡（不可绕过）
+# - 真仙以上不再使用固定寿元
+# - breakthrough_rate 为基础成功率（可被丹药、机缘等修正）
+# - 此文件是唯一境界定义源

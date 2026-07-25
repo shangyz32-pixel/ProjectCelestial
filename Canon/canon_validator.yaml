@@ -1,0 +1,348 @@
+# Canon Validator Specification
+#
+# 所有内容产出的最终关卡。
+# 发现冲突 → 修改产出，不修改 Canon。
+
+version: "1.0"
+status: Canon
+
+---
+
+# ============================================================
+# 全局设置
+# ============================================================
+
+validator:
+  mode: "strict"  # strict = BLOCK违规阻止写入 / lenient = 标记但放行
+  auto_fix: true  # 是否自动尝试修正违规事件
+  max_fix_attempts: 3  # 自动修正最大重试次数
+
+---
+
+# ============================================================
+# 域 1: 世界规则
+# ============================================================
+
+domain_01_world_rules:
+  source: [volume1_universe.md, volume2_physics.md, Registry]
+
+  rules:
+
+    r1_qi_bounds:
+      description: 灵气浓度不得超出物理极限
+      check: "0 <= qi_density <= 1000"
+      source: "volume2_physics.md: 灵气浓度上限"
+      severity: BLOCK
+      fix: "clamp(location.qi_density, 0, 1000)"
+
+    r2_weather_valid:
+      description: 天气必须在 Registry 允许的类型中
+      check: "weather_type in registry/weather.yaml.types"
+      source: "registry/weather.yaml"
+      severity: BLOCK
+      fix: "回退到上一天天气 + WARN"
+
+    r3_causality_required:
+      description: 事件必须有原因
+      check: "event.trigger is not null OR event.type == 'random_encounter'"
+      source: "volume4_world_engine.md: 事件必须有原因"
+      severity: WARN
+      fix: "标记 trigger = 'unknown_cause'"
+
+    r4_resource_conservation:
+      description: 资源总量变化必须可追溯
+      check: |
+        sum(resource.delta) across all events =
+        sum(production) - sum(consumption)
+      source: "volume4_world_engine.md: 资源必须遵循循环"
+      severity: WARN
+      tolerance: 0.01  # 1% 误差容限
+      fix: "调整消费量以匹配产出"
+
+    r5_no_uncaused_existence:
+      description: 新实体必须有一个创建事件
+      check: "new entity → corresponding creation event exists"
+      severity: BLOCK
+      fix: "自动生成 creation 事件"
+
+---
+
+# ============================================================
+# 域 2: 修炼体系
+# ============================================================
+
+domain_02_cultivation:
+  source: [volume3_cultivation.md, registry/realms.yaml, registry/spirit_roots.yaml]
+
+  rules:
+
+    r6_realm_sequential:
+      description: 境界必须逐级突破，不可跳跃
+      check: "new_realm.index == old_realm.index + 1"
+      source: "registry/realms.yaml: realm_order"
+      severity: BLOCK
+      example_violation: "筑基境 → 元婴境（跳过了金丹）"
+      fix: "设置 new_realm = old_realm.index + 1"
+
+    r7_spirit_root_cap:
+      description: 灵根品质决定境界上限
+      check: "npc.realm <= npc.spirit_root.quality.realm_cap"
+      source: "registry/spirit_roots.yaml: realm_cap"
+      severity: BLOCK
+      example_violation: "品质为'凡灵根'(上限筑基)的 NPC 突破到金丹"
+      fix: "突破判定失败 → event = breakthrough_failed"
+
+    r8_lifespan_enforced:
+      description: NPC 年龄不得超过当前境界的寿元上限
+      check: "npc.age <= registry/lifespan.yaml[npc.realm].max_age"
+      source: "registry/lifespan.yaml"
+      severity: BLOCK
+      exception: "有延寿丹药/功法 → 需要对应的 active_effect"
+      fix: "触发 death_pipeline"
+
+    r9_breakthrough_conditions:
+      description: 突破必须满足五个条件
+      check: |
+        ALL of [qi_enough, realm_cap_ok, lifespan_enough,
+                resources_ok, comprehension_ok]
+      source: "rule_engine.yaml: breakthrough pipeline"
+      severity: BLOCK
+      fix: "突破失败 → cultivation_loss + possible_damages"
+
+    r10_tribulation_trigger:
+      description: 天劫仅限元婴及以上
+      check: "tribulation_event → target_realm >= nascent_soul"
+      source: "rule_engine.yaml: tribulation.trigger"
+      severity: BLOCK
+      fix: "移除天劫事件（低境界无天劫）"
+
+    r11_cultivation_progress_bounds:
+      description: 每日修炼进度不能为负（除非受伤/心魔）
+      check: "daily_progress >= 0 OR npc.has_debuff('injury'|'heart_demon')"
+      source: "volume3_cultivation.md"
+      severity: WARN
+      fix: "clamp(daily_progress, 0, max)"
+
+---
+
+# ============================================================
+# 域 3: 历史一致性
+# ============================================================
+
+domain_03_history:
+  source: [History Engine, knowledge_graph.yaml]
+
+  rules:
+
+    r12_no_time_paradox:
+      description: 历史事件不可修改
+      check: "写操作的目标 timestamp < 当前时间 → 拒绝"
+      severity: BLOCK
+      fix: "拒绝写入，返回错误"
+
+    r13_no_backward_reference:
+      description: 事件不能引用未来的事件
+      check: "event.references.all(timestamp <= event.timestamp)"
+      severity: BLOCK
+      fix: "移除对未来事件的引用"
+
+    r14_death_is_final:
+      description: 死亡 NPC 不能产生新事件（除非复活/鬼魂）
+      check: |
+        npc.status == 'deceased' AND event.participants.includes(npc)
+        → event.type must be 'resurrection' or 'ghost_activity'
+      source: "rule_engine.yaml: death pipeline"
+      severity: BLOCK
+      fix: "从事件参与者中移除已死亡 NPC 或标记为 ghost"
+
+    r15_no_contradictory_state:
+      description: 同一实体在同一时刻不能有两个冲突状态
+      check: >
+        对任何 (entity, timestamp, attribute)，
+        不存在两条冲突的状态记录。
+      example_violation: "张三在 847年7月 同时 '在青云宗' 和 '在黑风岭'"
+      severity: BLOCK
+      fix: "以后发生的状态覆盖前发生的"
+
+---
+
+# ============================================================
+# 域 4: 人物设定
+# ============================================================
+
+domain_04_character:
+  source: [npc memory files, registry/spirit_roots.yaml]
+
+  rules:
+
+    r16_spirit_root_match:
+      description: NPC 灵根与注册数据一致
+      check: "npc.spirit_root == memory.spirit_root"
+      severity: BLOCK
+      fix: "以 Registry 为准"
+
+    r17_memory_internal_consistency:
+      description: 同一 NPC 的记忆不得自相矛盾
+      check: |
+        扫描 NPC 的所有 long_term 记忆，
+        检测矛盾：同一 (participants, event_type) 有冲突描述。
+      severity: WARN
+      example: "memory_1: '王虎杀了林远' vs memory_2: '林远死于意外'"
+      fix: "标记冲突，以 importance 高者为准，低者附加 [disputed] 标记"
+
+    r18_behavior_tag_no_contradiction:
+      description: 同一 target 不能同时有冲突标签
+      check: |
+        NOT (LOYAL_TO(X) AND HOSTILE_TOWARD(X))
+        NOT (TRUSTS(X) AND BETRAYED_BY(X))
+        NOT (FRIENDLY_TOWARD(X) AND HOSTILE_TOWARD(X))
+      exception: "如果 HOSTILE_TOWARD 的 intensity 远高于 LOYAL_TO(差≥5)，允许（内部挣扎）"
+      severity: WARN
+      fix: "保留 intensity 更高的标签，移除冲突标签"
+
+    r19_location_valid:
+      description: NPC 当前位置必须是已注册的地点
+      check: "npc.location_id in locations_registry"
+      severity: BLOCK
+      fix: "设置 location = npc.faction.headquarters (默认回宗门)"
+
+    r20_personality_behavior_match:
+      description: 行为决策应与 NPC 人格一致
+      check: "隐忍型人格 → 高冲突场景不选 attack，选 stalk/avoid"
+      severity: WARN
+      fix: "标记 'personality_override'，不强制修改"
+
+---
+
+# ============================================================
+# 域 5: 时间线
+# ============================================================
+
+domain_05_timeline:
+  source: [TimeEngine.md, causal_chain.yaml]
+
+  rules:
+
+    r21_chronological_order:
+      description: 事件按时间顺序排列
+      check: "events[i].timestamp <= events[i+1].timestamp"
+      severity: BLOCK
+      fix: "按 timestamp 排序"
+
+    r22_causal_forward_only:
+      description: 原因必须在结果之前
+      check: "causal_chain.cause.timestamp < causal_chain.effect.timestamp"
+      severity: BLOCK
+      fix: "断开因果边，标记为 correlation（非因果）"
+
+    r23_no_posthumous_action:
+      description: NPC 死亡后不能有主动行为
+      check: |
+        event.timestamp > npc.death_timestamp
+        AND event.participants[npc].role == 'initiator'
+        → BLOCK
+      exception: "npc.is_ghost == true"
+      severity: BLOCK
+      fix: "从事件中移除该 NPC 或标记 role=referenced"
+
+    r24_lifespan_check_at_tick:
+      description: 每次 Tick 检查是否有 NPC 超过寿元
+      check: "for each npc: npc.age <= registry/lifespan.yaml[npc.realm].max_age"
+      severity: BLOCK
+      fix: "触发 death_pipeline.natural_death"
+
+---
+
+# ============================================================
+# 域 6: 关系网络（KG）
+# ============================================================
+
+domain_06_kg:
+  source: [knowledge_graph.yaml]
+
+  rules:
+
+    r25_bidirectional_consistency:
+      description: 双向边必须一致
+      check: |
+        A -[ALLY_OF]-> B implies B -[ALLY_OF]-> A
+        A -[HOSTILE_TO]-> B implies B -[HOSTILE_TO]-> A (or RIVAL_OF)
+        A -[SAVED]-> B implies B has corresponding reverse record
+      severity: BLOCK
+      fix: "自动补全缺失的双向边"
+
+    r26_no_mutually_exclusive_edges:
+      description: 同一对实体不能同时有冲突边
+      check: |
+        NOT (ALLY_OF(A,B) AND HOSTILE_TO(A,B))
+        NOT (TRADES_WITH(A,B) AND HOSTILE_TO(A,B))
+      severity: WARN
+      fix: "以最后创建的边为准，旧边标记 [inactive]"
+
+    r27_edge_change_traceable:
+      description: 每条边的变更必须能追溯到事件
+      check: "edge.last_modified.event_id is not null"
+      severity: WARN
+      fix: "标记为 [source_unknown]"
+
+    r28_deceased_node_edges:
+      description: 已死亡实体的边可以保留但不能新增
+      check: |
+        node.status == 'deceased'
+        → 可以保留现有边
+        → 不能创建以该节点为 from 的新边
+        → 可以从其他节点创建指向它的新边（他人对其态度变化）
+      severity: WARN
+      fix: "禁止创建以 dead_node 为 from 的新边"
+
+---
+
+# ============================================================
+# 校验执行流程
+# ============================================================
+
+execution:
+
+  pre_check:
+    timing: "在 Step 9 Events 生成后立即执行"
+    scope: "本次 Tick 生成的新事件 + 新记忆 + KG 变更"
+    domains: [domain_01, domain_02, domain_03, domain_05]
+
+  post_check:
+    timing: "在叙事生成后执行"
+    scope: "叙事输出 + 完整世界状态（所有 NPC、所有事件）"
+    domains: [domain_01, domain_02, domain_03, domain_04, domain_05, domain_06]
+
+  on_failure:
+    BLOCK:
+      - "撤回违规事件"
+      - "查找违规原因"
+      - "尝试自动修复"
+      - "修复后重新校验"
+      - "3 次失败 → 暂停模拟，输出错误报告"
+
+    WARN:
+      - "记录警告到 validator_log"
+      - "事件正常通过"
+      - "在叙事中标注 [disputed]"
+
+    INFO:
+      - "仅记录，不影响流程"
+
+---
+
+# ============================================================
+# 校验日志格式
+# ============================================================
+
+log_format:
+  fields:
+    - tick: "Tick 编号"
+    - timestamp: "校验时间"
+    - domain: "域 ID"
+    - rule: "规则 ID"
+    - severity: "BLOCK/WARN/INFO"
+    - event_id: "触发校验的事件"
+    - violation: "违规描述"
+    - fix: "采取的修复措施或 null"
+    - status: "fixed / escalated / accepted_with_warning"

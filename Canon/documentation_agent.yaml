@@ -1,0 +1,64 @@
+# Documentation Agent — Layer 9 Agent Specification
+#
+# Phase 4, Layer 9
+# 自动维护文档。保证文档始终与 Canon 同步。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+documentation_agent:
+
+  identity:
+    name: "Documentation Agent"
+    layer: 9
+    capability_level: "L6 (Observer)"
+    description: "自动维护项目文档。文档始终反映最新 Canon。"
+
+  responsibilities:
+
+    api_docs:
+      description: "API 文档自动生成"
+      source: "capability.yaml → SDK API 定义"
+      trigger: "API 变更时自动更新"
+      output: "docs/api.md"
+
+    adr:
+      description: "ADR 索引维护"
+      source: "Canon/ADR/ 目录"
+      trigger: "新 ADR 创建时自动更新索引"
+      checks:
+        - "INDEX.md 中 ADR 列表是否完整"
+        - "每个 ADR 的 Status 是否正确"
+        - "被引用的 ADR 是否存在"
+
+    changelog:
+      description: "CHANGELOG 自动更新"
+      source: "Canon diff (Canon Loader → diff report)"
+      trigger: "Canon 版本变更时自动追加"
+      format: "version / date / changes"
+
+    roadmap:
+      description: "ROADMAP 同步"
+      source: "各 Layer 状态 + ADR 进度"
+      trigger: "Phase 状态变更时更新"
+      checks:
+        - "进度百分比与实际完成一致"
+        - "Phase 顺序正确"
+
+    registry:
+      description: "Registry 文档同步"
+      source: "compiled_registry"
+      trigger: "Registry YAML 变更时自动重新生成文档"
+      rule: "Registry 编译后 → 自动更新可读文档"
+
+    index:
+      description: "INDEX.md 维护"
+      source: "文件系统扫描"
+      trigger: "文件增删时自动更新"
+      rule: "INDEX.md 永远反映最新文件列表"
+
+  constraints:
+    auto_sync: "文档自动同步——不需要人工触发"
+    no_stale: "过时文档自动标记 [deprecated]"

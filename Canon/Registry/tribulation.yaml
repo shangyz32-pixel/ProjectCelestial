@@ -1,0 +1,51 @@
+# Tribulation Registry
+# 天劫——世界校验，不是惩罚
+
+tribulation:
+  description: >
+    当生命突破当前层级极限，天道将验证身体是否足够强、
+    神魂是否稳定、大道是否理解、心境是否完整。
+    只有全部满足，才能完成突破。否则，世界拒绝升级。
+
+  types:
+    - id: thunder_tribulation
+      name: 雷劫
+      trigger: 金丹→元婴 及以上
+      severity: medium
+      description: 天雷淬体
+
+    - id: fire_tribulation
+      name: 火劫
+      trigger: 特殊条件
+      severity: medium
+      description: 天火焚身
+
+    - id: wind_tribulation
+      name: 风劫
+      trigger: 特殊条件
+      severity: medium
+      description: 罡风裂魂
+
+    - id: heart_demon_tribulation
+      name: 心魔劫
+      trigger: 化神→炼虚 及以上
+      severity: high
+      description: 心魔滋生，考验道心
+
+    - id: karma_tribulation
+      name: 因果劫
+      trigger: 因果值极低时突破
+      severity: very_high
+      description: 因果反噬
+
+    - id: dao_tribulation
+      name: 大道劫
+      trigger: 渡劫→真仙
+      severity: extreme
+      description: 大道直接校验
+
+# 规则
+# - 天劫不可跳过
+# - 天劫威力 = 渡劫者实力 × 天劫系数
+# - 渡劫失败 → 参见 Breakthrough Registry
+# - 此文件是唯一定义源

@@ -1,0 +1,64 @@
+# Lifespan Registry
+# Single Source of Truth — 所有寿元定义只在这里
+
+lifespan:
+  mortal:
+    realm: 凡人
+    years: 100
+    description: 未修炼的普通人
+
+  qi_refining:
+    realm: 炼气
+    years: 150
+    description: 引气入体，经脉初通
+
+  foundation:
+    realm: 筑基
+    years: 300
+    description: 丹田液化，道基初成
+
+  golden_core:
+    realm: 金丹
+    years: 600
+    description: 凝结金丹，灵海初开
+
+  nascent_soul:
+    realm: 元婴
+    years: 1200
+    description: 神魂具象，元婴诞生
+
+  spirit_severing:
+    realm: 化神
+    years: 2500
+    description: 神魂与灵海融合
+
+  void_refining:
+    realm: 炼虚
+    years: 5000
+    description: 炼化虚空之力
+
+  integration:
+    realm: 合体
+    years: 8000
+    description: 身与道合
+
+  great_vehicle:
+    realm: 大乘
+    years: 12000
+    description: 参悟本源大道
+
+  tribulation:
+    realm: 渡劫
+    years: 20000
+    description: 历劫蜕变，半步飞升
+
+  immortal:
+    realm: 真仙以上
+    years: null
+    description: 不再采用固定寿元，受大道法则约束
+
+# 规则
+# - 延寿丹药最多延长 30%
+# - 同一延寿丹药只生效一次
+# - 寿元耗尽 → 生命自然终结（不可绕过）
+# - 此文件是唯一定义源

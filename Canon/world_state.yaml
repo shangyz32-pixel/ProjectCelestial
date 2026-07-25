@@ -1,0 +1,145 @@
+# World State — 统一世界状态数据模型
+#
+# 所有世界数据统一存储于此。
+# 任何组件读取 → 只读引用。
+# 任何组件写入 → 必须通过 Kernel → Transaction。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+# ============================================================
+# 顶层结构
+# ============================================================
+
+world_state:
+
+  meta:
+    world_id: "celestial-001"
+    world_name: "天历世界"
+    canon_version: "1.0.0"
+    kernel_version: "1.0.0"
+    created_at: "天历 1 年 1 月 1 日"
+    current_tick: 0
+
+  time:
+    current: "天历 847 年 7 月 23 日 酉时"
+    year: 847
+    month: 7
+    day: 23
+    hour: 18
+    season: "夏季"
+    tick_count: 0
+    time_scale: "1 tick = 1 世界日"
+
+  geography:
+    locations:
+      - id: "loc_yunlai_market"
+        name: "云来坊市"
+        type: "贸易集市"
+        region: "东海地区"
+
+      - id: "loc_duanhunya"
+        name: "断魂崖"
+        type: "山脉"
+        region: "青云山脉"
+
+      - id: "loc_qingyun_peak"
+        name: "青云峰"
+        type: "宗门总部"
+        region: "青云山脉"
+
+      - id: "loc_sanxiu_cliff"
+        name: "散修崖"
+        type: "联盟总部"
+        region: "东海之滨"
+
+      - id: "loc_heifeng_ridge"
+        name: "黑风岭"
+        type: "荒山"
+        region: "东海地区"
+
+      - id: "loc_lonely_island"
+        name: "无名孤岛"
+        type: "海岛"
+        region: "东海"
+
+      - id: "loc_yan_valley"
+        name: "赤焰谷"
+        type: "古修洞府"
+        region: "南方火山"
+
+      - id: "loc_zhao_fortress"
+        name: "赵家堡"
+        type: "废墟"
+        region: "西部边境"
+        status: "已灭（天历 845 年）"
+
+      - id: "loc_qingyun_outer"
+        name: "青云宗外门"
+        type: "修炼区"
+        region: "青云山脉"
+
+    qi_distribution:
+      loc_qingyun_peak: 60
+      loc_sanxiu_cliff: 45
+      loc_yunlai_market: 35
+      loc_heifeng_ridge: 40
+      loc_duanhunya: 55
+
+  spirit_veins:
+    - id: "vein_qingyun_main"
+      name: "青云主脉"
+      grade: "天级"
+      qi_output: 60
+      status: "decaying"
+      location: "青云山脉"
+      owner: "青云宗"
+
+    - id: "vein_donghai"
+      name: "东海灵脉"
+      grade: "地级"
+      qi_output: 45
+      status: "stable"
+      location: "东海之滨"
+      owner: "散修盟"
+
+  factions:
+    faction_qingyun:
+      state: active
+
+    faction_sanxiumeng:
+      state: active
+
+    faction_moyuan:
+      state: active
+
+  npcs:
+    npc_001:
+      state: active
+
+    npc_002:
+      state: active
+
+    npc_003:
+      state: active
+
+    npc_master_li:
+      state: active
+
+  players: []
+  beasts: []
+  economy:
+    price_table: {}
+    trade_routes: []
+  wars: []
+  history: []
+
+  knowledge_graph:
+    nodes: []
+    edges: []
+
+  plugins:
+    registered: []
+    active: []

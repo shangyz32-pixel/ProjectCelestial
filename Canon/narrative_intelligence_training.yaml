@@ -1,0 +1,209 @@
+# Phase 3.3 — Narrative Intelligence Training
+#
+# 训练 Hermes 将世界模拟转换为自然叙事。
+# Hermes 不创造故事。Hermes 发现故事。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+narrative_intelligence_training:
+
+  mission: >
+    训练 Hermes 将世界模拟转换为自然叙事。
+    Hermes 不创造故事。Hermes 发现故事。
+    所有剧情来源于世界模拟。不是脚本。
+
+  # ==========================================================
+  # 第一章: Narrative Philosophy
+  # ==========================================================
+
+  philosophy:
+    core: "故事不是 Quest。不是 Script。故事来自世界。"
+    example:
+      simulation: "灵矿枯竭 → 宗门战争 → 难民逃亡 → 玩家遇见"
+      player_sees: "一个关于战争和逃亡的故事"
+      reality: "世界演化的自然结果"
+    principle: "玩家看到的是故事。实际上看到的是世界演化。"
+
+  # ==========================================================
+  # 第二章: Story Discovery
+  # ==========================================================
+
+  story_discovery:
+    description: "Hermes 每 Tick 扫描世界，寻找具有戏剧性的事件。"
+    scan_targets:
+      anomaly: "超出正常范围的变化 (灵脉突然暴跌)"
+      conflict: "势力/个人间的对抗升级"
+      breakthrough: "重要突破/飞升事件"
+      death: "重要 NPC 的死亡"
+      love: "道侣结合/情感事件"
+      betrayal: "背叛/阴谋揭露"
+      war: "战争爆发/关键战役"
+
+    output: "Story Candidate — 标记为潜在故事线"
+    threshold: "importance >= 7 → Candidate | >= 9 → Major Story"
+
+  # ==========================================================
+  # 第三章: Story Extraction
+  # ==========================================================
+
+  story_extraction:
+    description: "从事件链中提炼故事结构，而不是生成小说。"
+    structure:
+      cause: "为什么发生？(追溯到根因事件)"
+      characters: "主要人物及其动机"
+      key_events: "情节转折点 (按时间排列)"
+      climax: "重要性最高的事件"
+      resolution: "故事的当前终点 (或最新状态)"
+
+    format: "结构化故事大纲 — 不是全文。全文由 Narrative Engine 根据大纲生成。"
+
+  # ==========================================================
+  # 第四章: Quest Generation
+  # ==========================================================
+
+  quest_generation:
+    principle: "Quest 不是设计出来的。Quest 来自世界的真实需求。"
+    correct:
+      source: "商队真的缺人 (因为战争导致护卫伤亡)"
+      generated: "护送任务"
+    wrong:
+      wrong_source: "凭空生成护送任务 (没有商队、没有需求)"
+    types:
+      escort: "商队/信使真的需要保护"
+      deliver: "物资真的需要运输"
+      investigate: "异常真的发生了 (灵脉异常/妖兽异常)"
+      rescue: "NPC 真的身处危险"
+      eliminate: "妖兽/敌人真的在威胁定居点"
+    validation: "Quest 发布前必须验证: 世界状态支持这个需求吗？"
+
+  # ==========================================================
+  # 第五章: Dialogue Generation
+  # ==========================================================
+
+  dialogue:
+    principle: "NPC 说的话来自身份/关系/情绪/历史/目标。不是固定台词。"
+    sources:
+      identity: "我是谁？(境界/宗门/地位)"
+      relationship: "你是谁？(KG: 师徒/仇敌/恩人/陌生人)"
+      emotion: "我现在感觉如何？(emotional_valence: -10~10)"
+      history: "我们之间发生过什么？(entity_memory: 共同经历)"
+      goal: "我想要什么？(Decision Engine: current_active_goal)"
+
+    example:
+      npc: "陈玄"
+      speaking_to: "王虎 (recently encountered)"
+      identity: "散修盟盟主，元婴境"
+      relationship: "RIVAL_OF (杀徒之仇)"
+      emotion: "-8 (愤怒+克制)"
+      history: "林远之死(3年前) + 坊市相遇(昨天)"
+      goal: "SEEKS_REVENGE(10)"
+      generated: "(沉默。左手在袖中掐着焚天诀的起手式。)
+                 '你腰上那把剑——是谁的？'"
+
+  # ==========================================================
+  # 第六章: Character Arc
+  # ==========================================================
+
+  character_arc:
+    description: "每个 NPC 拥有完整的人生轨迹。"
+    elements:
+      growth: "境界提升 / 技能掌握 / 心智成熟"
+      failure: "突破失败 / 失去重要的人 / 计划受挫"
+      regret: "遗憾的记忆 (importance >= 8 的负面事件)"
+      glory: "辉煌时刻 (importance >= 8 的正面事件)"
+      legacy: "传承 — 师徒/子女/功法流传"
+      life_trajectory: "从出生到死亡的整体轨迹"
+
+    player_role: "玩家见证 NPC 的人生。不是任务发布器。"
+
+  # ==========================================================
+  # 第七章: Dynamic Narrative
+  # ==========================================================
+
+  dynamic_narrative:
+    description: "世界持续变化。同一地点，每次不同。"
+    examples:
+      city: "昨天繁华的坊市 → 今天因战乱萧条 → 明天可能重建或废弃"
+      faction: "弱小的散修盟 → 逐渐壮大 → 可能成为一方霸主或覆灭"
+      market: "物价随供需波动。今天便宜的丹药下个月可能买不到。"
+      npc: "今天卖丹药的掌柜 → 明天可能死于妖兽袭击"
+
+    effect: "玩家每次来到同一地点，看到的是不同的世界。"
+
+  # ==========================================================
+  # 第八章: Historical Narrative
+  # ==========================================================
+
+  historical_narrative:
+    description: "重大事件自动进入史书。世界自己写历史。"
+    triggers:
+      faction_destruction: "宗门覆灭 → 《XX宗灭门录》"
+      major_war: "大规模战争 → 《第 N 次 XX 战争》"
+      ascension_era: "飞升潮 → 《第 N 纪飞升时代》"
+      civilization_collapse: "文明崩溃 → 《XX 纪元终结》"
+      golden_age: "文明鼎盛 → 《XX 中兴史》"
+
+    format:
+      title: "史书标题"
+      period: "时间跨度"
+      summary: "事件链概述"
+      key_figures: "主要人物"
+      impact: "对后世的影响"
+
+  # ==========================================================
+  # 第九章: Player Narrative
+  # ==========================================================
+
+  player_narrative:
+    core: "玩家不是主角。玩家只是世界中的一个角色。"
+    possibilities:
+      change_history: "玩家的行动可能改变历史走向——也可能不会"
+      unknown: "玩家可能默默无闻度过一生"
+      witness: "玩家可能只是宏大事件的旁观者"
+    principle: "世界不会围绕玩家运行。玩家需要适应世界，而不是世界适应玩家。"
+
+  # ==========================================================
+  # 第十章: Narrative Memory
+  # ==========================================================
+
+  narrative_memory:
+    description: "所有故事永久保存。形成世界记忆。"
+    stores:
+      player_experience: "玩家的经历 (去过哪里/见过谁/做了什么)"
+      npc_experience: "NPC 的经历 (entity_memory)"
+      world_experience: "世界的经历 (History + Learning Loop)"
+
+    continuity: "NPC 记得玩家。玩家离开再回来，NPC 会说'三年不见，你金丹了。'"
+
+  # ==========================================================
+  # 第十一章: Narrative Consistency
+  # ==========================================================
+
+  consistency:
+    rules:
+      - "所有故事必须符合 Canon"
+      - "所有故事必须符合历史 (不覆盖已有事件)"
+      - "所有故事必须符合人物 (NPC 行为与记忆/人格一致)"
+      - "所有故事必须符合世界状态 (不说'繁华的废墟')"
+
+    forbidden:
+      - "剧情杀 — 为了戏剧性让 NPC 不合理死亡"
+      - "强行反转 — 为了反转而违反角色逻辑"
+      - "作者意志 — 叙事者强行干预世界运行"
+      - "机械降神 — 用外部力量解决世界内部的问题"
+
+  # ==========================================================
+  # 第十二章: Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "所有剧情来自模拟 — 可追溯到具体 event/causal_chain"
+    - "所有任务来自世界需求 — 不是凭空生成"
+    - "NPC 拥有真实人生 — 完整的 character arc"
+    - "玩家拥有独立人生 — 不是世界中心"
+    - "世界自动记录历史 — 史书/年鉴自动生成"
+    - "世界持续产生新故事 — Story Discovery 每 Tick 运行"
+    - "Hermes 成为世界叙事者 — 不是剧本作者"

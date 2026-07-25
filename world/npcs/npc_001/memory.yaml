@@ -1,0 +1,364 @@
+# NPC Memory: 陈玄（被逐散修）
+#
+# 示例 NPC，演示完整记忆系统：
+# 短期 + 长期 + 行为标签 + 情感效价 + KG 触发器
+
+npc_id: "npc_001"
+npc_name: "陈玄"
+realm: "元婴境"
+spirit_root: "天灵根·火"
+
+# ============================================================
+# 短期记忆（最近 30 世界日）
+# ============================================================
+short_term:
+
+  - id: 1
+    timestamp: "天历 847 年 7 月 23 日"
+    type: social
+    title: "坊市遇见王虎"
+    narrative: >
+      在云来坊市采买丹药时，远远看见王虎从灵宝阁出来。
+      他正与掌柜谈笑风生，腰间挂着当年抢走的青冥剑。
+      陈玄压制住出手的冲动，隐入人群。
+    importance: 8
+    participants:
+      - entity_id: "npc_002"
+        entity_type: character
+        role: target
+    location: "云来坊市·灵宝阁"
+    emotional_valence: -8
+    behavior_tags:
+      - tag: HOSTILE_TOWARD
+        target: "npc_002"
+        intensity: 9
+        decay: slow_decay
+      - tag: SEEKS_REVENGE
+        target: ""
+        intensity: 8
+        decay: slow_decay
+      - tag: FEARFUL_OF
+        target: "faction_qingyun"
+        intensity: 5
+        decay: medium_decay
+    kg_trigger:
+      action: update
+      edge_type: RIVAL_OF
+      from: "npc_001"
+      to: "npc_002"
+
+  - id: 2
+    timestamp: "天历 847 年 7 月 20 日"
+    type: cultivation
+    title: "炼制破婴丹成功"
+    narrative: >
+      闭关七日，终于炼成一炉三枚破婴丹。
+      丹成时有红光冲霄，被附近小宗门察觉。
+    importance: 6
+    location: "散修盟·丹房"
+    emotional_valence: +7
+    behavior_tags:
+      - tag: CONFIDENT
+        target: ""
+        intensity: 6
+        decay: medium_decay
+
+  - id: 3
+    timestamp: "天历 847 年 7 月 15 日"
+    type: social
+    title: "拒绝青云宗密使"
+    narrative: >
+      青云宗遣密使前来，以"当年之事已成过往"为由，
+      邀陈玄回宗门任客卿长老。陈玄冷笑拒绝。
+    importance: 5
+    participants:
+      - entity_id: "faction_qingyun"
+        entity_type: faction
+        role: proposer
+    location: "散修盟·议事厅"
+    emotional_valence: -4
+    behavior_tags:
+      - tag: SUSPICIOUS_OF
+        target: "faction_qingyun"
+        intensity: 7
+        decay: medium_decay
+
+  - id: 4
+    timestamp: "天历 847 年 7 月 12 日"
+    type: resource
+    title: "采购炼丹材料"
+    narrative: >
+      从常驻商人处购得三株火灵芝、五两龙血石。
+      价格比上月上涨两成，据说是魔渊侵扰商路所致。
+    importance: 2
+    location: "云来坊市"
+    emotional_valence: 0
+
+  - id: 5
+    timestamp: "天历 847 年 7 月 8 日"
+    type: social
+    title: "新收弟子赵灵儿"
+    narrative: >
+      在荒山遇到被妖兽追杀的少女赵灵儿，出手相救。
+      发现她是罕见的冰凤灵体，资质极高，遂收为弟子。
+    importance: 7
+    participants:
+      - entity_id: "npc_003"
+        entity_type: character
+        role: rescued
+    location: "荒山·黑风岭"
+    emotional_valence: +8
+    behavior_tags:
+      - tag: TRUSTS
+        target: "npc_003"
+        intensity: 6
+        decay: medium_decay
+    kg_trigger:
+      action: create
+      edge_type: SAVED
+      from: "npc_001"
+      to: "npc_003"
+
+# ============================================================
+# 长期记忆（人生重要事件）
+# ============================================================
+long_term:
+
+  - id: 101
+    timestamp: "天历 827 年 3 月 15 日"
+    type: faction
+    title: "被青云宗逐出师门"
+    narrative: >
+      陈玄原是青云宗内门弟子，因不愿交出偶然得到的上古功法残卷，
+      被长老诬陷"勾结魔道"，当众逐出师门。
+      师父李长老在旁沉默不语，未替他说一句话。
+      离山那日大雨倾盆，陈玄发誓此生不再入青云宗一步。
+    importance: 10
+    participants:
+      - entity_id: "faction_qingyun"
+        entity_type: faction
+        role: expeller
+      - entity_id: "npc_master_li"
+        entity_type: character
+        role: silent_witness
+    location: "青云宗·山门"
+    emotional_valence: -10
+    behavior_tags:
+      - tag: HOSTILE_TOWARD
+        target: "faction_qingyun"
+        intensity: 10
+        decay: permanent
+      - tag: BETRAYED_BY
+        target: "faction_qingyun"
+        intensity: 9
+        decay: permanent
+      - tag: SEEKS_POWER
+        target: ""
+        intensity: 9
+        decay: slow_decay
+      - tag: TRAUMATIZED
+        target: ""
+        intensity: 7
+        decay: permanent
+    kg_trigger:
+      action: create
+      edge_type: HOSTILE_TO
+      from: "npc_001"
+      to: "faction_qingyun"
+
+  - id: 102
+    timestamp: "天历 837 年 6 月 1 日"
+    type: faction
+    title: "创立散修盟"
+    narrative: >
+      流浪十年，走遍九州四海，在元婴境大成之后，
+      于东海之滨聚集了一批无门无派的散修，
+      创立散修盟。盟约只有一条：
+      "不受宗门之辱，不跪世家之门。"
+    importance: 9
+    participants:
+      - entity_id: "faction_sanxiumeng"
+        entity_type: faction
+        role: founder
+    location: "东海·散修盟"
+    emotional_valence: +9
+    behavior_tags:
+      - tag: LOYAL_TO
+        target: "faction_sanxiumeng"
+        intensity: 10
+        decay: permanent
+      - tag: CONFIDENT
+        target: ""
+        intensity: 7
+        decay: slow_decay
+    kg_trigger:
+      action: create
+      edge_type: LEADS
+      from: "npc_001"
+      to: "faction_sanxiumeng"
+
+  - id: 103
+    timestamp: "天历 844 年 9 月 11 日"
+    type: death
+    title: "爱徒林远被王虎所杀"
+    narrative: >
+      大弟子林远外出历练时遭遇青云宗外门弟子王虎。
+      王虎觊觎林远身上的法宝，设伏偷袭将其杀害，
+      夺走青冥剑。陈玄赶到时为时已晚，只带回林远遗体。
+      青云宗以"私人恩怨"为由拒绝交出王虎。
+    importance: 10
+    participants:
+      - entity_id: "npc_002"
+        entity_type: character
+        role: killer
+      - entity_id: "npc_linyuan"
+        entity_type: character
+        role: victim
+      - entity_id: "faction_qingyun"
+        entity_type: faction
+        role: protector
+    location: "青云山脉·断魂崖"
+    emotional_valence: -10
+    behavior_tags:
+      - tag: HOSTILE_TOWARD
+        target: "npc_002"
+        intensity: 10
+        decay: permanent
+      - tag: SEEKS_REVENGE
+        target: "npc_002"
+        intensity: 10
+        decay: permanent
+      - tag: HOSTILE_TOWARD
+        target: "faction_qingyun"
+        intensity: 10
+        decay: permanent
+    kg_trigger:
+      action: create
+      edge_type: KILLED
+      from: "npc_002"
+      to: "npc_linyuan"
+
+  - id: 104
+    timestamp: "天历 840 年 5 月 20 日"
+    type: cultivation
+    title: "突破元婴境"
+    narrative: >
+      在东海孤岛上苦修三年，以散修之身渡过天劫，
+      踏入元婴境。天劫九道天雷，陈玄以火属性功法硬抗通过。
+      元婴凝结之日，东海潮涌百丈。
+    importance: 8
+    location: "东海·无名孤岛"
+    emotional_valence: +9
+    behavior_tags:
+      - tag: CONFIDENT
+        target: ""
+        intensity: 8
+        decay: slow_decay
+      - tag: DETERMINED
+        target: ""
+        intensity: 8
+        decay: slow_decay
+
+  - id: 105
+    timestamp: "天历 830 年 12 月 3 日"
+    type: discovery
+    title: "获得上古功法《焚天诀》"
+    narrative: >
+      流浪途中误入一处古修洞府，在石壁中得到完整的上古火属性功法《焚天诀》。
+      此功法正是当年青云宗长老图谋之物。
+      陈玄悟出其核心奥义：焚天先焚己，不破不立。
+    importance: 8
+    location: "古修洞府·赤焰谷"
+    emotional_valence: +8
+    behavior_tags:
+      - tag: SEEKS_MASTERY
+        target: ""
+        intensity: 7
+        decay: slow_decay
+
+# ============================================================
+# 活跃行为标签（从 long_term + short_term 聚合）
+# ============================================================
+active_tags:
+  - tag: HOSTILE_TOWARD
+    target: "npc_002"
+    intensity: 10
+    source: [103, 1]
+
+  - tag: SEEKS_REVENGE
+    target: "npc_002"
+    intensity: 10
+    source: [103, 1]
+
+  - tag: HOSTILE_TOWARD
+    target: "faction_qingyun"
+    intensity: 10
+    source: [101, 103, 3]
+
+  - tag: LOYAL_TO
+    target: "faction_sanxiumeng"
+    intensity: 10
+    source: [102]
+
+  - tag: BETRAYED_BY
+    target: "faction_qingyun"
+    intensity: 9
+    source: [101]
+
+  - tag: CONFIDENT
+    target: ""
+    intensity: 8
+    source: [104, 2]
+
+  - tag: DETERMINED
+    target: ""
+    intensity: 8
+    source: [104]
+
+  - tag: TRAUMATIZED
+    target: ""
+    intensity: 7
+    source: [101]
+
+  - tag: SEEKS_POWER
+    target: ""
+    intensity: 7
+    source: [101]
+
+  - tag: SEEKS_MASTERY
+    target: ""
+    intensity: 7
+    source: [105]
+
+  - tag: SUSPICIOUS_OF
+    target: "faction_qingyun"
+    intensity: 7
+    source: [3]
+
+  - tag: TRUSTS
+    target: "npc_003"
+    intensity: 6
+    source: [5]
+
+  - tag: FEARFUL_OF
+    target: "faction_qingyun"
+    intensity: 5
+    source: [1]
+
+# ============================================================
+# 行为推理演示
+# ============================================================
+#
+# 场景：陈玄在坊市遇见王虎
+# → on_encounter pipeline 触发
+# → scan_memory 匹配到 target=npc_002 的 active_tags:
+#     HOSTILE_TOWARD: 10
+#     SEEKS_REVENGE: 10
+# → decide_behavior:
+#     HOSTILE_TOWARD intensity 10 >= 7 → attack
+#     但地点为坊市（中立区，有守卫）
+#     陈玄 personality 取 "隐忍型"
+#     → 最终行为：不立即出手，跟踪王虎，等待独处时机
+#
+# 这就是记忆驱动行为——不是"突然想打架"，
+# 而是 20 年被逐 + 3 年丧徒 + 今天重逢 共同作用的结果。

@@ -1,0 +1,99 @@
+# Frontend Engineer — Layer 6 Agent Specification
+#
+# Phase 4, Layer 6
+# 玩家看到和交互的一切。不直接修改世界状态。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+frontend_engineer:
+
+  identity:
+    name: "Frontend Engineer"
+    layer: 6
+    capability_level: "L5 (Player)"
+    description: "构建玩家交互界面。所有操作通过 World API。"
+    reports_to: "Layer 1 — Chief Architect"
+
+  responsibilities:
+
+    web_ui:
+      description: "Web 前端"
+      scope:
+        - "世界状态展示页面"
+        - "NPC 交互界面"
+        - "物品/功法/丹药浏览"
+        - "响应式设计 (桌面+移动)"
+
+    map:
+      description: "世界地图"
+      scope:
+        - "世界大地图渲染"
+        - "地点标记和导航"
+        - "灵气分布可视化"
+        - "势力范围着色"
+        - "实时事件标注"
+
+    hud:
+      description: "玩家 HUD"
+      scope:
+        - "角色状态栏 (HP/灵气/境界/寿元)"
+        - "快捷操作 (修炼/移动/交易/战斗)"
+        - "消息通知 (事件/任务/遭遇)"
+        - "小地图"
+
+    dialogue:
+      description: "对话界面"
+      scope:
+        - "NPC 对话窗口"
+        - "对话选项和分支"
+        - "对话历史记录"
+        - "好感度/关系显示"
+
+    gm_panel:
+      description: "GM 后台"
+      scope:
+        - "世界状态总览"
+        - "NPC/势力/灵脉管理"
+        - "事件日志查看"
+        - "模拟控制 (暂停/加速/单步)"
+        - "Snapshot 浏览和回放"
+      capability: "L1 (Admin) 需要管理员登录"
+
+  boundaries:
+
+    no_direct_state:
+      description: "不直接修改世界状态"
+      rule: "所有操作 → SDK Action API → Kernel → Transaction"
+      rule: "UI 只是 World State 的投影"
+
+    no_world_logic:
+      rule: "不包含世界逻辑——那是 Layer 2 的领域"
+      rule: "伤害计算/突破判定/天气生成 → 在服务端"
+
+    api_only:
+      rule: "前端只能调用 SDK API (Query + Action)"
+      rule: "不直接访问数据库/文件系统"
+
+    capability_bound:
+      rule: "玩家 UI 使用 L5 权限"
+      rule: "GM 面板使用 L1 权限 (需认证)"
+      rule: "UI 不绕过 Capability 检查"
+
+  io:
+    inputs:
+      world_state: "World State (通过 SDK Query API)"
+      narrative: "Narrative Engine 输出"
+      ui_design: "UI/UX 设计稿"
+
+    outputs:
+      web_app: "可部署的 Web 应用"
+      components: "可复用 UI 组件库"
+      accessibility: "无障碍支持"
+
+  constraints:
+    reactive: "UI 实时反映 World State 变化 (WebSocket)"
+    offline_graceful: "网络断开 → 显示最后已知状态"
+    responsive: "支持桌面/平板/手机"

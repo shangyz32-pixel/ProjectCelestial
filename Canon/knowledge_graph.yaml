@@ -1,0 +1,240 @@
+# Knowledge Graph Specification
+# 世界关系网络——所有 Entity 组成可查询的图
+# 不是全文搜索。是图遍历。
+
+version: "1.0"
+status: Canon
+
+---
+
+node_types:
+
+  character:
+    description: 人物节点
+    attributes:
+      - name
+      - realm
+      - spirit_root
+      - faction_id
+      - location_id
+      - cultivation_value
+      - lifespan_remaining
+      - karma_score
+      - dao_comprehension
+
+  faction:
+    description: 势力节点（宗门/国家/商会/魔教/家族/联盟）
+    attributes:
+      - name
+      - type
+      - population
+      - treasury
+      - influence
+      - location_id
+      - spirit_vein_ids
+
+  location:
+    description: 地点节点（城市/山脉/秘境/洞天）
+    attributes:
+      - name
+      - type
+      - realm_id
+      - qi_density
+      - danger_level
+      - resources
+
+  spirit_vein:
+    description: 灵脉节点
+    attributes:
+      - name
+      - grade
+      - qi_output
+      - status
+      - location_id
+      - owner_faction_id
+
+  item:
+    description: 物品节点（法宝/丹药/功法/材料）
+    attributes:
+      - name
+      - type
+      - grade
+      - effects
+      - owner_id
+      - origin_location_id
+
+  event:
+    description: 事件节点（历史事件）
+    attributes:
+      - name
+      - timestamp
+      - type
+      - severity
+      - description
+
+---
+
+edge_types:
+
+  social:
+    - MASTER_OF:        师父 → 弟子
+    - STUDENT_OF:       弟子 → 师父
+    - SPOUSE_OF:        道侣 ↔ 道侣
+    - PARENT_OF:        父母 → 子女
+    - FRIEND_OF:        朋友 ↔ 朋友
+    - RIVAL_OF:         敌对 ↔ 敌对
+    - OWES_DEBT_TO:     欠债 → 债主
+
+  faction:
+    - MEMBER_OF:        人物 → 势力
+    - LEADS:            掌门 → 宗门
+    - ALLY_OF:          势力 ↔ 势力
+    - HOSTILE_TO:       势力 → 势力
+    - VASSAL_OF:        势力 → 宗主势力
+    - TRADES_WITH:      势力 ↔ 势力
+
+  location:
+    - LOCATED_AT:       人物/势力/灵脉 → 地点
+    - CONNECTED_TO:     地点 ↔ 地点
+    - CONTAINS:         地点 → 子地点
+
+  cultivation:
+    - CULTIVATES:       人物 → 功法
+    - COMPREHENDS:      人物 → 大道
+    - USES:             人物 → 法宝
+    - OWNS:             人物 → 物品
+
+  karma:
+    - SAVED:            人物 → 人物（救命之恩）
+    - BETRAYED:         人物 → 人物（背叛）
+    - KILLED:           人物 → 人物（杀害）
+    - TAUGHT:           人物 → 人物（传道）
+
+  resource:
+    - PRODUCES:         灵脉/地点 → 资源
+    - CONSUMES:         势力 → 资源
+    - GUARDS:           妖兽 → 地点/资源
+
+  event:
+    - PARTICIPATED_IN:  人物/势力 → 事件
+    - CAUSED_BY:        事件 → 人物/势力
+    - LED_TO:           事件 → 事件
+
+---
+
+examples:
+
+  graph_query_1:
+    question: "张三的师父是谁？"
+    query: "MATCH (zhang:character {name:'张三'})-[r:STUDENT_OF]->(master) RETURN master.name"
+    result: "李长老"
+    time: "O(1) 边查询"
+
+  graph_query_2:
+    question: "青云宗有哪些仇敌？"
+    query: "MATCH (s:faction {name:'青云宗'})-[r:HOSTILE_TO]->(enemy) RETURN enemy.name"
+    result: "魔渊、血煞门、天狼帮"
+    time: "O(出度)"
+
+  graph_query_3:
+    question: "张三修炼的功法需要什么资源？"
+    query: >
+      MATCH (zhang:character {name:'张三'})
+      -[c:CULTIVATES]->(skill)
+      -[r:REQUIRES]->(resource)
+      RETURN resource.name, resource.location
+    result: "剑灵石 → 剑冢秘境"
+
+  graph_query_4:
+    question: "谁欠青云宗人情？"
+    query: >
+      MATCH (s:faction {name:'青云宗'})<-[r:SAVED]-(person)
+      RETURN person.name, person.realm
+    result: "赵城主(元婴), 王散修(金丹)"
+
+  graph_query_5:
+    question: "青云宗灵脉枯竭会影响到谁？"
+    query: >
+      MATCH (v:spirit_vein {name:'青云主脉'})
+      -[:PRODUCES]->(resource)
+      <-[:CONSUMES]-(f:faction)
+      <-[:MEMBER_OF]-(person:character)
+      RETURN person.name
+    result: "全部青云宗弟子 (127 人)"
+
+---
+
+graph_maintenance:
+
+  on_entity_created:
+    action: 创建节点 + 初始边
+    example: "新 NPC → 自动创建 MEMBER_OF 边到宗门"
+
+  on_relation_changed:
+    action: 创建/删除/更新边
+    example: "好感度 < -50 → 创建 RIVAL_OF 边"
+
+  on_event_occurred:
+    action: 创建事件节点 + PARTICIPATED_IN 边
+    example: "张三救了李四 → 创建 SAVED 边 + 事件节点"
+
+  on_entity_destroyed:
+    action: 标记节点为 deleted，保留边（历史不可删除）
+    example: "张三死亡 → 节点标记 [deceased]，边全部保留"
+
+  on_memory_event:
+    description: >
+      当 NPC Memory Pipeline 写入新记忆时自动触发。
+      Memory 是 KG 的事件源。KG 边始终反映最新关系状态。
+    trigger: memory_pipeline.steps.kg_sync
+
+    auto_inference:
+      description: >
+        若 memory_entry 未显式指定 kg_trigger，按以下规则自动推断。
+      rules:
+        hostile_tag:
+          condition: HOSTILE_TOWARD tag present
+          action: CREATE RIVAL_OF or HOSTILE_TO edge
+
+        grateful_tag:
+          condition: GRATEFUL_TOWARD tag present
+          action: "CREATE SAVED edge (bidirectional)"
+
+        betrayal_tag:
+          condition: BETRAYED_BY tag present
+          action: "CREATE BETRAYED edge (bidirectional)"
+
+        trust_tag:
+          condition: TRUSTS tag present
+          action: UPDATE ALLY_OF edge weight +1
+
+        death_event:
+          condition: event.type == death AND participant.role == victim
+          action: "MARK node as [deceased], retain all edges"
+
+        member_joined:
+          condition: event.type == faction AND participant.role == member_joined
+          action: CREATE MEMBER_OF edge
+
+        expelled:
+          condition: event.type == faction AND participant.role == expelled
+          action: DELETE MEMBER_OF edge, CREATE HOSTILE_TO edge
+
+        master_student:
+          condition: "event.type == cultivation AND has MASTER_OF or STUDENT_OF relation"
+          action: "CREATE cultivation edge (bidirectional)"
+
+      conflict_resolution:
+        description: 当新记忆事件与已有 KG 边冲突时的处理规则
+        rule: 以重要性更高的记忆为准。同等重要性时新事件覆盖旧状态。
+        example: "A HOSTILE_TO B (imp=7) vs A SAVED B (imp=8) → 删除 HOSTILE_TO, 创建 SAVED"
+
+---
+
+# 查询优先级
+# 图查询 > Registry > Volume > 模型记忆
+# 
+# 铁律
+# - 所有关系必须双向维护（A SAVED B → B 也记录被 A 救了）
+# - 历史边不可删除（只标记 inactive）
+# - 图与 Registry 不一致 → 以 Registry 为准

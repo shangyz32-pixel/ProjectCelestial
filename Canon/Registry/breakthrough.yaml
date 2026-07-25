@@ -1,0 +1,41 @@
+# Breakthrough Registry
+# 突破——生命层级跃迁的判定规则
+
+breakthrough:
+  conditions:
+    description: 突破需要同时满足五个条件，缺一不可
+    items:
+      - id: qi
+        name: 灵气
+        description: 所在地灵气浓度必须足够
+        fail: 灵气不足 → 无法开始突破
+      - id: resources
+        name: 资源
+        description: 丹药、灵物等辅助资源
+        fail: 无资源 → 可以硬冲（基础概率），但高境界强烈建议有
+      - id: comprehension
+        name: 悟性
+        description: 对大道的理解程度
+        fail: 悟性不足 → 突破概率显著降低
+      - id: dao_heart
+        name: 道心
+        description: 修炼稳定性
+        fail: 道心不足 → 容易走火入魔、心魔滋生
+      - id: destiny
+        name: 机缘
+        description: 天时、地利、人和
+        fail: 机缘不足 → 突破概率降低
+
+  failure_consequences:
+    - 境界停滞
+    - 修为倒退
+    - 经脉受损
+    - 神魂破裂
+    - 寿元减少
+    - 心魔产生
+
+# 铁律
+# - 突破永远不是 100% 保证
+# - 失败不是 Bug，属于世界规则
+# - 不存在"剧情需要强行突破"
+# - 此文件是唯一定义源

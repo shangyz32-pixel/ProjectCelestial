@@ -1,0 +1,163 @@
+# Phase 13 — Autonomous Development
+#
+# Hermes 不再执行单一任务。
+# Hermes 成为 Autonomous Software Engineer。
+# 人类只描述需求。AI 完成整个开发生命周期。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+autonomous_development:
+
+  mission: >
+    Hermes 不再执行单一任务。Hermes 成为 Autonomous Software Engineer。
+    用户只描述需求。Hermes 自主完成整个开发生命周期。
+
+  principle: "Human Defines Intent. AI Delivers Implementation."
+
+  # ==========================================================
+  # Development Pipeline
+  # ==========================================================
+
+  pipeline:
+    stages:
+      analysis:
+        - "Requirement Analysis — 理解需求，自动分析影响范围"
+        - "Architecture Review — 检查架构兼容性"
+        - "Canon Validation — 检查 Canon 一致性"
+        - "Simulation Impact Analysis — 评估对世界模拟的影响"
+
+      design:
+        - "Task Planning — Epic → Feature → Task → Subtask"
+        - "RFC (如需要) — 重大功能必须 RFC"
+        - "ADR (如需要) — 架构变更必须 ADR"
+        - "System Design — 系统架构设计"
+        - "Data Model — 数据模型设计 + Migration"
+        - "API Design — 接口设计"
+        - "UI Design — 界面设计"
+        - "Sequence Diagram — 时序图"
+
+      implementation:
+        - "Backend Code"
+        - "Frontend Code"
+        - "AI/Prompt Update"
+        - "Simulation Update"
+        - "Database Migration"
+        - "Configuration Update"
+        - "Asset Generation (Icon/UI/文本/默认资源)"
+        - "Documentation Update (API/ADR/Bible/CHANGELOG)"
+
+      testing:
+        - "Unit Test"
+        - "Integration Test"
+        - "Simulation Test (1000 Tick)"
+        - "Multiplayer Test (multi-client)"
+        - "Regression Test (Golden World)"
+        - "Performance Test"
+        - "Bug Fix → Retest → 循环直到全部通过"
+
+      release:
+        - "Git Commit (auto message)"
+        - "CHANGELOG Update"
+        - "Pull Request"
+        - "Release Candidate"
+
+  # ==========================================================
+  # Requirement Understanding
+  # ==========================================================
+
+  requirement:
+    description: "Hermes 自动分析需求影响范围"
+    example:
+      user_input: "新增一个门派"
+      auto_analysis:
+        affected_systems:
+          - "World: 新势力加入世界"
+          - "NPC: 新门派成员"
+          - "Faction: 新 Faction Entity"
+          - "Skills: 门派专属技能"
+          - "Map: 门派驻地"
+          - "Economy: 门派经济"
+          - "Quests: 门派任务"
+          - "History: 门派历史"
+          - "Diplomacy: 与其他势力的关系"
+          - "Player: 玩家可加入"
+
+  # ==========================================================
+  # Autonomous Planning
+  # ==========================================================
+
+  planning:
+    auto_decompose:
+      epic: "新增门派系统"
+      features:
+        - "门派数据模型 + Registry"
+        - "门派驻地 + Map"
+        - "门派技能体系"
+        - "门派任务系统"
+        - "门派外交系统"
+      tasks: "每个 Feature → 3-10 Task"
+      subtasks: "每个 Task → 2-5 Subtask"
+    auto_schedule:
+      - "确定依赖关系"
+      - "确定执行顺序"
+      - "分配 Agent (基于 Layer)"
+
+  # ==========================================================
+  # Example: 新增一个门派
+  # ==========================================================
+
+  example_new_sect:
+
+    user_says: "新增一个叫'天剑阁'的剑修门派"
+
+    hermes_does:
+
+      analysis:
+        - "分析影响: World / NPC / Faction / Skills / Map / Economy / Quests / History / Diplomacy"
+        - "Architecture Review: 门派属于 Faction 扩展，走 Plugin 路径"
+        - "Canon Validation: 剑修 — 符合 Registry 中的 '金' 属性灵根"
+
+      design:
+        - "RFC: 新门派系统扩展 — Approved"
+        - "Data Model: faction_tianjiange + 剑修技能树"
+        - "API: joinFaction / learnSectSkill / sectQuest"
+        - "Map: 天剑峰 (新地点)"
+        - "Sequence: 玩家加入天剑阁 → 学习剑诀 → 接门派任务"
+
+      implementation:
+        - "Faction Registry: 天剑阁 (type=宗门, location=天剑峰)"
+        - "Skills: 天剑九式 (9 个剑修技能)"
+        - "Quests: 入门试炼 / 剑诀修炼 / 下山历练"
+        - "NPC: 阁主 + 传功长老 + 10 弟子"
+        - "Config: 门派贡献/技能解锁条件"
+        - "Assets: 天剑阁图标 + UI"
+
+      testing:
+        - "Unit: 技能伤害/冷却/消耗 验证"
+        - "Integration: 玩家加入→学习技能→接任务→完成任务"
+        - "Simulation: 1000 Tick 天剑阁 NPC 正常运作"
+        - "Multiplayer: 3 玩家同时加入天剑阁，状态一致"
+        - "Regression: Golden World 对比通过"
+
+      release:
+        - "Commit: feat: add 天剑阁 faction with sword cultivation system"
+        - "CHANGELOG: v1.x — 新增门派: 天剑阁"
+        - "PR: 自动创建 → 等待 Review"
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "理解需求 — 自动分析影响范围"
+    - "自主规划 — 自动拆解任务"
+    - "自主设计 — 自动生成架构/数据模型/API"
+    - "自主开发 — 自动写代码/配置/资源"
+    - "自主测试 — 自动运行所有测试并修复Bug"
+    - "自主提交 — 自动 Commit + PR"
+    - "自主生成文档 — API/ADR/CHANGELOG 同步"
+    - "自主准备发布 — Release Candidate 就绪"
+    - "整个软件开发生命周期形成闭环"

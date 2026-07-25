@@ -1,0 +1,248 @@
+# Registry Compiler Specification
+#
+# Phase 4, Module 2: Registry Compiler
+# 将 8 个 Registry YAML 编译为运行时优化的结构化数据
+
+version: "1.0.0"
+status: Canon
+
+---
+
+registry_compiler:
+
+  description: >
+    将人类可读的 Registry YAML 编译为运行时数据结构。
+    ID 化、外键化、索引化——O(1) 查询。
+    Canon 不变。编译可重复。
+
+  # ==========================================================
+  # Compilation Pipeline
+  # ==========================================================
+
+  pipeline:
+
+    1_parse:
+      input: "8 个 Registry YAML 文件"
+      action: "YAML → 结构化中间表示"
+
+    2_validate:
+      action: "编译前校验"
+      checks:
+        - "所有名称唯一（如境界名不重复）"
+        - "所有引用目标存在（如 next_realm 指向存在的境界）"
+        - "无死循环引用（如 A→B→A）"
+        - "数值在合法范围内（如突破率 0~1）"
+
+    3_normalize:
+      action: "统一格式"
+      rules:
+        - "字符串 trim + 标准化"
+        - "数值单位统一"
+        - "可选字段填充默认值"
+        - "列表排序（按 index 字段）"
+
+    4_assign_ids:
+      action: "名称 → 数字 ID"
+      rules:
+        - "按定义顺序分配 ID（0-based 或 1-based）"
+        - "ID 一旦分配，永不改变（即使中间条目被删除）"
+
+    5_resolve_references:
+      action: "字符串引用 → 外键 ID"
+      rules:
+        - "境界名 → realm_id"
+        - "灵根品质名 → quality_id"
+        - "属性名 → attribute_id"
+        - "天劫类型名 → tribulation_id"
+        - "未找到引用目标 → 编译错误"
+
+    6_index:
+      action: "List → Map (ID 为 key)"
+      rules:
+        - "所有实体用 ID 作为 Map key"
+        - "常用查询路径建立反向索引"
+
+    7_output:
+      action: "生成 compiled_registry (见下方 Schema)"
+      format: "JSON（运行时）或 YAML（调试）"
+
+  # ==========================================================
+  # Per-Registry Compilation Rules
+  # ==========================================================
+
+  rules:
+
+    realms:
+      source: "Registry/Realm.yaml"
+      transformations:
+        - "realm_name → realm_id (0~15)"
+        - "next_realm 字符串 → next_realm_id (外键)"
+        - "lifespan 保留数值"
+        - "breakthrough_rate 保留数值"
+        - "min_qi 保留数值"
+        - "tribulation_required 保留布尔"
+      output_key: "realms"
+
+    spirit_roots:
+      source: "Registry/SpiritRoot.yaml"
+      transformations:
+        - "quality_name → quality_id (0~7)"
+        - "attribute_name → attribute_id (0~13)"
+        - "realm_cap 境界名 → realm_cap_id (外键)"
+        - "cultivation_multiplier 保留数值"
+        - "生成 quality × attribute 组合索引"
+      output_key: "spirit_roots"
+
+    lifespan:
+      source: "Registry/lifespan.yaml"
+      transformations:
+        - "realm_name → realm_id (外键, 合并到 realms)"
+        - "min_age / max_age 保留数值"
+      output_key: "inline in realms"  # 合并到 realms 表
+
+    dao:
+      source: "Registry/dao.yaml"
+      transformations:
+        - "layer_name → dao_layer_id (0~2)"
+        - "每个 layer 的 sub_daos → dao_id"
+        - "建立 dao → layer 反向索引"
+      output_key: "dao"
+
+    tribulation:
+      source: "Registry/tribulation.yaml"
+      transformations:
+        - "tribulation_name → tribulation_id (0~5)"
+        - "trigger_realm → trigger_realm_id (外键)"
+        - "requirements → 结构体"
+        - "failure_consequences → 结构体"
+      output_key: "tribulations"
+
+    breakthrough:
+      source: "Registry/breakthrough.yaml"
+      transformations:
+        - "condition_name → condition_id"
+        - "required_for 境界列表 → realm_ids 数组"
+        - "failure_effects → 结构体（概率 + 后果）"
+      output_key: "breakthrough"
+
+    weather:
+      source: "Registry/weather.yaml"
+      transformations:
+        - "weather_name → weather_id (0~11)"
+        - "cultivation_effect → 数值"
+        - "season_weights → Map(season → probability)"
+      output_key: "weather"
+
+    factions:
+      source: "Registry/factions.yaml"
+      transformations:
+        - "faction_type → faction_type_id (0~5)"
+        - "default_behaviors → 枚举数组"
+      output_key: "faction_types"
+
+  # ==========================================================
+  # Compiled Output Schema
+  # ==========================================================
+
+  compiled_format:
+
+    realms:
+      type: "Map<realm_id, Realm>"
+      Realm:
+        realm_id: int
+        name: string
+        index: int               # 在境界序列中的位置
+        lifespan: int            # 寿元上限（年）
+        breakthrough_rate: float # 突破成功率
+        min_qi: int              # 突破最低灵气
+        next_realm_id: "int | null"  # 下一个境界
+        tribulation_required: bool
+
+    spirit_roots:
+      type: "Map<quality_id, Quality>"
+      Quality:
+        quality_id: int
+        name: string
+        realm_cap_id: int        # 该品质最高可达到的境界
+        cultivation_multiplier: float
+        attributes: "Map<attribute_id, Attribute>"
+      Attribute:
+        attribute_id: int
+        name: string
+
+    dao:
+      type: "Map<dao_id, Dao>"
+      Dao:
+        dao_id: int
+        name: string
+        layer_id: int
+        description: string
+
+    tribulations:
+      type: "Map<tribulation_id, Tribulation>"
+      Tribulation:
+        tribulation_id: int
+        name: string
+        trigger_realm_id: int
+        danger_level: int
+        requirements: object
+        failure_consequences: object
+
+    breakthrough:
+      type: "Map<condition_id, Condition>"
+      Condition:
+        condition_id: int
+        name: string
+        required_for: [int]  # realm_ids
+
+    weather:
+      type: "Map<weather_id, Weather>"
+      Weather:
+        weather_id: int
+        name: string
+        cultivation_modifier: float
+        season_weights: "Map<season, float>"
+
+    faction_types:
+      type: "Map<faction_type_id, FactionType>"
+      FactionType:
+        faction_type_id: int
+        name: string
+        default_behaviors: [string]
+
+  # ==========================================================
+  # Query API（运行时）
+  # ==========================================================
+
+  query_api:
+    description: "Hermes 运行时查询编译后 Registry"
+
+    get_realm:
+      params: [realm_id]
+      returns: "Realm 完整信息"
+      complexity: "O(1)"
+
+    get_next_realm:
+      params: [realm_id]
+      returns: "下一个境界 | null"
+      complexity: "O(1)"
+
+    get_spirit_root_cap:
+      params: [quality_id]
+      returns: "该品质的最高境界"
+      complexity: "O(1)"
+
+    get_breakthrough_rate:
+      params: [realm_id]
+      returns: "基础突破率"
+      complexity: "O(1)"
+
+    get_weather_effect:
+      params: [weather_id, season]
+      returns: "修炼倍率"
+      complexity: "O(1)"
+
+    get_tribulation_for_realm:
+      params: [realm_id]
+      returns: "该境界对应的天劫类型 | null"
+      complexity: "O(1)"

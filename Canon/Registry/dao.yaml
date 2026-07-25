@@ -1,0 +1,94 @@
+# Dao Registry
+# Single Source of Truth — 大道分层体系
+
+dao:
+  origin:
+    description: 本源大道 — 宇宙存在的基础法则。不可创造、不可毁灭。
+    count: 5
+    comprehension_requirement: 元婴期以上
+    time_per_dao: "千年以上"
+    items:
+      - id: time
+        name: 时间之道
+        essence: 一切流动的原因
+      - id: space
+        name: 空间之道
+        essence: 一切位置的原因
+      - id: fate
+        name: 命运之道
+        essence: 一切轨迹的原因
+      - id: causality
+        name: 因果之道
+        essence: 一切联系的原因
+      - id: reincarnation
+        name: 轮回之道
+        essence: 一切循环的原因
+
+  natural:
+    description: 自然大道 — 物质世界的构成元素。法术的力量来源。
+    count: 10
+    comprehension_requirement: 筑基期以上
+    items:
+      - id: metal
+        name: 金之大道
+        essence: 金属、锋锐、杀伐
+      - id: wood
+        name: 木之大道
+        essence: 生命、生长、恢复
+      - id: water
+        name: 水之大道
+        essence: 流动、适应、侵蚀
+      - id: fire
+        name: 火之大道
+        essence: 燃烧、毁灭、激情
+      - id: earth
+        name: 土之大道
+        essence: 稳固、防御、厚重
+      - id: wind
+        name: 风之大道
+        essence: 速度、自由、无形
+      - id: thunder
+        name: 雷之大道
+        essence: 毁灭、审判、极速
+      - id: ice
+        name: 冰之大道
+        essence: 静止、保存、纯粹
+        parent: water
+      - id: light
+        name: 光之大道
+        essence: 光明、净化、揭示
+      - id: darkness
+        name: 暗之大道
+        essence: 阴影、隐匿、吞噬
+
+  human:
+    description: 人道 — 文明创造的大道。可创新、可失传、可复兴。
+    count: null
+    comprehension_requirement: 练气期以上
+    items:
+      - id: sword
+        name: 剑道
+      - id: saber
+        name: 刀道
+      - id: alchemy
+        name: 丹道
+      - id: artifact
+        name: 器道
+      - id: formation
+        name: 阵道
+      - id: talisman
+        name: 符道
+      - id: beast_taming
+        name: 御兽
+      - id: puppet
+        name: 傀儡
+      - id: medicine
+        name: 医道
+      - id: music
+        name: 琴道
+
+# 铁律
+# - Origin 和 Natural 数量不可增减
+# - Human 可以新增（需 ADR）
+# - 大道高于仙帝
+# - 此文件是唯一定义源

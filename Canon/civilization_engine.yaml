@@ -1,0 +1,219 @@
+# Civilization Engine — 组织层面智能
+#
+# Phase 4 核心。将组织从"一个领导 NPC 的延伸"
+# 升级为独立智能实体。
+
+version: "1.0.0"
+status: Canon
+phase: 4
+
+---
+
+# ============================================================
+# 文明演化层次
+# ============================================================
+
+civilization:
+
+  description: >
+    组织层面的智能。与 NPC 系统叠加运行。
+    同一个 NPC 有个体身份和组织身份。
+
+  pillars:
+
+    long_term_goals:
+      description: 跨越数十到数百年的战略目标
+      horizon: "10~500 世界年"
+      example:
+        faction: "青云宗"
+        goal: "在灵脉枯竭前找到替代灵脉（50年窗口）"
+        sub_goals:
+          - "派出探索队（进行中）"
+          - "争夺太虚真人洞府的造化玉液（进行中）"
+          - "培养下一代灵脉勘探师（10年计划）"
+          - "如果失败 → 宗门迁徙方案（30年备选）"
+
+      evaluation: "每 1 世界年评估进展"
+      adaptation: "世界状态变化 → 目标可调整"
+
+    institution:
+      description: 制度高于个人。掌门死了，制度继续运转。
+      components:
+
+        hierarchy:
+          description: 组织层级和职责
+          example_qingyun:
+            - level: "宗主"
+              power: "最终决策权（受长老会议制约）"
+              succession: "长老会议推举"
+
+            - level: "大长老"
+              power: "日常执政、资源分配"
+              succession: "宗主提名 + 长老会议表决"
+
+            - level: "内门长老"
+              power: "各堂管理（丹堂/执法堂/传功堂）"
+              succession: "元婴境以上 + 资历"
+
+            - level: "内门弟子"
+              power: "修炼 + 宗门任务"
+              promotion: "金丹境以上 / 天灵根"
+
+            - level: "外门弟子"
+              power: "基础修炼 + 杂务"
+              promotion: "筑基境以上"
+
+        rules:
+          description: 成文的组织规则
+          immutable:
+            - "宗门弟子不得背叛宗门（叛宗者追杀令）"
+            - "未经允许不得私传功法"
+          mutable:
+            - "弟子月俸额度（可调整）"
+            - "外门晋升标准（可调整）"
+
+        traditions:
+          description: 不成文的组织文化
+          example:
+            - "青云宗重颜面 → 宁包庇弟子不认错"
+            - "散修盟重自由 → 来去自由，不强制留人"
+          evolution: "文化可以演化。重大事件改变组织性格。"
+
+    succession:
+      description: 权力交接机制。不是换名字——是博弈。
+
+      modes:
+        election:
+          description: "长老会议推举"
+          example: "青云宗宗主"
+          process:
+            - "候选人提名（长老自荐或推举）"
+            - "长老会议投票"
+            - "票数过半 → 新任宗主"
+            - "无人过半 → 第二轮投票（前两名）"
+            - "平局 → 大长老决定"
+
+        designation:
+          description: "前任指定继承人"
+          example: "散修盟——陈玄指定下一任盟主"
+
+        hereditary:
+          description: "世袭"
+          example: "修仙家族"
+
+        contest:
+          description: "实力争夺——比武或内战"
+          example: "魔渊魔将更替"
+          process:
+            - "旧领导死亡 / 被推翻"
+            - "候选者公开争夺"
+            - "可能引发组织分裂"
+
+      triggers:
+        - "领导 NPC 死亡"
+        - "领导 NPC 寿元耗尽"
+        - "领导 NPC 被推翻（内部政变）"
+        - "领导 NPC 主动退位"
+
+      consequences:
+        - "和平交接 → 组织稳定"
+        - "争议交接 → 内部紧张，可能分裂"
+        - "暴力交接 → 内战，组织实力大损"
+        - "分裂 → 新势力诞生"
+
+    collective_decision:
+      description: 重大事务不是一个人说了算。
+
+      council:
+        description: "长老会议"
+        members: "所有内门长老"
+        voting:
+          - "重大事务（宣战/迁徙/制度变更）→ 2/3 多数"
+          - "常规事务（预算/人事）→ 简单多数"
+          - "紧急事务 → 大长老独断（事后追认）"
+
+      factions:
+        description: 组织内部的派系
+        example_qingyun:
+          conservatives:
+            leader: "大长老公孙烈"
+            stance: "颜面优先、排斥散修、包庇自己人"
+            support: "多数长老"
+          reformists:
+            leader: "李长风"
+            stance: "正道宗门应有底线、与散修和解"
+            support: "少数长老"
+
+        dynamics:
+          - "派系力量对比随时间变化"
+          - "重大事件可能改变派系平衡"
+          - "派系分歧过大 → 可能分裂为新势力"
+
+    cultural_memory:
+      description: 组织记忆。不是任何一个 NPC 的记忆——是组织的记忆。
+
+      types:
+        founding_myth:
+          description: "组织的创立故事"
+          example: "散修盟：创始人不愿交出功法被逐出师门"
+
+        historical_trauma:
+          description: "组织层面的创伤事件"
+          example: "青云宗：灵脉枯竭（847年）→ 此后重视灵脉勘探"
+
+        golden_age:
+          description: "组织最辉煌的时期"
+          example: "青云宗：青云真人飞升时期（500年）"
+
+        rival_definition:
+          description: "组织对敌人的定义"
+          example: "散修盟 → 青云宗：既是旧主也是压迫者"
+
+      effects:
+        - "影响组织决策倾向"
+        - "影响新成员招募标准"
+        - "影响对外关系的基调"
+        - "缓慢演化（一个世纪可能改变一次）"
+
+---
+
+# ============================================================
+# 与现有系统的集成
+# ============================================================
+
+integration:
+
+  faction_engine:
+    upgrade: "Step 6 从简单决策升级为 Civilization Engine"
+    new_steps:
+      - "评估长期目标进展"
+      - "检查权力交接触发条件"
+      - "运行集体决策流程"
+      - "更新派系力量对比"
+
+  npc_engine:
+    relation: >
+      个体 NPC 的决策受两个层面影响：
+      1. 个人记忆 + 行为标签（Phase 3）
+      2. 组织身份 + 制度约束（Phase 4）
+      
+      例如：陈玄想杀王虎（个人驱动），
+           但作为散修盟盟主不能公开攻击青云宗弟子（制度约束）。
+
+  event_bus:
+    new_events:
+      - LeadershipChanged: { faction_id, old_leader, new_leader, mode }
+      - FactionSplit: { parent_id, child_id, reason }
+      - InstitutionalReform: { faction_id, rule_changed, old, new }
+      - CulturalShift: { faction_id, tradition_changed, trigger_event }
+      - CollectiveDecision: { faction_id, issue, vote_result, dissenting }
+
+  knowledge_graph:
+    new_node_types:
+      - institution: 制度节点
+      - faction_internal: 派系节点
+    new_edge_types:
+      - institution:
+          - BELONGS_TO: 派系 → 组织
+          - LED_BY: 派系 → 领导人
+          - OPPOSES: 派系 → 派系

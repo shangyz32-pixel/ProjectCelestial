@@ -1,0 +1,179 @@
+# World Kernel Specification
+#
+# World OS Kernel — 唯一状态管理者
+# 所有世界操作的唯一入口。任何组件不得绕过 Kernel。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+# ============================================================
+# Kernel 架构
+# ============================================================
+
+kernel:
+  description: 世界内核。唯一允许修改 World State 的组件。
+
+  components:
+
+    scheduler:
+      description: Tick 调度器
+      spec: simulation_loop.yaml
+      steps: 11
+      trigger: "tick() 调用 或 自动定时器"
+
+    state_manager:
+      description: 世界状态管理器
+      spec: world_state.yaml
+      access: "只允许 Kernel 写入"
+
+    event_bus:
+      description: 事件总线
+      spec: event_bus (见下方)
+      mode: "pub/sub"
+
+    validator:
+      description: Canon 校验器
+      spec: canon_validator.yaml
+      position: "Step 9 和 Step 10 之间"
+      enforcement: "BLOCK = 阻止写入"
+
+    snapshotter:
+      description: 快照管理器
+      action: "每个 Tick 结束后保存全量快照"
+      rule: "只允许新增，不覆盖"
+
+    transaction_manager:
+      description: 事务管理器
+      spec: transaction (见下方)
+      guarantee: "ACID-like"
+
+---
+
+# ============================================================
+# Transaction Model
+# ============================================================
+
+transaction:
+
+  lifecycle:
+    1_create:
+      input:
+        - target: "要修改的状态路径（如 npc_001.money）"
+        - old_value: "当前值"
+        - new_value: "目标值"
+        - reason: "修改原因"
+        - initiator: "发起者 ID"
+        - capability: "发起者权限级别"
+
+    2_validate:
+      checks:
+        capability:
+          rule: "initiator.capability >= target.required_capability"
+          source: capability.yaml
+        canon:
+          rule: "修改符合所有 Canon 规则"
+          source: canon_validator.yaml
+        consistency:
+          rule: "修改不会导致状态矛盾"
+          checks:
+            - "新值在合法范围内"
+            - "不影响其他实体的引用完整性"
+            - "不违反时间线"
+
+    3_execute:
+      action: "在事务内修改 World State"
+      isolation: "事务执行期间，其他读取者看到旧状态"
+      atomic: "要么全部成功，要么全部回滚"
+
+    4_generate_events:
+      action: "根据变更 diff 生成事件"
+      publish_to: event_bus
+      event_types:
+        - "StateChanged: {target, old_value, new_value, reason}"
+        - "以及所有相关的领域事件（如 NPCLocationChanged）"
+
+    5_save_snapshot:
+      action: "保存事务后的 World State 快照"
+      format: "world/snapshots/tick_{n}_{timestamp}.yaml"
+
+    6_commit:
+      action: "提交事务。不可回滚。"
+      write_history: "是"
+
+  on_failure:
+    action: "Rollback"
+    steps:
+      - "恢复 World State 到事务前快照"
+      - "丢弃事务中生成的所有事件"
+      - "返回错误: {success: false, error: '原因', stage: '失败阶段'}"
+
+---
+
+# ============================================================
+# Event Bus
+# ============================================================
+
+event_bus:
+
+  description: 所有 Engine 通过 Event Bus 通信。禁止直接调用。
+
+  events:
+
+    kernel_events:
+      - TickStarted:
+          publisher: Kernel
+          payload: { tick_count, timestamp }
+      - TickCompleted:
+          publisher: Kernel
+          payload: { tick_count, events_generated, validated }
+      - StateChanged:
+          publisher: Transaction Manager
+          payload: { target, old_value, new_value, reason }
+
+    engine_events:
+      - WeatherChanged:
+          publisher: WeatherEngine
+          payload: { location, weather_type, previous_weather }
+          subscribers: [EconomyEngine, NPCEngine, EcologyEngine]
+
+      - QiChanged:
+          publisher: QiEngine
+          payload: { location, qi_density, delta }
+          subscribers: [NPCEngine, EcologyEngine]
+
+      - NPCLocationChanged:
+          publisher: NPCEngine
+          payload: { npc_id, from_location, to_location }
+          subscribers: [FactionEngine, WarEngine]
+
+      - EncounterDetected:
+          publisher: NPCEngine
+          payload: { participants, location, detected_tags }
+          subscribers: [MemoryEngine, NarrativeEngine]
+
+      - ResourcePriceChanged:
+          publisher: EconomyEngine
+          payload: { item, old_price, new_price, cause }
+          subscribers: [FactionEngine, NPCEngine]
+
+      - WarDeclared:
+          publisher: WarEngine
+          payload: { attacker, defender, reason }
+          subscribers: [FactionEngine, EconomyEngine, NPCEngine]
+
+      - EventGenerated:
+          publisher: EventBus (聚合器)
+          payload: { event_id, type, importance, participants }
+          subscribers: [MemoryEngine, KnowledgeGraph, NarrativeEngine, Validator]
+
+  routing:
+    mode: "topic-based"
+    guarantee: "at-least-once delivery（事件可被多个订阅者处理）"
+    ordering: "事件按发布时间排序，同一 Tick 内的事件顺序不变"
+
+  prohibition:
+    - "Engine X 不得直接调用 Engine Y 的方法"
+    - "所有 Engine 间通信必须通过 Event Bus"
+    - "违规 → Validator 拒绝 Engine 注册"

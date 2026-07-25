@@ -1,0 +1,15 @@
+{
+  "name": "project-celestial-runtime",
+  "version": "1.0.0",
+  "description": "Project Celestial — Persistent Universe Runtime",
+  "type": "module",
+  "main": "bootstrap/index.js",
+  "scripts": {
+    "start": "node bootstrap/index.js",
+    "test": "node --test tests/**/*.test.js",
+    "snapshot": "node bootstrap/index.js --snapshot"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

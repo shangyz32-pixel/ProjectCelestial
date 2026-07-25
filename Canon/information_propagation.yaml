@@ -1,0 +1,193 @@
+# Phase 3.4 — Information Propagation Layer
+#
+# 事实、信息、叙事 — 三层解耦。
+# 真实世界不是全知全能的。信息传播本身就是模拟对象。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+information_propagation:
+
+  # ==========================================================
+  # 架构位置
+  # ==========================================================
+
+  position:
+    description: >
+      世界状态不再直接暴露给 Narrative Intelligence。
+      Information Propagation 是中间的必经层。
+      Narrative 看到的是"角色实际能知道的信息"，不是全知视角。
+
+    flow: |
+      World State (Reality)
+          │
+          ▼
+      Information Propagation (Knowledge)
+          │
+          ▼
+      Narrative Intelligence (Story)
+          │
+          ▼
+      Player Experience
+
+  # ==========================================================
+  # 三层解耦
+  # ==========================================================
+
+  three_layers:
+
+    reality:
+      name: "Reality"
+      source: "World State"
+      description: "实际发生的事情。唯一真相。"
+      example: "青云宗于天历 372 年灭亡。"
+
+    information:
+      name: "Information"
+      source: "Information Propagation Engine"
+      description: "每个实体实际知道的信息。可能延迟/失真/不完整。"
+      example: "相邻城镇 3 天后才知道。官方 1 个月后发布。百年后入史书。"
+
+    narrative:
+      name: "Narrative"
+      source: "Narrative Intelligence (读取 Information, 不读取 Reality)"
+      description: "信息的表达方式。不同角色有不同的叙事。"
+      example: "平民: 粮价涨了。商人: 商路断了。史官: 青云宗亡。"
+
+  # ==========================================================
+  # 信息传播引擎
+  # ==========================================================
+
+  engine:
+
+    propagation_speed:
+      description: "信息不是瞬时的。传播需要时间和载体。"
+      channels:
+        flying_sword_message:
+          speed: "极快 (同一天到达, 但需要 sender + receiver 都有飞剑传书能力)"
+          range: "跨区域"
+          cost: "灵石消耗"
+
+        trade_caravan:
+          speed: "慢 (沿商路移动, 1 格/天)"
+          range: "沿商路"
+          carrier: "商人 NPC 携带信息"
+
+        post_station:
+          speed: "中等 (驿站接力, 3 格/天)"
+          range: "沿官道"
+          availability: "有组织的势力才有"
+
+        sect_communication:
+          speed: "快 (宗门内部传讯阵, 瞬间)"
+          range: "宗门领地内"
+          access: "仅宗门成员"
+
+        word_of_mouth:
+          speed: "极慢 (人群扩散, 随机)"
+          range: "同城/邻城"
+          accuracy: "低 — 失真严重"
+
+    information_decay:
+      description: "信息在传播过程中衰减和失真。"
+      distortion_types:
+        exaggeration: "青云宗损失惨重 → 青云宗全军覆没 → 青云宗被魔渊灭了"
+        omission: "完整事件 → 只剩关键细节 → 只剩一句话"
+        addition: "真实事件 + 民间想象 → 添油加醋"
+        confusion: "两件相似事件 → 被合并/混淆"
+      accuracy_formula: "accuracy = base_accuracy × distance_decay × carrier_reliability"
+
+    secrecy:
+      description: "不是所有信息都是公开的。"
+      levels:
+        public:
+          description: "公开告示 / 坊市传闻 — 所有人可知"
+          example: "粮价公告"
+        faction_internal:
+          description: "宗门内部 — 仅成员可知"
+          example: "青云宗灵脉真实状态 (对外声称'正常')"
+        confidential:
+          description: "机密 — 仅高层可知"
+          example: "李长风私下调查王虎"
+        secret:
+          description: "绝密 — 仅极少数人可知"
+          example: "太虚真人封印的秘密"
+
+      information_leak:
+        description: "机密可能泄漏"
+        probability: "基于事件重要性 + 涉及人数 + 敌对势力情报能力"
+        effect: "机密 → 降级 (如 faction_internal → public 传播)"
+
+    entity_knowledge:
+      description: "每个实体拥有自己的已知信息集合。"
+      per_entity:
+        npc:
+          known: "个人信息 (所见所闻) + 宗门内部 + 坊市传闻 + 商路消息"
+          unknown: "超出感知范围的信息"
+        faction:
+          known: "官方记录 + 情报网络 + 公开信息"
+          unknown: "敌对势力的机密"
+        player:
+          known: "与 NPC 相同 (所见所闻 + 人际网络)"
+          unknown: "超出社交范围的信息"
+
+  # ==========================================================
+  # 示例: 青云宗灭亡的信息传播时间线
+  # ==========================================================
+
+  example_qingyun_fall:
+
+    day_0:
+      reality: "赤炎宗攻破青云山门。青云宗灭亡。"
+      who_knows: "赤炎宗全军 + 青云宗幸存者 (逃散)"
+
+    day_1:
+      spread: "附近城镇开始听到传闻 (word_of_mouth: '青云山打起来了')"
+      accuracy: "30% — 只知道在打仗，不知道结果"
+
+    day_3:
+      spread: "商队将消息带到下一个城市 (trade_caravan)"
+      accuracy: "60% — '听说青云宗败了'"
+
+    day_7:
+      spread: "飞剑传书将消息传给其他宗门 (flying_sword)"
+      accuracy: "90% — '确认: 赤炎宗攻灭青云宗'"
+
+    day_30:
+      spread: "官方告示发布 (public)"
+      accuracy: "95% — 官方确认"
+
+    year_1:
+      narrative_layer: "Record — 各方史官整理"
+      accuracy: "90% — 不同史官的叙事有微妙差异"
+
+    year_100:
+      narrative_layer: "History — 后世史书"
+      accuracy: "70% — 细节已流失"
+
+    year_1000:
+      narrative_layer: "Legend — 民间传说"
+      accuracy: "40% — 青云真人飞升时预言了宗门覆灭 (后人附会)"
+
+  # ==========================================================
+  # 集成
+  # ==========================================================
+
+  integration:
+
+    simulation_engine:
+      new_step: "Step 8.3: Information Propagation — 每 Tick 推进信息扩散"
+
+    narrative_intelligence:
+      change: "不再读取 World State。改为读取 Information Layer 中目标实体的 known 信息。"
+      effect: "NPC 对话基于他们实际知道的信息，不是全知。"
+
+    player_experience:
+      change: "玩家只能看到自己的 known 信息。不是世界全貌。"
+      effect: "探索和情报收集变得有意义。"
+
+    quest_generation:
+      change: "任务可以基于信息不对称生成。"
+      example: "商队带来消息 → 玩家得知远方发生战争 → 护送/侦察/救援任务"

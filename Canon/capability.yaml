@@ -1,0 +1,191 @@
+# Capability Model + SDK API
+#
+# 权限模型 + 开发者 SDK 接口定义
+
+version: "1.0.0"
+status: Canon
+
+---
+
+capability:
+
+  levels:
+
+    L0_kernel:
+      name: "Kernel"
+      read: "全部"
+      write_self: "全部"
+      write_others: "全部"
+      world_management: true
+      start_stop: true
+      holders: ["World Kernel"]
+
+    L1_admin:
+      name: "Admin"
+      read: "全部"
+      write_self: "全部"
+      write_others: "全部"
+      world_management: true
+      start_stop: true
+      holders: ["Hermes (Architect)"]
+
+    L2_world_master:
+      name: "World Master"
+      read: "全部"
+      write_self: "全部"
+      write_others: "势力范围"
+      world_management: true
+      start_stop: false
+      holders: ["天道意志"]
+
+    L3_sect_master:
+      name: "Sect Master"
+      read: "全部"
+      write_self: "全部"
+      write_others: "宗门内"
+      world_management: false
+      start_stop: false
+      holders: ["陈玄", "公孙烈"]
+
+    L4_npc:
+      name: "NPC"
+      read: "感知范围"
+      write_self: true
+      write_others: false
+      world_management: false
+      start_stop: false
+      holders: ["所有 NPC"]
+
+    L5_player:
+      name: "Player"
+      read: "感知范围"
+      write_self: true
+      write_others: false
+      world_management: false
+      start_stop: false
+
+    L6_observer:
+      name: "Observer"
+      read: "全部(只读)"
+      write_self: false
+      write_others: false
+      world_management: false
+      start_stop: false
+      holders: ["Narrator Agent"]
+
+  enforcement:
+    location: "Kernel → Transaction → Validate"
+    check: "initiator.capability >= target.required_capability"
+    on_deny: "返回 CAPABILITY_DENIED 错误"
+
+---
+
+sdk:
+
+  query_api:
+
+    get_world_time:
+      capability: L6
+      returns: "year/month/day/hour/season/tick_count"
+
+    get_npc:
+      capability: L6
+      params: [npc_id]
+      returns: "NPC完整状态"
+      scope_rule: "capability<L1时只返回感知范围内NPC"
+
+    get_faction:
+      capability: L6
+      params: [faction_id]
+      returns: "势力信息"
+
+    get_location:
+      capability: L6
+      params: [location_id]
+      returns: "地点信息+灵气浓度"
+
+    get_price_table:
+      capability: L6
+      returns: "市场价格表"
+
+    get_history:
+      capability: L6
+      params: [from, to, filter]
+      returns: "事件列表"
+
+    get_causal_chain:
+      capability: L6
+      params: [event_id]
+      returns: "完整因果链"
+
+  action_api:
+
+    move:
+      capability: L5
+      params: [npc_id, target_location]
+      transaction: true
+
+    cultivate:
+      capability: L4
+      params: [npc_id, duration_hours]
+      transaction: true
+
+    trade:
+      capability: L5
+      params: [buyer_id, seller_id, item_id, quantity, price]
+      transaction: true
+
+    attack:
+      capability: L4
+      params: [attacker_id, target_id, technique]
+      transaction: true
+
+    dialogue:
+      capability: L5
+      params: [speaker_id, listener_id, content]
+      transaction: true
+
+  simulation_api:
+
+    tick:
+      capability: L1
+      description: "推进一个Tick"
+
+    pause:
+      capability: L1
+      description: "暂停模拟"
+
+    resume:
+      capability: L1
+      description: "恢复模拟"
+
+    set_speed:
+      capability: L1
+      params: [multiplier]
+      description: "设置模拟速度"
+
+    get_snapshot:
+      capability: L1
+      params: [tick]
+      description: "获取指定Tick快照"
+
+---
+
+hermes_roles:
+
+  architect:
+    capability: L1
+    description: "Hermes默认Admin权限"
+    can: ["读写全部状态", "推进模拟", "暂停恢复", "管理世界"]
+
+  narrator:
+    capability: L6
+    description: "叙事者身份"
+    can: ["读取全部状态", "生成叙事"]
+    cannot: ["修改状态", "控制模拟"]
+
+  npc:
+    capability: L4
+    description: "扮演NPC身份"
+    can: ["读取感知范围", "操作该NPC"]
+    cannot: ["修改其他NPC", "查看全局"]

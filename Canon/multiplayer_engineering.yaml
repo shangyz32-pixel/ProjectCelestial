@@ -1,0 +1,158 @@
+# Phase X — Distributed Multiplayer Engineering
+#
+# 每一项功能，默认必须支持多人。
+# Server Authoritative. 禁止先单机再改多人。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+multiplayer_engineering:
+
+  mission: >
+    训练 AI 采用 Server Authoritative 架构开发游戏。
+    任何新增功能默认必须支持多人。
+    禁止: 先做单机，以后再改多人。
+
+  # ==========================================================
+  # Core Principle
+  # ==========================================================
+
+  core_principle:
+    rule: "Every Feature Is Multiplayer First"
+    design_order:
+      first: "服务器 — 负责什么？"
+      second: "客户端 — 负责什么？"
+      last: "表现层 — 怎么好看？"
+
+  # ==========================================================
+  # Design Workflow
+  # ==========================================================
+
+  workflow:
+    steps:
+      - "Architecture Review — 多人架构设计"
+      - "Server Logic — 服务器端核心逻辑"
+      - "Database — 持久化方案"
+      - "Network Protocol — 通信协议定义"
+      - "Client Prediction — 客户端预测"
+      - "State Synchronization — 状态同步"
+      - "Persistence — 数据持久化"
+      - "Testing — 多人自动测试"
+      - "Release"
+
+  # ==========================================================
+  # Multiplayer Checklist
+  # ==========================================================
+
+  checklist:
+    every_new_system_must_answer:
+      server_role: "服务器负责什么？"
+      client_role: "客户端负责什么？"
+      sync_data: "哪些数据需要同步？"
+      local_prediction: "哪些数据可以本地预测？"
+      persistence: "哪些数据必须持久化？"
+      reconnect: "是否支持断线重连？"
+      concurrency: "是否支持多人同时操作？"
+      high_latency: "是否支持高延迟？"
+      rollback: "是否支持回滚？"
+
+  # ==========================================================
+  # Subsystem Training
+  # ==========================================================
+
+  server:
+    description: "服务器负责所有关键逻辑"
+    responsibilities:
+      - "世界模拟 (Simulation Engine)"
+      - "NPC AI (Decision Engine)"
+      - "战斗判定 (damage/hit/critical)"
+      - "掉落判定"
+      - "经济系统"
+      - "任务系统"
+      - "World State 管理"
+    rule: "任何关键逻辑不得相信客户端"
+
+  client:
+    description: "客户端负责表现和输入"
+    responsibilities:
+      - "输入处理"
+      - "UI 渲染"
+      - "动画播放"
+      - "粒子特效"
+      - "音效播放"
+      - "客户端预测 (movement)"
+      - "插值和平滑"
+    rule: "客户端不得决定最终结果"
+
+  database:
+    description: "所有长期数据持久化"
+    stores:
+      - "角色数据 (属性/境界/装备)"
+      - "技能数据"
+      - "宗门数据"
+      - "好友/邮件"
+      - "仓库/背包"
+      - "World State 快照"
+      - "交易记录"
+    capabilities: ["恢复", "迁移", "审计"]
+
+  synchronization:
+    types:
+      state_sync: "状态同步 — 服务器推送状态"
+      event_sync: "事件同步 — 服务器推送事件"
+      tick_sync: "Tick 同步 — 确定性模拟"
+      object_sync: "对象同步 — 单个实体状态"
+      world_sync: "世界同步 — 完整 World State"
+    guarantee: "所有玩家看到一致的世界"
+
+  network:
+    challenges: ["高延迟", "丢包", "重复包", "乱序包", "网络抖动"]
+    solutions: ["自动重传", "延迟补偿", "客户端预测", "服务器回滚"]
+
+  reconnection:
+    guarantees:
+      - "断线不丢失数据"
+      - "重连恢复: 角色状态/背包/任务/位置/Buff/世界状态"
+      - "无缝继续游戏"
+
+  scalability:
+    targets: ["100 玩家", "1000 玩家", "10000 玩家"]
+    rule: "不得设计只能支持单实例的架构"
+
+  security:
+    rule: "客户端永远不可信"
+    validates: ["移动", "技能释放", "伤害", "金币", "装备", "交易", "聊天"]
+    principle: "任何关键操作 — 服务器验证"
+
+  # ==========================================================
+  # Automated Multiplayer Testing
+  # ==========================================================
+
+  testing:
+    description: "自动启动多客户端测试"
+    setup:
+      - "启动 Server"
+      - "启动 Client A, Client B, Client C"
+    scenarios:
+      - "登录"
+      - "移动 (验证位置同步)"
+      - "释放技能 (验证伤害一致)"
+      - "交易 (验证物品转移)"
+      - "掉线 (验证恢复)"
+      - "重连 (验证状态一致)"
+    verification: "所有客户端世界状态一致"
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "所有功能默认支持多人"
+    - "Server Authoritative — 客户端不可信"
+    - "数据支持持久化 — 可恢复/迁移/审计"
+    - "网络异常可恢复 — 掉线/重连/高延迟"
+    - "世界状态一致 — 所有客户端同步验证"
+    - "自动完成多人测试 — 多 Client 自动验证"
+    - "AI 默认采用分布式架构开发 — Multiplayer First"

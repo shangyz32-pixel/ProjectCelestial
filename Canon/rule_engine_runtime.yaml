@@ -1,0 +1,185 @@
+# Rule Engine Runtime Specification
+#
+# Phase 4, Module 3: Rule Engine Runtime
+# 管线定义的确定性解释器。不允许 AI 自由发挥。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+rule_engine_runtime:
+
+  description: >
+    将 rule_engine.yaml 的管线定义编译为可执行的判定逻辑。
+    每条规则是确定的 if→then。相同输入 → 相同输出。
+    AI 可以解释结果，不能修改规则。
+
+  # ==========================================================
+  # Execution Model
+  # ==========================================================
+
+  execution:
+
+    invoke:
+      input:
+        entity_id: "目标实体 ID"
+        action_type: "breakthrough | tribulation | death | memory_event | memory_encounter | memory_tick"
+        context:
+          world_state: "当前世界状态引用"
+          compiled_registry: "编译后的 Registry 引用"
+          seed: "PRNG seed"
+
+      output:
+        success: bool
+        result: "SUCCESS | FAILURE | BLOCKED"
+        trace: "完整执行轨迹（可审计）"
+        state_changes: "需要应用的状态变更"
+        events: "需要触发的事件"
+
+    guarantees:
+      - "同一 (entity, action, context, seed) → 同一 result"
+      - "完整 trace 记录每一步判定"
+      - "AI 可以读取 trace，不能修改判定逻辑"
+
+  # ==========================================================
+  # Pipeline: breakthrough
+  # ==========================================================
+
+  breakthrough:
+
+    checks:
+      qi_available:
+        description: "灵气是否充足"
+        condition: "location.qi_density >= compiled_registry.realms[target_realm_id].min_qi"
+        on_fail: "BLOCKED: 灵气不足 (当前: {actual}, 需要: {required})"
+
+      realm_cap:
+        description: "灵根是否支持该境界"
+        condition: "target_realm_id <= compiled_registry.spirit_roots[quality_id].realm_cap_id"
+        on_fail: "BLOCKED: 灵根上限不足 (灵根上限: {cap_realm}, 目标: {target_realm})"
+
+      lifespan_sufficient:
+        description: "寿元是否足够"
+        condition: "entity.age < compiled_registry.realms[entity.realm_id].lifespan"
+        on_fail: "BLOCKED: 寿元不足 (当前年龄: {age}, 寿元上限: {max_age})"
+
+      resources:
+        description: "是否有突破资源"
+        condition: "entity.has_breakthrough_pill OR context.allow_hard_attempt"
+        on_fail: "BLOCKED: 缺少突破丹药 (可硬冲但成功率降低)"
+        hard_attempt_penalty: 0.5  # 成功率减半
+
+      comprehension:
+        description: "心境/领悟是否足够"
+        condition: "entity.comprehension >= min_comprehension_for_realm(target_realm_id)"
+        min_comprehension:
+          "0~3": 0     # 凡人到金丹: 无最低要求
+          "4~5": 0.3   # 元婴到化神
+          "6~9": 0.6   # 炼虚到渡劫
+          "10~15": 0.9 # 地仙到超脱
+
+    probability:
+      base: "compiled_registry.realms[target_realm_id].breakthrough_rate"
+      modifiers:
+        - name: pill_bonus
+          condition: "entity.has_breakthrough_pill"
+          formula: "base * 1.3"
+
+        - name: qi_density
+          formula: "base * (1.0 + (location.qi_density - min_qi) * 0.01)"
+
+        - name: comprehension
+          formula: "base * (0.8 + entity.comprehension * 0.004)"
+
+        - name: dao_heart
+          formula: "base * (0.7 + entity.dao_heart * 0.006)"
+
+        - name: destiny
+          formula: "base * (0.9 + entity.destiny * 0.002)"
+
+      final_rate: "clamp(base × Π(modifiers), 0.01, 0.95)"
+      roll: "PRNG.random(0, 1, seed)"
+
+    consequences:
+      success:
+        state_changes:
+          - "entity.realm = target_realm"
+          - "entity.realm_id = target_realm_id"
+          - "entity.cultivation_value = 0"
+          - "entity.lifespan = compiled_registry.realms[target_realm_id].lifespan"
+        events:
+          - type: "breakthrough_success"
+            importance: "7 + target_realm_id"
+
+      failure:
+        state_changes:
+          - "entity.cultivation_value *= (1 - failure_loss_rate)"
+          - "entity.cultivation_value = max(entity.cultivation_value, 0)"
+        possible_damages:
+          meridian_damage:
+            probability: 0.3
+            effect: "entity.meridian_integrity -= 0.2"
+          soul_damage:
+            probability: 0.3
+            effect: "entity.soul_integrity -= 0.15"
+          lifespan_loss:
+            probability: 0.2
+            effect: "entity.lifespan -= random(50, 200)"
+        heart_demon_risk:
+          probability: "0.1 + (1.0 - entity.dao_heart) * 0.3"
+          effect: "entity.add_debuff('heart_demon')"
+        events:
+          - type: "breakthrough_failure"
+            importance: "6 + target_realm_id"
+
+  # ==========================================================
+  # Execution Trace（可审计）
+  # ==========================================================
+
+  trace:
+    format:
+      pipeline: "breakthrough"
+      entity: "npc_001 (陈玄)"
+      target_realm: "化神境 (realm_id=5)"
+      timestamp: "天历 847-07-24"
+      seed: 42
+
+      checks:
+        - name: "qi_available"
+          condition: "qi_density(45) >= min_qi(200)"
+          result: "BLOCKED"
+          detail: "灵气不足: 当前 45, 需要 200"
+
+        # 如果第一个 check 就 BLOCKED，后续不再执行
+
+      result: "BLOCKED"
+      reason: "qi_available failed"
+
+    # 非 BLOCKED 的完整 trace 见下方演示
+
+---
+# ==========================================================
+# AI 边界（强制）
+# ==========================================================
+
+ai_boundary:
+
+  allowed:
+    - "读取 trace，解释判定结果"
+    - "将 state_changes 传递给 Narrative Engine"
+    - "根据 events 创建 NPC 记忆"
+    - "生成人类可读的突破叙事"
+
+  forbidden:
+    - "修改任何 check 条件"
+    - "修改 probability formula"
+    - "跳过任何管线步骤"
+    - "覆盖判定结果（如 BLOCKED 改为 SUCCESS）"
+    - "在 Rule Engine 执行期间插入 AI 判断"
+
+  enforcement:
+    location: "Canon Validator → domain_02 (修炼体系)"
+    rule: "r9_breakthrough_conditions"
+    severity: BLOCK
+    detection: "trace 中的 result 与实际状态变更不一致 → BLOCK"

@@ -1,0 +1,277 @@
+# Narrative Layer Schema
+#
+# Narrative Layer = World OS Layer 3
+# 位于 Simulation 之上、Interface 之下
+#
+# 核心原则：
+# 故事不是写出来的。故事是模拟结果经过叙事引擎生成的。
+# 一句话对应一个记忆条目。一段心理描写对应一个情感效价。
+
+version: "1.0"
+status: Canon
+
+---
+
+# ============================================================
+# 架构位置
+# ============================================================
+#
+# Kernel    → Time / Physics / Cultivation
+# Simulation → NPC (Memory + Behavior) / Ecology / Economy
+# Narrative → Scene / Chapter / Arc  ← 本层
+# Interface → Hermes / Player / API
+#
+# Narrative 不创造事件。Narrative 只叙述已经发生的模拟结果。
+
+---
+
+# ============================================================
+# 叙事单元层级
+# ============================================================
+
+hierarchy:
+
+  beat:
+    description: 最小叙事单元——单一时刻、单一视角
+    example: "陈玄看到王虎走出酒楼"
+    input: scene_state + single_npc_memory_match
+    output: 1-3 句
+
+  scene:
+    description: 完整场景——包含多视角、有起承转合
+    example: "云来坊市相遇"
+    input: multiple_beats + scene_context
+    output: 5-15 句
+    template: scene_template
+
+  chapter:
+    description: 因果链中一个事件的叙事
+    example: "弟子外出寻找灵脉"
+    input: 一个 causal_chain 事件 + 多视角选择
+    output: 多个 scene（每个视角一个）
+    source: narrative_arc.yaml
+
+  arc:
+    description: 一整条因果链的叙事——涌现式，非预写
+    example: "灵脉危机"
+    input: causal_chain (length≥3, total_importance≥15)
+    output: 多个 chapter（链中每个事件一个）
+    source: narrative_arc.yaml
+    origin: causal_chain.yaml（因果链检测）
+
+---
+
+# ============================================================
+# Scene Template（场景模板）
+# ============================================================
+
+scene_template:
+
+  parts:
+
+    opening:
+      order: 1
+      description: 场景开场——时间、地点、氛围
+      compose_from:
+        - time: from scene.timestamp
+        - location: from scene.location.name + location.description
+        - atmosphere: from scene.location.atmosphere
+        - weather: from scene.weather (if any)
+
+    perspectives:
+      order: 2
+      description: 从每个参与者的视角看这个场景
+      repeat: for each participant in scene.participants
+      compose_from:
+        - what_they_see: from scene.state
+        - what_they_remember: from npc.memory (matched by on_encounter)
+        - what_they_feel: from memory.emotional_valence
+        - what_they_decide: from rule_engine.memory.on_encounter.decide_behavior
+
+    action:
+      order: 3
+      description: 场景中的实际动作
+      compose_from:
+        - initiator: who acts first
+        - action: from behavior_decision.action
+        - reaction: from other participants' behavior_decisions
+
+    resolution:
+      order: 4
+      description: 场景收束——结果、状态变化、悬念
+      compose_from:
+        - outcome: [conflict_started, avoided, delayed, resolved]
+        - state_changes: what changed in the world
+        - new_memory: what each NPC will remember (created by memory_pipeline)
+        - hook: optional, set up for next scene
+        - time_jump: if next scene is not immediately after
+
+---
+
+# ============================================================
+# 行为 → 叙事转换规则
+# ============================================================
+
+narrative_rules:
+
+  action_to_narrative:
+
+    attack:
+      patterns:
+        - "{initiator}眼中杀意一闪，{technique}轰然出手。"
+        - "{initiator}不再犹豫——{technique}直取{target}。"
+        - "轰！{initiator}的{technique}撕裂空气，{target}面色骤变。"
+      variables: [initiator, technique, target]
+
+    stalk:
+      patterns:
+        - "{initiator}压低{headwear}，不近不远地缀在{target}身后。"
+        - "{initiator}隐入{cover}，目光死死锁住{target}的背影。"
+        - "{initiator}的影子在暮色中拉得很长。{target}浑然不觉。"
+      variables: [initiator, headwear, target, cover]
+
+    flee:
+      patterns:
+        - "{initiator}面色骤变，身形一晃遁入{escape_method}。"
+      variables: [initiator, escape_method]
+
+    ignore:
+      patterns:
+        - "{initiator}并未注意到{target}，径自离去。"
+        - "{initiator}瞥了一眼{target}——散修而已，不值得多看一眼。"
+      variables: [initiator, target]
+
+    confront:
+      patterns:
+        - "{initiator}拦在{target}面前，声音低沉：'{dialogue}'"
+      variables: [initiator, target, dialogue]
+
+    dialogue:
+      patterns:
+        - "'{content}' {speaker}的语气里带着{emotion}。"
+      variables: [content, speaker, emotion]
+
+  memory_to_thought:
+    description: 将匹配到的记忆转换为角色内心活动
+
+    highly_significant:
+      condition: "matched_memory.importance >= 8"
+      pattern: >
+        {time_ago}的一幕不受控制地在{character}脑海中闪过——
+        {memory_narrative_summary}。
+
+    traumatic:
+      condition: "matched_memory.emotional_valence <= -7"
+      pattern: >
+        {character}的手不自觉地握紧了。
+        {time_ago}的痛，没有一天真正消退。
+
+    positive:
+      condition: "matched_memory.emotional_valence >= 7"
+      pattern: >
+        {character}心中一暖。他想起了{time_ago}——{memory_title}。
+
+    conflict:
+      condition: "contradictory active_tags exist"
+      pattern: >
+        {character}心中天人交战——{tag1_meaning}，还是{tag2_meaning}？
+
+  atmosphere_to_prose:
+    description: 场景氛围 → 环境描写
+
+    calm:
+      pattern: "坊市人声渐稀。夕阳将屋檐拉出长长的影子。"
+    tense:
+      pattern: "空气仿佛凝结了。每一个脚步声都像踩在鼓面上。"
+    desolate:
+      pattern: "荒野无垠。月光被云层吞没，只剩远处几点鬼火般的磷光。"
+    mysterious:
+      pattern: "雾气不知从何处漫起，将街灯的光晕染得模糊而遥远。"
+
+---
+
+# ============================================================
+# 叙事引擎管线
+# ============================================================
+
+narrative_pipeline:
+
+  on_scene_start:
+    1_load_context:
+      action: 加载场景上下文（时间、地点、天气、参与者）
+    2_load_memories:
+      action: 为每个参与者加载匹配的记忆条目
+    3_compose_beats:
+      action: 为每个参与者生成 beat（opening + perspective）
+    4_compose_action:
+      action: 从 behavior_decision 生成动作描写
+    5_compose_resolution:
+      action: 从 outcome 生成收尾
+    6_quality_check:
+      action: >
+        验证：每一句描写是否可以追溯到具体的记忆条目？
+        如果不能 → 标记为 [narrative_hallucination] 并删除。
+
+  quality_rules:
+    - "禁止无来源的心理描写。所有'他想起了'必须对应 memory_id。"
+    - "禁止无来源的动作。所有'他出手'必须对应 behavior_decision。"
+    - "禁止无来源的环境描写。所有氛围必须对应 atmosphere_to_prose。"
+    - "允许留白。但留白处必须标注 [unknown]——留给读者想象。"
+
+---
+
+# ============================================================
+# 涌现叙事管线（Emergent Narrative Pipeline）
+# ============================================================
+#
+# 这是从"写一个场景"升级到"让故事自己涌现"的关键扩展。
+# 完整管线：
+#   Simulation Tick → Events → Causal Chain Detection → Arc Formation → Narrative Output
+
+emergent_pipeline:
+
+  position:
+    after: simulation_loop.step_09_events
+    before: simulation_loop.step_10_history
+
+  steps:
+
+    1_causal_detection:
+      action: 对本次 Tick 的新事件执行因果链检测
+      engine: causal_chain.yaml
+      output: "新增的 LED_TO 边 + 因果链扩展/交汇"
+
+    2_arc_evaluation:
+      action: 检查所有 active 因果链是否满足弧条件
+      condition: "length >= 3 AND total_importance >= 15"
+      engine: narrative_arc.yaml
+      output: "新提升的 Arc + 已有 Arc 的章节更新"
+
+    3_perspective_assign:
+      action: 为弧的每个事件分配叙事视角
+      rules:
+        - "根因事件 → 全知视角（建立全局视野）"
+        - "NPC 参与的核心事件 → 该 NPC 的视角"
+        - "玩家可感知的事件 → 玩家视角"
+        - "交汇事件 → 多视角并列"
+
+    4_scene_generation:
+      action: 调用 scene_template 生成每个场景的叙事文本
+      engine: scene_template（本文件）
+      trigger: "importance >= 7 的事件 → 完整场景，< 7 → beat"
+
+    5_arc_narrative:
+      action: 生成弧的时间线 + 每章摘要
+      engine: narrative_arc.yaml → arc_timeline
+      output: "可读的弧概览（给 Interface Layer）"
+
+    6_canon_validate:
+      action: 对叙事输出执行 Canon 校验
+      engine: canon_validator.yaml → post_check
+      scope: "叙事文本 + 角色状态 + 时间线 + KG"
+      on_BLOCK: "标记违规段落 → 重新生成"
+      on_WARN: "标注 [disputed] → 正常输出"
+
+  # 管线不创造故事。管线检测因果关系，然后描述它。
+  # 如果世界没有发生任何有因果关联的事件 → 没有弧 → 没有叙事。
+  # 这才是"剧情来自世界状态"的真正含义。

@@ -1,0 +1,263 @@
+# NPC Memory Schema
+# 定义每个 NPC 记忆文件的数据结构
+# 所有 NPC 记忆必须遵守此 Schema
+
+version: "1.0"
+status: Canon
+
+---
+
+# ============================================================
+# 顶层结构
+# ============================================================
+# 每个 NPC 的 memory.yaml 包含以下字段：
+
+schema:
+  npc_id:
+    type: string
+    required: true
+    description: 唯一标识符
+
+  npc_name:
+    type: string
+    required: true
+    description: NPC 名称（可重复，id 唯一）
+
+  short_term:
+    type: array
+    description: 短期记忆（最近 30 世界日所有事件）
+    item: memory_entry
+
+  long_term:
+    type: array
+    description: 长期记忆（重要性 ≥ 5，永久保留）
+    item: memory_entry
+
+  active_tags:
+    type: array
+    description: 当前活跃行为标签（从记忆提取，驱动当前行为）
+    item: behavior_tag
+
+---
+
+# ============================================================
+# 记忆条目结构
+# ============================================================
+
+memory_entry:
+  fields:
+
+    id:
+      type: integer
+      required: true
+      description: 自增 ID（全局唯一前缀：{npc_id}-{id}）
+
+    timestamp:
+      type: string
+      required: true
+      format: "YYYY-MM-DD HH:MM"  # 世界时间，非真实时间
+      description: 事件发生的世界时间
+
+    type:
+      type: string
+      required: true
+      enum:
+        - breakthrough       # 突破事件
+        - battle             # 战斗
+        - social             # 社交
+        - faction            # 宗门/势力
+        - cultivation        # 修炼
+        - resource           # 资源获取/失去
+        - death              # 目击/经历死亡
+        - travel             # 旅行/迁徙
+        - discovery          # 发现（秘境/功法/物品）
+        - emotional          # 情感事件
+        - tribulation        # 天劫
+        - karma              # 因果事件
+      description: 事件类型
+
+    title:
+      type: string
+      required: true
+      max_length: 80
+      description: 一句话摘要（人类可读）
+      example: "突破金丹境失败"
+
+    narrative:
+      type: string
+      required: true
+      max_length: 500
+      description: 完整叙事（Hermes 生成行为时参考）
+      example: "在青云山闭关三年冲击金丹，因心魔反噬而失败，经脉受损三成。"
+
+    importance:
+      type: integer
+      required: true
+      range: [1, 10]
+      description: 重要性评分（≥5 晋升长期记忆）
+
+    participants:
+      type: array
+      required: false
+      description: 参与此事件的其他实体
+      item:
+        entity_id: string      # npc_id / faction_id / ...
+        entity_type: string    # character / faction / ...
+        role: string           # attacker / victim / ally / witness / ...
+
+    location:
+      type: string
+      required: false
+      description: 事件发生地点
+
+    emotional_valence:
+      type: integer
+      required: false
+      range: [-10, 10]
+      description: >
+        情感效价。负值=负面，正值=正面，0=中性。
+        用于计算行为倾向强度。
+      example: -8 (被背叛)
+
+    behavior_tags:
+      type: array
+      required: false
+      description: 此事件产生的行为标签
+      item:
+        tag: string            # 标签名
+        target: string         # 目标实体 id
+        intensity: integer     # 1-10 强度
+        decay: string          # decay 规则（见下方）
+
+    kg_trigger:
+      type: object
+      required: false
+      description: 触发 Knowledge Graph 更新的边操作
+      properties:
+        action: string         # create / update / delete
+        edge_type: string      # 参考 knowledge_graph.yaml edge_types
+        from: string           # 源节点 id
+        to: string             # 目标节点 id
+
+---
+
+# ============================================================
+# 行为标签
+# ============================================================
+
+behavior_tags:
+  social:
+    - HOSTILE_TOWARD       # 敌对 → 战斗/回避
+    - FRIENDLY_TOWARD      # 友善 → 帮助/合作
+    - GRATEFUL_TOWARD      # 感恩 → 报恩/送礼
+    - FEARFUL_OF           # 恐惧 → 逃跑/回避
+    - TRUSTS               # 信任 → 分享秘密/委托
+    - SUSPICIOUS_OF        # 怀疑 → 试探/监视
+    - LOYAL_TO             # 忠诚 → 保护/服从
+    - BETRAYED_BY          # 被背叛 → 复仇/不信任
+
+  goal:
+    - SEEKS_REVENGE        # 复仇目标
+    - SEEKS_POWER          # 追求力量
+    - SEEKS_KNOWLEDGE      # 追求知识
+    - SEEKS_WEALTH         # 追求财富
+    - SEEKS_PROTECTION     # 寻求庇护
+    - SEEKS_MASTERY        # 追求突破
+    - SEEKS_PEACE          # 追求安宁
+
+  location:
+    - AVOIDS               # 回避地点
+    - HOMESICK_FOR         # 思念故地
+    - GUARDS               # 守护地点
+
+  self:
+    - CONFIDENT            # 自信 → 主动行动
+    - TRAUMATIZED          # 创伤 → 回避相关场景
+    - DETERMINED           # 坚定 → 不被阻碍
+    - DESPERATE            # 绝望 → 冒险行为
+    - ENLIGHTENED          # 顿悟 → 修炼加速
+
+---
+
+# ============================================================
+# 标签衰减规则
+# ============================================================
+
+decay_rules:
+
+  permanent:
+    description: 永不衰减（人生定义性事件）
+    threshold: importance >= 9
+    tags_example:
+      - BETRAYED_BY (被至亲背叛)
+      - TRAUMATIZED (目睹宗门覆灭)
+
+  slow_decay:
+    description: 每 100 世界年强度 -1
+    threshold: importance 7-8
+    tags_example:
+      - HOSTILE_TOWARD, SEEKS_REVENGE
+
+  medium_decay:
+    description: 每 10 世界年强度 -1
+    threshold: importance 5-6
+    tags_example:
+      - GRATEFUL_TOWARD, TRUSTS
+
+  fast_decay:
+    description: 每 1 世界年强度 -1（仅短期记忆标签）
+    threshold: importance < 5
+    tags_example:
+      - FRIENDLY_TOWARD (萍水相逢)
+
+  override:
+    description: 相反标签出现时快速覆盖
+    rule: >
+      HOSTILE_TOWARD + GRATEFUL_TOWARD → 取更强一方，
+      但若新事件重要性更高，直接覆盖旧标签。
+
+---
+
+# ============================================================
+# 记忆管线伪代码
+# ============================================================
+
+pipeline:
+  on_event:
+    1_create_entry:
+      action: 创建 memory_entry
+      fields: [timestamp, type, title, narrative, participants, location]
+
+    2_score_importance:
+      action: 根据 type + narrative 计算 importance (1-10)
+      rules: 参考 importance_scoring
+
+    3_assign_tags:
+      action: 根据 type + participants + narrative 生成 behavior_tags
+
+    4_assign_emotion:
+      action: 根据 type + narrative 计算 emotional_valence
+
+    5_short_term:
+      action: 添加到 short_term 数组
+
+    6_promote:
+      condition: importance >= 5
+      action: 同时添加到 long_term 数组
+
+    7_kg_sync:
+      condition: 事件涉及人际关系
+      action: 触发 Knowledge Graph 边创建/更新
+
+    8_cleanup:
+      action: 清理 short_term 中超过 30 世界日的非重要性事件
+
+  on_tick:
+    1_decay_tags:
+      action: 遍历 active_tags，按 decay 规则降低 intensity
+
+    2_remove_weak:
+      action: 移除 intensity <= 0 的标签
+
+    3_rebuild_active:
+      action: 从 long_term 重新聚合 active_tags

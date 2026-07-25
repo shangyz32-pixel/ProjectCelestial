@@ -1,0 +1,138 @@
+# Agent Communication Protocol
+#
+# Phase 4 — 所有 Agent 的协作规则。
+# 禁止直接通信。统一走 Task Queue → Scheduler → Review。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+agent_communication:
+
+  # ==========================================================
+  # 核心原则
+  # ==========================================================
+
+  principles:
+    no_direct:
+      rule: "Agent 之间禁止直接通信"
+      reason: "避免隐式依赖和不可追踪的决策"
+
+    queue_driven:
+      rule: "所有 Agent 通信通过 Task Queue"
+      reason: "可追踪、可排队、可重试"
+
+    review_required:
+      rule: "所有修改必须 Review"
+      reason: "架构一致性保证"
+
+  # ==========================================================
+  # 通信流水线
+  # ==========================================================
+
+  pipeline:
+
+    developer:
+      description: "开发者创建任务 (L2/L3/L4)"
+      actions:
+        - "编写代码/配置"
+        - "本地测试通过"
+        - "Canon Validator 0 REJECT"
+        - "提交到 Task Queue"
+
+    task_queue:
+      description: "任务队列 (L5 Infrastructure)"
+      actions:
+        - "接收任务 → 排队"
+        - "优先级排序 (CRITICAL > HIGH > NORMAL)"
+        - "分配 Agent (基于 Layer 和可用性)"
+        - "追踪状态 (pending/in_progress/review/merged/rejected)"
+
+    hermes_scheduler:
+      description: "调度器 (L1 Chief Architect 审批)"
+      actions:
+        - "从 Task Queue 拉取任务"
+        - "检查: 是否有对应的 Accepted ADR？"
+        - "检查: 是否影响其他模块？"
+        - "分配给合适的 Agent"
+        - "不通过 → 退回 (附原因)"
+
+    agent_execution:
+      description: "Agent 执行 (L2~L9)"
+      actions:
+        - "接收任务"
+        - "执行 (写代码/测试/审核/文档...) "
+        - "完成后提交 Pull Request"
+
+    pull_request:
+      description: "Pull Request (代码变更提案)"
+      format:
+        title: "简述变更"
+        body:
+          - "What: 做了什么"
+          - "Why: 为什么 (链接 ADR)"
+          - "How: 怎么做的"
+          - "Test: 测试结果"
+          - "Validator: Canon Validator 结果"
+        reviewer: "自动分配 (基于影响范围)"
+
+    architecture_review:
+      description: "架构审查 (L1 Chief Architect)"
+      checks:
+        - "符合 ADR？"
+        - "符合 Canon？"
+        - "接口清晰？"
+        - "对其他模块影响可接受？"
+      decision: "Approve / Request Changes / Reject"
+
+    merge:
+      description: "合并 (L10 Release Manager)"
+      conditions: "Architecture Review Approved + All tests pass"
+      actions:
+        - "合并到 main"
+        - "触发 CI/CD"
+        - "更新 CHANGELOG"
+
+  # ==========================================================
+  # Review 规则
+  # ==========================================================
+
+  review:
+
+    who_reviews:
+      code_L2_world:
+        reviewer: "L1 Chief Architect + L7 QA Agent"
+      code_L3_gameplay:
+        reviewer: "L1 Chief Architect + L2 World Engineer"
+      code_L4_ai:
+        reviewer: "L1 Chief Architect"
+      config_L5_infra:
+        reviewer: "L1 Chief Architect"
+      ui_L6_frontend:
+        reviewer: "L1 Chief Architect + L3 Gameplay Engineer"
+      issue_L7_qa:
+        reviewer: "自动路由到相关 Layer"
+      lore_L8:
+        reviewer: "L1 Chief Architect"
+      docs_L9:
+        reviewer: "L1 Chief Architect"
+      release_L10:
+        reviewer: "L1 Chief Architect + All Layer leads"
+
+    mandatory:
+      rule: "任何代码合并必须经过至少 1 个 Review"
+      rule: "Canon 修改必须经过 L1 审批"
+      rule: "L1 不能 Review 自己的代码 (L1 不写代码)"
+
+  # ==========================================================
+  # 禁止的操作
+  # ==========================================================
+
+  forbidden:
+    - "Agent A 直接调用 Agent B (绕过 Task Queue)"
+    - "未经 Review 的代码合并"
+    - "没有对应 ADR 的 Canon 修改"
+    - "跳过 Canon Validator 的提交"
+    - "L1 写业务代码 (违反自身边界)"
+    - "任何 Agent 修改不属于自己 Layer 的代码"

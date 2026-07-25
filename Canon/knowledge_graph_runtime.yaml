@@ -1,0 +1,161 @@
+# Runtime Knowledge Graph Specification
+#
+# Phase 4, Module 4: Knowledge Graph Runtime
+# 所有 Engine 共用的统一世界图谱。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+knowledge_graph_runtime:
+
+  description: >
+    一个世界，一张图。所有 Engine 查询同一张图。
+    查询只读。修改通过 Kernel Transaction。
+
+  nodes:
+
+    character:
+      key: "npc_id"
+      properties: [name, realm, spirit_root, faction_id, location_id]
+
+    faction:
+      key: "faction_id"
+      properties: [name, type, population, leader_id, location_id]
+
+    nation:
+      key: "nation_id"
+      properties: [name, ruler_id, capital_id]
+
+    location:
+      key: "location_id"
+      properties: [name, type, qi_density, danger_level, region]
+
+    spirit_vein:
+      key: "vein_id"
+      properties: [name, grade, qi_output, status, location_id]
+
+    treasure:
+      key: "item_id"
+      properties: [name, type, grade, effects, owner_id]
+
+    event:
+      key: "event_id"
+      properties: [name, timestamp, type, severity, importance]
+
+  edges:
+
+    social:
+      types: [MASTER_OF, STUDENT_OF, SPOUSE_OF, RIVAL_OF, FRIEND_OF, SAVED, BETRAYED, KILLED]
+
+    faction_membership:
+      types: [MEMBER_OF, LEADS]
+
+    faction_relation:
+      types: [ALLY_OF, HOSTILE_TO, VASSAL_OF, TRADES_WITH]
+
+    location_relation:
+      types: [LOCATED_AT, CONNECTED_TO, CONTAINS]
+
+    resource_relation:
+      types: [CONTROLS, PRODUCES, CONSUMES, GUARDS]
+
+    possession:
+      types: [OWNS, CULTIVATES]
+
+    causality:
+      types: [PARTICIPATED_IN, CAUSED_BY, LED_TO]
+
+  query:
+
+    get_node:
+      params: [node_type, node_id]
+      returns: "Node + properties"
+      complexity: "O(1)"
+
+    get_neighbors:
+      params: [node_type, node_id, edge_types, direction]
+      returns: "list of (edge_type, target_node)"
+      complexity: "O(out_degree)"
+      direction_options: ["out", "in", "both"]
+
+    traverse:
+      description: "沿指定边类型路径遍历"
+      params:
+        start: "node reference"
+        path: "list of edge_types"
+      returns: "路径上的所有节点"
+      example: "npc_001 → MEMBER_OF → CONTROLS = 陈玄→散修盟→东海灵脉"
+
+    find_path:
+      description: "两节点间最短路径"
+      params: [from_node, to_node, max_depth]
+      returns: "path or null"
+      default_max_depth: 6
+
+    query_by_property:
+      params: [node_type, property_filters]
+      returns: "matching nodes"
+
+    get_related_events:
+      params: [node_type, node_id, time_range]
+      returns: "events sorted by time"
+
+    get_impact_analysis:
+      description: "节点变化的波及范围"
+      params: [node_type, node_id, depth]
+      returns: "affected entity tree"
+      example: "灵脉枯竭 → 灵石减产 → 青云宗 → 全部弟子"
+
+  write:
+
+    add_node:
+      trigger: "entity created"
+      via: "Kernel Transaction"
+
+    add_edge:
+      trigger: "relation change or memory event"
+      rules:
+        - "MEMBER_OF 自动双向感知"
+        - "HOSTILE_TO 不与 ALLY_OF 共存"
+        - "SAVED 自动创建反向边"
+
+    remove_edge:
+      action: "mark inactive, keep for history"
+
+    mark_deleted:
+      action: "mark node [deceased] or [destroyed], keep all edges"
+
+  engine_queries:
+
+    npc_engine:
+      - "所属宗门: get_neighbors(npc, MEMBER_OF)"
+      - "师父: get_neighbors(npc, STUDENT_OF)"
+      - "仇人位置: neighbors(npc,RIVAL_OF) → LOCATED_AT"
+
+    faction_engine:
+      - "控制灵脉: traverse(faction, CONTROLS, PRODUCES)"
+      - "盟友: get_neighbors(faction, ALLY_OF)"
+      - "敌人: get_neighbors(faction, HOSTILE_TO)"
+
+    economy_engine:
+      - "贸易伙伴: get_neighbors(faction, TRADES_WITH)"
+      - "灵脉产出: get_neighbors(vein, PRODUCES)"
+
+    war_engine:
+      - "敌方灵脉: traverse(enemy, CONTROLS)"
+      - "灵脉守卫: get_neighbors(vein, GUARDS)"
+
+    narrative_engine:
+      - "事件影响: get_impact_analysis(event)"
+      - "NPC历史: get_related_events(npc)"
+
+  sync_with_world_state:
+    direction: "World State → KG"
+    trigger: "after each Tick"
+    checks:
+      - "每个 NPC 的 faction_id 有对应 MEMBER_OF 边"
+      - "每个灵脉的 owner_id 有对应 CONTROLS 边"
+      - "deleted 实体在 KG 中标记 inactive"
+    on_mismatch: "以 World State 为准，修正 KG"

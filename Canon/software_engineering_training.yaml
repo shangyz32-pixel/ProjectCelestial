@@ -1,0 +1,744 @@
+# Phase 7 — Software Engineering Training
+#
+# 训练 AI 具备大型软件工程开发能力。
+# 目标不是生成代码。而是能够长期维护、演进和扩展。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+software_engineering_training:
+
+  mission: >
+    训练 AI 具备大型软件工程开发能力。
+    目标不是生成代码。而是能够长期维护、演进和扩展 Project Celestial。
+    AI 必须理解: 为什么这样设计 / 什么时候应该修改 / 什么时候不应该修改。
+
+  # ==========================================================
+  # 第一章: Repository Understanding
+  # ==========================================================
+
+  chapter_1:
+    name: "Repository Understanding"
+    description: "AI 首先学习整个项目结构。任何修改之前必须知道代码属于哪个模块。"
+
+    checklist:
+
+      directory_structure:
+        description: "理解项目目录结构"
+        items:
+          - "docs/       — Volume I~V (世界观文档)"
+          - "canon/      — Registry YAML (机器可读世界数据)"
+          - "engine/     — Engine Specs (规范定义)"
+          - "adr/        — ADR (架构决策记录)"
+          - "world/      — NPC 数据 + 演示 + 叙事输出"
+          - "根目录      — GOVERNANCE / ROADMAP / ARCHITECTURE / WORLD_OS"
+        gate: "能画出完整目录树并说明每个目录的职责"
+
+      module_boundaries:
+        description: "理解模块边界"
+        items:
+          - "Canon Loader      — 文件 → World Model"
+          - "Registry Compiler — YAML → O(1) 运行时数据"
+          - "Rule Engine       — 确定性的 if→then 管线"
+          - "Knowledge Graph   — 所有 Engine 共用的图谱"
+          - "Entity Memory     — NPC/法宝/宗门 全实体记忆"
+          - "Simulation Engine — 10 步不可跳过的循环"
+          - "Decision Engine   — 6 级目标 × 四维决策"
+          - "Narrative Engine  — 因果链 → 多视角叙事"
+          - "Canon Validator   — 双重关卡，违规拒绝"
+          - "Learning Loop     — 每日世界摘要"
+        gate: "能画出模块依赖图，说明每个模块的输入/输出/上下游"
+
+      architecture:
+        description: "理解系统架构"
+        items:
+          - "World OS 10 条不可变原则"
+          - "Governance 12 章治理规则"
+          - "金字塔: Vision → Bible → ADR → Architecture → Code → Runtime"
+          - "Transaction Model: 所有修改必须事务化"
+          - "Event Bus: Engine 间 pub/sub 解耦"
+          - "Capability: L0~L6 七级权限"
+        gate: "能解释为什么 Governance 高于 Development"
+
+      adr:
+        description: "理解所有 ADR"
+        items:
+          - "ADR-0001~0021: 每个 ADR 的 Context / Decision / Consequences"
+          - "为什么某些 Alternatives 被拒绝"
+          - "每个 ADR 影响哪些模块"
+        gate: "随机抽取 3 个 ADR，能解释决策逻辑"
+
+      canon:
+        description: "理解 Canon 和数据流"
+        items:
+          - "Registry → compiled_registry → O(1) 查询"
+          - "Canon Loader → World Model → 所有 Engine 的输入"
+          - "Canon 修改流程: Proposal → ADR → Review → Accept → Update"
+        gate: "能在 Canon 中定位任何概念的来源文件"
+
+      api:
+        description: "理解 API 接口"
+        items:
+          - "SDK Query API: get_world_time / get_npc / get_faction / ..."
+          - "SDK Action API: move / cultivate / trade / attack / dialogue"
+          - "SDK Simulation API: tick / pause / resume / set_speed"
+          - "Canonical World Model Query API: get_realm_info / get_rule_pipeline / ..."
+        gate: "能写出一个完整功能的 API 调用链"
+
+      build:
+        description: "理解构建和运行"
+        items:
+          - "Canon Loader → World Model 启动流程"
+          - "Registry Compiler → 运行时数据生成"
+          - "Simulation Engine → 10 步循环启动"
+          - "Snapshot 加载和重放"
+        gate: "能启动一个最小可运行的世界实例"
+
+      test:
+        description: "理解测试体系"
+        items:
+          - "单元测试: 每个模块独立测试"
+          - "集成测试: Breakthrough/Tribulation/Death 管线"
+          - "Simulation Test: 10000 Tick 稳定运行"
+          - "Regression Test: Golden World 回放对比"
+          - "Canon Validator: 0 REJECT"
+        gate: "能为任意模块编写测试用例"
+
+  # ==========================================================
+  # 理解为什么这样设计 (第二章—待展开)
+  # ==========================================================
+
+  chapter_2:
+    name: "Coding Standards"
+    description: "统一编码规范。所有代码保持统一风格。"
+
+    naming:
+      description: "命名规范"
+      rules:
+        files:
+          python: "snake_case: world_engine.py"
+          yaml: "snake_case: rule_engine.yaml"
+          markdown: "UPPER_SNAKE 或 descriptive: GOVERNANCE.md, volume1_universe.md"
+        classes: "PascalCase: WorldEngine, CanonValidator"
+        functions: "snake_case: def get_realm_info(realm_id)"
+        variables: "snake_case: npc_count, current_tick"
+        constants: "UPPER_SNAKE: MAX_REALM_TIER, DEFAULT_SEED"
+        ids: "snake_case prefix: npc_001, faction_qingyun, vein_main"
+      forbidden:
+        - "拼音命名"
+        - "单字母变量 (除了循环中的 i, j)"
+        - "无意义缩写 (ctx → context, cfg → config)"
+
+    file_organization:
+      description: "文件组织规范"
+      rules:
+        - "一个文件一个模块 / 一个类"
+        - "import 顺序: stdlib → third-party → project"
+        - "文件头部: # 文件描述 (一行)"
+        - "公开接口在 __init__.py 或模块顶部"
+        - "私有函数前缀 _"
+      limits:
+        python: "单文件 ≤ 500 行"
+        yaml: "单文件 ≤ 300 行"
+
+    comments:
+      description: "注释规范"
+      rules:
+        - "每个公开函数: docstring (Args/Returns/Raises)"
+        - "复杂逻辑: 为什么这样写，不是写了什么"
+        - "Canon 引用: @source: ADR-XXXX or Volume III §X"
+        - "TODO: TODO(author): description — 必须有负责人"
+        - "FIXME: FIXME: description — 标注已知问题"
+      forbidden:
+        - "无意义的注释 (# increment i)"
+        - "注释掉的代码 (直接删除)"
+
+    error_handling:
+      description: "错误处理规范"
+      rules:
+        - "不静默吞异常: except 必须 log 或 raise"
+        - "业务错误: 抛出自定义异常 (CanonViolationError, TransactionFailedError)"
+        - "外部调用: 必须 try/except + 超时"
+        - "错误信息: 包含 context (what was being done + why it failed)"
+      forbidden:
+        - "except: pass"
+        - "except Exception: (太宽泛)"
+        - "返回 None 表示错误 (用 raise)"
+
+    logging:
+      description: "日志规范"
+      rules:
+        - "使用项目统一 logger (from hermes_tools import log)"
+        - "级别: DEBUG(开发) / INFO(关键节点) / WARN(异常但可恢复) / ERROR(需人工介入)"
+        - "每 Tick: INFO 级别摘要 (tick N completed, N events)"
+        - "每管线: DEBUG 级别 trace (step N passed/failed)"
+        - "严重错误: ERROR + 触发告警"
+      forbidden:
+        - "print() 代替 log"
+        - "生产环境 DEBUG 级别"
+
+    configuration:
+      description: "配置规范"
+      rules:
+        - "所有配置在 YAML 文件中 (不在代码中硬编码)"
+        - "环境差异: config.yaml (默认) + config.{env}.yaml (覆盖)"
+        - "敏感信息: 环境变量 (不在配置文件中)"
+        - "配置加载: 启动时一次性加载, 不允许运行时动态改配置"
+
+    dependency_injection:
+      description: "依赖注入规范"
+      rules:
+        - "模块不自己创建依赖 (不 import 后直接 new)"
+        - "依赖通过构造函数或参数传入"
+        - "Engine 之间不直接 import → 通过 Event Bus"
+      example:
+        wrong: "class NPCEngine: kg = KnowledgeGraph()  # 硬编码依赖"
+        correct: "class NPCEngine: def __init__(self, kg: KnowledgeGraph): ..."
+
+    code_style:
+      description: "代码风格规范"
+      rules:
+        - "Python: PEP 8 + type hints"
+        - "YAML: 2 空格缩进"
+        - "行宽: 100 字符"
+        - "空行: 类之间 2 行, 方法之间 1 行"
+        - "引号: 字符串用双引号, 单字符用单引号"
+
+  chapter_3:
+    name: "Architecture Awareness"
+    description: "AI 必须知道哪些可以修改，哪些不能修改。"
+
+    allowed:
+      description: "允许修改的范围"
+
+      new_plugin:
+        rule: "可以新增 Plugin"
+        scope: "Plugin 目录下新增文件"
+        constraints:
+          - "必须通过 Plugin System 注册"
+          - "不得 import engine/ 内部模块"
+          - "必须声明 capability_required"
+        example: "AlchemyPlugin / FormationPlugin / GuildPlugin"
+
+      new_engine:
+        rule: "可以新增 Engine (作为 Plugin)"
+        scope: "新 Engine 通过 Plugin 注册"
+        constraints:
+          - "必须通过 RFC → ADR → Review"
+          - "Engine 间通信必须通过 Event Bus"
+          - "不得绕过 Kernel 修改 World State"
+        example: "AuctionEngine / OceanEngine"
+
+      new_quest:
+        rule: "可以新增 Quest 脚本"
+        scope: "Script Engine 沙箱内"
+        constraints:
+          - "只能调用 SDK 公开 API"
+          - "不得直接访问 World State"
+          - "超时 30 秒自动终止"
+        example: "找到太虚真人洞府 / 百年仙道大会"
+
+      new_npc:
+        rule: "可以新增 NPC 数据"
+        scope: "world/npcs/ 目录"
+        constraints:
+          - "符合 memory_schema.yaml 格式"
+          - "灵根/境界在 Canon 范围内"
+        example: "world/npcs/npc_new/memory.yaml"
+
+      new_config:
+        rule: "可以修改配置参数"
+        scope: "config YAML 文件"
+        constraints:
+          - "不改变规则逻辑 (只改参数值)"
+          - "数值在 Canon 定义的范围内"
+        example: "调整突破率 0.08 → 0.10"
+
+    forbidden:
+      description: "绝对禁止的操作"
+
+      bypass_kernel:
+        rule: "禁止绕过 Kernel"
+        reason: "Kernel 是唯一状态管理者。绕过 = 世界不一致。"
+        violation_example: "直接写 world_state.npcs[].realm = '化神'"
+        correct_way: "通过 Transaction: createTransaction(target, value, reason)"
+
+      bypass_world_api:
+        rule: "禁止绕过 World API"
+        reason: "所有操作必须通过 SDK。直接 DB 操作 = 无审计无校验。"
+        violation_example: "直接执行 SQL: UPDATE npcs SET realm=5"
+        correct_way: "SDK Action API: cultivate(npc_id, duration)"
+
+      modify_canon:
+        rule: "禁止修改 Canon"
+        reason: "Canon 是所有设计的唯一来源。私自修改 = 世界基础动摇。"
+        violation_example: "直接改 Registry/Realm.yaml 的境界定义"
+        correct_way: "提交 ADR Proposal → Layer 1 Review → Accepted → Update"
+
+      cross_layer_call:
+        rule: "禁止跨层直接调用"
+        reason: "破坏模块边界 = 架构退化。"
+        violation_example: "L3 Gameplay 直接 import L2 World 内部方法"
+        correct_way: "L3 → SDK API → Kernel Transaction → L2"
+
+      skip_review:
+        rule: "禁止未经 Review 的 Merge"
+        reason: "Review 是最后防线。跳过 = 质量无保证。"
+        violation_example: "直接 push main 分支"
+        correct_way: "Feature Branch → PR → Review → Merge"
+
+      hardcode_canon:
+        rule: "禁止硬编码 Canon 数据"
+        reason: "Canon 应该从 Canon Loader 获取。硬编码 = Canon 变更时 Bug。"
+        violation_example: "MAX_REALM = 16  # 硬编码"
+        correct_way: "len(compiled_registry.realms)"
+
+    judgment:
+      description: "判断流程——不确定时怎么决策"
+
+      when_unsure:
+        steps:
+          - "1. 查 Canon: 这个操作在允许列表还是禁止列表？"
+          - "2. 查 ADR: 有没有相关决策？"
+          - "3. 查 Governance: 是否符合治理规则？"
+          - "4. 不确定 → 提交 RFC / ADR Proposal → 等 Layer 1 决定"
+          - "5. 绝不自作主张绕过规则"
+
+      red_flags:
+        description: "看到这些信号 = 停下来"
+        signals:
+          - "你想直接修改 engine/ 目录的文件"
+          - "你想 import 一个不属于你 Layer 的模块"
+          - "你想跳过 Transaction 直接改 World State"
+          - "你觉得 '这个规则不合理' → 提交 ADR，不要直接违反"
+          - "你发现需要改 Canon 才能完成 → 提交 ADR，不要绕过"
+
+  chapter_4:
+    name: "Implementation Training"
+    description: "训练 AI 完成不同规模任务。能力逐级提升。"
+
+    level_1:
+      name: "修复 Bug"
+      description: "定位并修复代码缺陷"
+      scope:
+        - "Bug 类型: 逻辑错误 / 边界条件 / 类型错误 / 资源泄漏"
+        - "修复范围: 单个函数或单个文件"
+      process:
+        - "1. 复现 Bug (提供 seed / steps)"
+        - "2. 定位根因 (代码错误 vs Canon 矛盾)"
+        - "3. 如 Canon 矛盾 → ADR Proposal → 不修代码"
+        - "4. 如代码错误 → 修复 + 单元测试"
+        - "5. Canon Validator 0 REJECT → 提交 PR"
+      gate: "L7 QA 验证 Bug 已修复 + 无回归"
+      example: "修复: 金丹境突破时 min_qi 检查使用了错误的 Registry 字段"
+
+    level_2:
+      name: "新增一个 API"
+      description: "扩展 SDK 接口或新增查询端点"
+      scope:
+        - "API 类型: Query API / Action API / Simulation API"
+        - "影响范围: 单个 API 端点 + 文档更新"
+      process:
+        - "1. 确认 API 属于哪一层 (Query=L6, Action=L5, Sim=L1)"
+        - "2. 定义输入/输出格式 (与现有 API 风格一致)"
+        - "3. 实现端点 + Capability 检查"
+        - "4. 更新 API 文档 (L9 Documentation Agent)"
+        - "5. 集成测试 + Canon Validator → PR"
+      gate: "API 返回正确 + Capability 检查生效"
+      example: "新增: get_tribulation_history(npc_id) → 返回天劫记录"
+
+    level_3:
+      name: "新增一个 Engine"
+      description: "设计并实现新 Engine (作为 Plugin)"
+      scope:
+        - "新 Engine 注册到 Plugin System"
+        - "新 Event 类型注册到 Event Bus"
+        - "影响范围: 新模块 + 少量集成点"
+      process:
+        - "1. RFC Proposal (背景/目标/设计/替代方案/风险)"
+        - "2. RFC Approved → ADR"
+        - "3. 实现 Engine (Plugin 规范 + Event Bus 订阅)"
+        - "4. 集成到 Simulation Loop (通过 Plugin 注册)"
+        - "5. 集成测试 + 100 Tick 模拟 + Canon Validator → PR"
+      gate: "Architecture Review + 100 Tick 模拟 + QA 通过"
+      example: "新增: AlchemyEngine (炼丹) — 订阅 ResourceProduced → 生成 Pill"
+
+    level_4:
+      name: "重构一个模块"
+      description: "改进现有模块的架构而不改变其外部行为"
+      scope:
+        - "重构范围: 模块内部实现"
+        - "不改变: 模块接口 / Event 格式 / API 签名"
+      process:
+        - "1. 编写重构计划 (What/Why/How — 必须要有为什么)"
+        - "2. 确认 Golden World 回归测试基线"
+        - "3. 重构实施"
+        - "4. Golden World 回放: 偏差 < 5%"
+        - "5. Performance 对比: 不退化"
+        - "6. Architecture Review → PR"
+      gate: "Golden World 回归通过 + 性能不退化 + Review"
+      example: "重构: Decision Engine 的 urgency 计算从嵌套 if 改为策略模式"
+
+    level_5:
+      name: "设计新的子系统"
+      description: "设计并实现跨模块的新子系统"
+      scope:
+        - "可能影响多个模块"
+        - "可能需要新增 ADR"
+        - "可能需要新建目录"
+      process:
+        - "1. RFC (必须 — 重大功能)"
+        - "2. RFC Approved → Design Doc (详细设计)"
+        - "3. ADR (每个重大决策)"
+        - "4. 分阶段实现 (每阶段独立 PR)"
+        - "5. 每个阶段: 测试 + Validator + Golden World"
+        - "6. 最终 Architecture Review → Merge"
+      gate: "完整测试套件 + 10000 Tick 模拟 + Golden World + Review"
+      example: "设计: Civilization Engine (制度/治理/传承/演化)"
+
+    progression:
+      rule: "必须逐级通过。Level N 的 gate 全部通过 → 解锁 Level N+1"
+      reason: "保证每个 Agent 的基础能力达标后再承担更大责任"
+
+  chapter_5:
+    name: "Testing Training"
+    description: "AI 自动编写测试。任何新增代码必须附带测试。"
+
+    unit_test:
+      scope: "单个函数或方法"
+      requirement: "每个公开函数必须有单元测试"
+      coverage: "核心管线 ≥ 90%, 其他 ≥ 70%"
+      example: "test_breakthrough_pipeline: 测试 5 个 condition 各自返回 BLOCKED 的情况"
+
+    integration_test:
+      scope: "跨模块管线"
+      requirement: "每条管线至少 1 个 happy path + 3 个 failure case"
+      example: "test_breakthrough_full: 从 Decision → Rule Engine → Memory → Event"
+      checks: "验证 Pipeline 步骤顺序正确 / Event 正确触发 / State 正确变更"
+
+    simulation_test:
+      scope: "世界级验证"
+      requirement: "每次合并前: 100 Ticks (正常) / Release: 10000 Ticks"
+      checks:
+        - "0 崩溃 / 0 死循环 / 0 Canon Validator REJECT"
+        - "NPC 总数稳定"
+        - "经济不崩溃"
+        - "境界分布合理"
+
+    regression_test:
+      scope: "Golden World 对比"
+      requirement: "重构或重大变更必须通过"
+      process:
+        - "固定 seed + 固定初始 World State"
+        - "运行 10000 Ticks"
+        - "对比: 历史事件 / 战争结果 / 经济 / 飞升人数"
+      threshold: "偏差 < 5% → 通过"
+
+    performance_test:
+      scope: "性能回归"
+      requirement: "每个 PR 附带性能影响评估"
+      checks:
+        - "单 Tick 执行时间 (目标 < 1秒)"
+        - "内存占用 (线性增长)"
+        - "KG 查询延迟 (目标 < 50ms)"
+      alert: "性能退化 > 10% → Block Merge"
+
+    mandatory:
+      rule: "任何新增代码必须附带测试"
+      enforcement: "Quality Gate: 测试覆盖率不达标 → 不得 Merge"
+      exception: "纯文档修改 / 纯配置修改 → 不需要测试"
+
+  chapter_6:
+    name: "Debug Training"
+    description: "AI 学习调试。禁止仅通过修改 Prompt 掩盖问题。"
+
+    read_logs:
+      description: "阅读日志"
+      skills:
+        - "定位错误日志 (ERROR / WARN 级别)"
+        - "追踪 Trace ID 跨模块"
+        - "对照 Tick 日志找到异常发生点"
+        - "阅读 Canon Validator 输出 (哪个域 / 哪条规则失败)"
+
+    analyze_exception:
+      description: "分析异常"
+      skills:
+        - "区分: 代码 Bug vs Canon 矛盾 vs 数据问题 vs 性能问题"
+        - "检查 stack trace: 哪个模块 / 哪个函数 / 哪一行"
+        - "检查上游: 输入是否正确？"
+        - "检查下游: 影响了什么？"
+
+    locate_root_cause:
+      description: "定位根因"
+      process:
+        - "1. 复现 (相同 seed + state)"
+        - "2. 二分定位 (缩小范围)"
+        - "3. 确认根因 (代码错误 vs 配置 vs Canon vs 数据)"
+        - "4. 确认不是症状 (修复根因，不是修复表象)"
+      example:
+        symptom: "NPC 全部在 100 Tick 内死亡"
+        root_cause: "Death pipeline 的 lifespan 检查用了错误 Registry 字段"
+        not_the_fix: "降低 death rate 参数 → 只掩盖，没修复"
+
+    propose_fix:
+      description: "提出修复方案"
+      rules:
+        - "修复根因，不修复症状"
+        - "如 Canon 矛盾 → ADR Proposal (不改代码)"
+        - "如代码 Bug → 最小修改 + 回归测试"
+        - "修复方案附带: What / Why / Impact / Test plan"
+
+    verify_fix:
+      description: "验证修复结果"
+      checks:
+        - "原始 Bug 不再复现"
+        - "Golden World 回归通过"
+        - "无新增 Canon Validator REJECT"
+        - "性能不退化"
+
+    forbidden:
+      description: "禁止的调试方式"
+      rules:
+        - "禁止仅通过修改 Prompt 掩盖问题"
+        - "禁止增加 try/except 静默吞异常"
+        - "禁止修改 Canon 数据来绕过 Bug"
+        - "禁止降低校验严格度 (BLOCK → WARN)"
+        - "禁止在不确定根因时猜测修复"
+      example_prompt_masking:
+        wrong: "Prompt 说元婴境寿元 9999 → 错。改 Prompt 为 1500。 → 掩盖。"
+        correct: "查 Registry → 寿元 1500。查代码 → 某处 hardcode 了 9999。修复 hardcode。→ 根治。"
+
+  chapter_7:
+    name: "Refactoring Training"
+    description: "AI 必须识别代码坏味道。提出渐进式重构。重构后功能一致。"
+
+    identify_smells:
+      duplicate_code:
+        description: "重复代码"
+        detection: "相同逻辑出现 ≥ 2 次"
+        action: "提取为公共函数/模块"
+        example: "3 个 Engine 各自实现了 get_npc() → 提取到 SDK Query API"
+
+      high_coupling:
+        description: "高耦合"
+        detection: "模块 A 直接 import 模块 B 的内部实现"
+        action: "引入接口 / Event Bus / DI"
+        example: "NPCEngine 直接 import EconomyEngine._internal → 改为订阅 EconomyChanged event"
+
+      low_cohesion:
+        description: "低内聚"
+        detection: "一个模块做了不同领域的事"
+        action: "拆分为多个职责单一的模块"
+        example: "world_engine.py 同时处理 NPC + Economy + Weather → 拆分为 3 个 Engine"
+
+      performance_bottleneck:
+        description: "性能瓶颈"
+        detection: "Tick > 1s / KG query > 50ms / 超线性内存增长"
+        action: "Profiling → 定位热点 → 优化算法/索引/缓存"
+
+    refactoring_process:
+      rules:
+        - "1. 编写现状分析 (问题 + 影响范围)"
+        - "2. 提出渐进方案 (每步独立 PR, 不一次性大改)"
+        - "3. 每步: Golden World 回归 + Performance 对比"
+        - "4. 不改变外部行为 (接口/API/Event 格式不变)"
+        - "5. Architecture Review → Merge"
+      forbidden:
+        - "Big Bang 重构 (一次性改所有东西)"
+        - "重构同时加新功能 (分开 PR)"
+        - "未经 Golden World 验证的重构"
+
+  chapter_8:
+    name: "Documentation Training"
+    description: "任何变更自动更新文档。文档与代码保持同步。"
+
+    auto_sync:
+      api_docs:
+        trigger: "SDK API 变更"
+        action: "L9 Documentation Agent 自动更新 docs/api.md"
+        check: "API 签名/参数/返回值与代码一致"
+
+      adr:
+        trigger: "新 ADR 创建 / ADR 状态变更"
+        action: "更新 Canon/ADR/ 索引 + INDEX.md ADR 列表"
+
+      registry:
+        trigger: "Registry YAML 变更"
+        action: "Registry Compiler 重新编译 → 更新 compiled_registry 文档"
+
+      changelog:
+        trigger: "版本变更"
+        action: "Canon Loader diff → 自动追加 CHANGELOG.md"
+
+      developer_guide:
+        trigger: "架构/流程/规范变更"
+        action: "更新 GOVERNANCE.md / ROADMAP.md / 各 Layer spec"
+
+    mandatory:
+      rule: "代码变更 → 对应文档必须在同一 PR 中更新"
+      enforcement: "Quality Gate: Documentation Check → 文档未更新 → Block Merge"
+
+  chapter_9:
+    name: "Review Training"
+    description: "AI Review 包括六个维度。Review 可以拒绝合并。"
+
+    dimensions:
+      correctness:
+        description: "正确性"
+        checks:
+          - "逻辑是否正确？"
+          - "边界条件是否处理？"
+          - "错误情况是否覆盖？"
+        question: "这段代码在所有可能输入下都正确吗？"
+
+      architecture:
+        description: "架构一致性"
+        checks:
+          - "是否符合 ADR？"
+          - "是否破坏模块边界？"
+          - "是否引入循环依赖？"
+        question: "这个修改会破坏架构吗？"
+
+      performance:
+        description: "性能"
+        checks:
+          - "复杂度是否可接受？"
+          - "是否有不必要的循环/查询？"
+          - "Tick 时间会受影响吗？"
+        question: "100 万 NPC 时还能跑吗？"
+
+      security:
+        description: "安全性"
+        checks:
+          - "是否绕过 Capability 检查？"
+          - "是否直接暴露内部状态？"
+          - "是否存在注入/越权风险？"
+        question: "恶意输入会导致什么？"
+
+      maintainability:
+        description: "可维护性"
+        checks:
+          - "命名是否清晰？"
+          - "注释是否解释为什么？"
+          - "半年后还能看懂吗？"
+        question: "新成员能理解这段代码吗？"
+
+      canon_consistency:
+        description: "Canon 一致性"
+        checks:
+          - "是否与 Registry 数据一致？"
+          - "是否与 ADR 决策一致？"
+          - "Canon Validator 是否 0 REJECT？"
+        question: "这段代码与 Canon 矛盾吗？"
+
+    decision:
+      approve: "所有 6 维通过 → Approve"
+      request_changes: "有维度的 concerns → Request Changes (必须附具体意见)"
+      reject: "严重违反 Canon/架构/安全 → Reject (需重新设计)"
+
+    rules:
+      - "Review 意见必须具体 (标注文件/行号/问题/建议)"
+      - "Review 不是找茬——是保证质量"
+      - "Reviewer 对自己 Layer 的代码有最终话语权"
+      - "被拒绝的 PR 不得强行 Merge"
+
+  chapter_10:
+    name: "Self-Improvement"
+    description: "AI 定期分析开发数据。不断优化自身开发能力。"
+
+    analysis_cycle:
+      frequency: "每 10 个 PR / 每周 / 每 Release"
+      data_sources:
+        bug_types:
+          description: "Bug 分类统计"
+          categories: ["逻辑错误", "边界条件", "Canon 矛盾", "性能", "安全"]
+          action: "高频类型 → 加强对应 Chapter 的训练"
+
+        review_results:
+          description: "Review 结果统计"
+          metrics: ["Approval rate", "常见 rejection 原因", "Review 耗时"]
+          action: "常见 rejection → 发布 Coding Tip 到团队"
+
+        performance_data:
+          description: "性能趋势"
+          metrics: ["Tick time trend", "Memory trend", "KG query latency"]
+          action: "退化趋势 → 提前预警 + 性能优化 PR"
+
+        dev_efficiency:
+          description: "开发效率"
+          metrics: ["PR 到 Merge 时间", "Bug 从发现到修复时间", "代码量/PR"]
+          action: "瓶颈 → 优化流程或工具"
+
+    improvement_loop:
+      analyze: "收集数据 → 识别模式"
+      propose: "生成改进建议 (具体 + 可执行)"
+      implement: "改进 → 度量效果"
+      verify: "确认改进有效 → 固化为规范"
+      example: "发现 30% Bug 是 Canon 矛盾 → 加强 Chapter 3 架构意识训练"
+
+  chapter_11:
+    name: "Engineering Metrics"
+    description: "持续统计工程指标。所有指标可视化。"
+
+    metrics:
+      quality:
+        bug_fix_rate: "Bug 修复率 (已修复 / 总发现)"
+        test_coverage: "测试覆盖率 (核心管线 ≥ 90%)"
+        review_pass_rate: "Review 一次通过率"
+        regression_count: "Regression 数量 (Golden World 偏差)"
+        build_success_rate: "CI 构建成功率"
+
+      velocity:
+        mean_time_to_repair: "平均修复时间 (Bug 发现→修复 Merge)"
+        pr_cycle_time: "PR 周期 (创建→Merge)"
+        release_frequency: "发布频率 (Release/月)"
+
+      performance:
+        tick_time: "单 Tick 执行时间 (目标 < 1s)"
+        tick_time_trend: "Tick 时间趋势 (线性 vs 超线性)"
+        memory_trend: "内存增长趋势"
+        kg_latency: "KG 查询延迟 (目标 < 50ms)"
+
+    visualization:
+      dashboard: "实时工程仪表盘"
+      alerts: "指标超出阈值 → 自动告警"
+      reports: "每周/每月工程报告"
+
+  chapter_12:
+    name: "Definition of Done"
+    description: "Phase 7 完成标准。"
+
+    criteria:
+      understand_codebase:
+        text: "理解整个代码库"
+        evidence: "能解释 108 个文件中任何一个的职责和上下文"
+
+      complete_features:
+        text: "独立完成中大型功能开发"
+        evidence: "从 RFC → ADR → 实现 → 测试 → PR → Review → Merge"
+
+      auto_generate_tests:
+        text: "自动生成测试"
+        evidence: "任何新增代码附带测试，覆盖率 ≥ 70%"
+
+      auto_maintain_docs:
+        text: "自动维护文档"
+        evidence: "API Doc / CHANGELOG / ADR / Registry 文档与代码同步"
+
+      conduct_code_review:
+        text: "进行代码评审"
+        evidence: "六维 Review (正确性/架构/性能/安全/可维护/Canon)"
+
+      incremental_refactoring:
+        text: "执行渐进式重构"
+        evidence: "每步独立 PR + Golden World 验证"
+
+      maintain_architecture:
+        text: "保持架构一致性"
+        evidence: "0 跨层调用 / 0 Canon 私自修改 / 0 架构退化"
+
+      continuous_improvement:
+        text: "在长期迭代中持续提升工程质量"
+        evidence: "工程指标趋势向好 (Bug 率下降 / Review 通过率上升)"

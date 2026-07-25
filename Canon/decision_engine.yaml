@@ -1,0 +1,183 @@
+# Decision Engine Runtime Specification
+#
+# Phase 4, Module 7: Decision Engine
+# NPC 不随机。目标驱动。四维决策。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+decision_engine:
+
+  description: >
+    每个 NPC 每日选择一个目标，生成一个行动。
+    目标按优先级排序。决策基于资源、时间、关系、历史。
+
+  # ==========================================================
+  # Goal Priority
+  # ==========================================================
+
+  goals:
+
+    survive:
+      priority: 1
+      conditions:
+        - "hp < 30%"
+        - "lifespan_remaining < 10%"
+        - "in_combat AND losing"
+      action_types: [flee, heal, consume_lifespan_pill, seek_shelter]
+      urgency_formula: "(1 - hp_ratio) + (1 - lifespan_ratio) + in_danger_bonus"
+
+    protect:
+      priority: 2
+      conditions:
+        - "has TRUSTS or GRATEFUL_TOWARD tag with intensity >= 7"
+        - "target is in danger (hp < 50% or in_combat)"
+      action_types: [defend, rescue, warn, escort]
+      urgency_formula: "tag_intensity × target_danger_level"
+
+    revenge:
+      priority: 3
+      conditions:
+        - "has SEEKS_REVENGE tag with intensity >= 7"
+        - "target is reachable (same region or known location)"
+      action_types: [stalk, ambush, confront, attack]
+      urgency_formula: "tag_intensity × target_proximity × memory_importance"
+
+    expand_sect:
+      priority: 4
+      conditions:
+        - "LEADS a faction"
+        - "faction has resources for expansion"
+      action_types: [recruit, expand_territory, build_institution, form_alliance]
+      urgency_formula: "faction_resource_ratio × faction_goal_progress"
+
+    seek_power:
+      priority: 5
+      conditions:
+        - "has SEEKS_POWER or SEEKS_MASTERY tag"
+        - "cultivation_value >= 80% of threshold"
+      action_types: [intensive_cultivate, seek_pill, seek_master, breakthrough_attempt]
+      urgency_formula: "cultivation_progress × tag_intensity × qi_availability"
+
+    cultivate:
+      priority: 6
+      conditions: "always (default)"
+      action_types: [cultivate, meditate, study_technique]
+      urgency_formula: "qi_density / max_qi × spirit_root_multiplier × 0.5"
+
+  # ==========================================================
+  # Urgency Calculation (四维)
+  # ==========================================================
+
+  urgency:
+
+    formula: "resource_factor × time_factor × relationship_factor × history_factor"
+
+    resource_factor:
+      description: "当前资源是否支持该目标？"
+      range: [0, 2]
+      inputs:
+        - qi_available: "locations.qi_density / goal_required_qi"
+        - money: "can afford required items?"
+        - hp: "current HP ratio"
+        - pills: "has required pills?"
+      default: 1.0
+
+    time_factor:
+      description: "有多紧迫？"
+      range: [0.5, 2]
+      inputs:
+        - lifespan_remaining_ratio: "剩余寿元 / 总寿元"
+        - deadline_proximity: "如 灵脉枯竭还剩 X 天"
+        - opportunity_window: "如 仇人正在附近"
+      default: 1.0
+
+    relationship_factor:
+      description: "目标驱动的关系有多强？"
+      range: [0.5, 1.5]
+      inputs:
+        - tag_intensity: "active_tags 中该目标的 intensity"
+        - kg_edge_strength: "KG 中关系边的权重"
+      default: 1.0
+
+    history_factor:
+      description: "触发该目标的记忆有多重要？"
+      range: [0.5, 1.5]
+      inputs:
+        - memory_importance: "entity_memory 中触发事件的最大 importance"
+        - memory_recency: "最近一次触发记忆距今多少天"
+      default: 1.0
+
+  # ==========================================================
+  # Daily Action Pipeline
+  # ==========================================================
+
+  pipeline:
+
+    1_evaluate_goals:
+      action: "检查每个目标的 conditions"
+      output: "active_goals[] (可能同时有 2-3 个)"
+      example: "陈玄: [revenge(SEEKS_REVENGE=10), seek_power(SEEKS_POWER=7), cultivate(default)]"
+
+    2_calculate_urgency:
+      action: "对每个 active goal 计算 urgency 分数"
+      output: "{ goal: urgency_score }"
+      example: "revenge: 12.6, seek_power: 4.2, cultivate: 1.8"
+
+    3_select_goal:
+      action: "选择 urgency 最高的目标"
+      constraint: "survive(priority=1) 覆盖所有其他目标"
+
+    4_generate_action:
+      action: "从目标的 action_types 中选择具体行动"
+      factors:
+        - "可行性: 行动是否可能？（位置/资源/能力）"
+        - "偏好: NPC personality 影响行动风格"
+        - "约束: faction rules 是否禁止该行动？"
+
+    5_constraint_check:
+      action: "最终检查"
+      checks:
+        - "行动是否可能？（如 target 不在 reachable 范围）"
+        - "是否违反 faction rules？（如 盟主不能公开攻击青云宗弟子）"
+      on_fail: "降级到下一个 urgency 目标"
+
+  # ==========================================================
+  # Decision Trace (可审计)
+  # ==========================================================
+
+  trace:
+    example: |
+      npc: 陈玄(npc_001)
+      date: 天历 847-07-24
+
+      active_goals:
+        1. survive:       INACTIVE (hp=100%, lifespan=94%)
+        2. protect:       INACTIVE (无受威胁的重要人物)
+        3. revenge:        urgency=12.6
+           - resource:  1.2 (东海灵气充足, 有丹药)
+           - time:      1.5 (王虎就在青云宗, 机会窗口)
+           - relation:  1.5 (SEEKS_REVENGE intensity=10)
+           - history:   1.4 (林远之死 imp=10 + 坊市相遇 imp=8)
+        4. expand_sect:   INACTIVE (散修盟无需扩张)
+        5. seek_power:    urgency=4.2
+        6. cultivate:     urgency=1.8
+
+      selected: revenge (urgency=12.6)
+      action: stalk — 继续追踪王虎，等待青云宗外出手时机
+      constraint_check:
+        - reachable: ✅ 王虎在青云宗 (可抵达外围)
+        - faction_rule: ⚠️  盟主公开攻击青云宗弟子 = 两派开战
+        → modified_action: stalk (隐蔽跟踪, 等待独处时机)
+
+  # ==========================================================
+  # Integration
+  # ==========================================================
+
+  integration:
+    simulation_engine:
+      step: "Step 4 NPC → daily_action"
+      before: "memory.on_tick, cultivation_progress"
+      after: "encounter_detection"

@@ -1,0 +1,232 @@
+# NPC Memory: 赵灵儿（新弟子）
+#
+# 与陈玄 (npc_001) 共享事件：天历847年被救、收徒
+# 视角：纯真少女——只知道当下的陈玄，不知道二十年前的陈玄
+
+npc_id: "npc_003"
+npc_name: "赵灵儿"
+realm: "筑基境"
+spirit_root: "天灵根·冰（冰凤灵体）"
+faction: "散修盟"
+faction_status: "弟子"
+
+# ============================================================
+# 短期记忆（最近 30 世界日）
+# ============================================================
+short_term:
+
+  - id: 1
+    timestamp: "天历 847 年 7 月 20 日"
+    type: cultivation
+    title: "师父传授基础心法"
+    narrative: >
+      师父今天开始教我散修盟的基础心法《归元诀》。
+      他说我的冰凤灵体极为罕见，普通心法可能不够，
+      他正在想办法帮我找适合冰属性的功法。
+      师父看起来总是很严肃，但教我时很耐心。
+      他的眼睛里有一种……我说不清的东西。
+      像是远处有火在烧。
+    importance: 5
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: teacher
+    location: "散修盟·练功房"
+    emotional_valence: +6
+    behavior_tags:
+      - tag: TRUSTS
+        target: "npc_001"
+        intensity: 7
+        decay: medium_decay
+      - tag: GRATEFUL_TOWARD
+        target: "npc_001"
+        intensity: 8
+        decay: medium_decay
+
+  - id: 2
+    timestamp: "天历 847 年 7 月 15 日"
+    type: social
+    title: "听师兄们说起师父的往事"
+    narrative: >
+      散修盟的老弟子们私下聊天时提到：
+      "盟主当年是被青云宗赶出来的。"
+      "他那个大弟子林远可是个天才……可惜了。"
+      看到我走近，他们立刻闭嘴不说了。
+      林远是谁？师父从没提过。
+    importance: 4
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: subject
+    location: "散修盟·饭堂"
+    emotional_valence: -2
+    behavior_tags:
+      - tag: SUSPICIOUS_OF
+        target: "faction_qingyun"
+        intensity: 3
+        decay: fast_decay
+
+  - id: 3
+    timestamp: "天历 847 年 7 月 12 日"
+    type: discovery
+    title: "第一次感受到冰凤灵体的力量"
+    narrative: >
+      夜里独自修炼时，无意中触发了冰凤灵体。
+      周身三丈尽皆凝霜，一只虚幻的冰凤虚影在背后展开。
+      师父被惊动赶来，看了很久，说了一句：
+      "灵儿，你的路会比我的更长。"
+      我不太懂这句话的意思。
+    importance: 7
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: witness
+    location: "散修盟·后山"
+    emotional_valence: +8
+    behavior_tags:
+      - tag: CONFIDENT
+        target: ""
+        intensity: 6
+        decay: medium_decay
+      - tag: SEEKS_MASTERY
+        target: ""
+        intensity: 7
+        decay: slow_decay
+
+# ============================================================
+# 长期记忆
+# ============================================================
+long_term:
+
+  - id: 101
+    timestamp: "天历 847 年 7 月 8 日"
+    type: battle
+    title: "黑风岭遇袭，被师父所救"
+    narrative: >
+      独自穿越黑风岭时遭遇三只金瞳妖狼。
+      筑基境的自己根本不是对手，被逼到绝路。
+      就在妖狼扑上来的瞬间，一道火焰从天而降——
+      一个中年修士挡在身前，一掌击退三狼。
+      他什么也没说，检查了我的伤势，发现我有冰凤灵体后，
+      沉默了很久才开口："跟我走。"
+      那一刻我第一次觉得安全。
+    importance: 10
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: rescuer
+    location: "荒山·黑风岭"
+    emotional_valence: +10
+    behavior_tags:
+      - tag: GRATEFUL_TOWARD
+        target: "npc_001"
+        intensity: 10
+        decay: permanent
+      - tag: TRUSTS
+        target: "npc_001"
+        intensity: 10
+        decay: permanent
+      - tag: LOYAL_TO
+        target: "faction_sanxiumeng"
+        intensity: 8
+        decay: slow_decay
+    kg_trigger:
+      action: create
+      edge_type: SAVED
+      from: "npc_001"
+      to: "npc_003"
+
+  - id: 102
+    timestamp: "天历 845 年 2 月 14 日"
+    type: death
+    title: "家族覆灭"
+    narrative: >
+      赵家本是小修仙家族，因族中出了冰凤灵体，
+      引来魔渊觊觎。一夜之间家族被灭，
+      只有赵灵儿被母亲藏在地窖中逃过一劫。
+      从那以后她独自流浪了两年，直到遇见师父。
+      她其实知道失去一切的滋味。
+      所以师父眼里的火焰，她觉得熟悉。
+    importance: 9
+    participants: []
+    location: "赵家堡"
+    emotional_valence: -10
+    behavior_tags:
+      - tag: TRAUMATIZED
+        target: ""
+        intensity: 8
+        decay: slow_decay
+      - tag: SEEKS_PROTECTION
+        target: ""
+        intensity: 7
+        decay: slow_decay
+      - tag: HOSTILE_TOWARD
+        target: "faction_moyuan"
+        intensity: 8
+        decay: slow_decay
+
+# ============================================================
+# 活跃行为标签
+# ============================================================
+active_tags:
+  - tag: GRATEFUL_TOWARD
+    target: "npc_001"
+    intensity: 10
+    source: [101]
+
+  - tag: TRUSTS
+    target: "npc_001"
+    intensity: 10
+    source: [101, 1]
+
+  - tag: LOYAL_TO
+    target: "faction_sanxiumeng"
+    intensity: 8
+    source: [101]
+
+  - tag: TRAUMATIZED
+    target: ""
+    intensity: 8
+    source: [102]
+
+  - tag: HOSTILE_TOWARD
+    target: "faction_moyuan"
+    intensity: 8
+    source: [102]
+
+  - tag: SEEKS_PROTECTION
+    target: ""
+    intensity: 7
+    source: [102]
+
+  - tag: SEEKS_MASTERY
+    target: ""
+    intensity: 7
+    source: [3]
+
+  - tag: CONFIDENT
+    target: ""
+    intensity: 6
+    source: [3]
+
+  - tag: SUSPICIOUS_OF
+    target: "faction_qingyun"
+    intensity: 3
+    source: [2]
+
+# ============================================================
+# 与陈玄 (npc_001) 的交叉视角
+# ============================================================
+# 同一事件——天历 847 年 7 月 8 日，黑风岭
+#
+# 陈玄眼中：发现好苗子，收徒。也许看到了林远的影子。
+#   重要性: 7
+#   情感效价: +8
+#
+# 赵灵儿眼中：绝境中被救，人生从此改变。
+#   重要性: 10
+#   情感效价: +10
+#   标签: GRATEFUL_TOWARD(10), TRUSTS(10)
+#
+# 同一事件在两个人生命中分量完全不同。
+# 陈玄有无数过往，赵灵儿只有这一刻的开始。

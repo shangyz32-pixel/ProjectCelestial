@@ -1,0 +1,171 @@
+# Phase 6 — Persistent Universe Runtime
+#
+# 不是存档系统。不是数据库。不是服务器。
+# 而是整个世界持续运行的 Runtime。
+# 让世界永远存在。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+persistent_universe:
+
+  mission: >
+    不是存档系统。不是数据库。不是服务器。
+    而是整个世界持续运行的 Runtime。
+    它负责让世界永远存在。
+
+  # ==========================================================
+  # Runtime Architecture
+  # ==========================================================
+
+  architecture: |
+    Canon -> Simulation Engine -> Persistent Universe Runtime
+                                        |
+        ┌───────────────┬───────────────┬───────────────┐
+        ▼               ▼               ▼               ▼
+    World State    Persistence     Scheduler      Snapshot
+        │               │               │               │
+        ├───────────────┼───────────────┼───────────────┤
+        ▼               ▼               ▼               ▼
+    Event Log      Time Service    Recovery        Replay
+        │               │               │               │
+        └───────────────┴───────────────┴───────────────┘
+                                │
+                        Multi-World Manager
+                                │
+                        Narrative Layer
+                                │
+                            Players
+
+  # ==========================================================
+  # Responsibilities
+  # ==========================================================
+
+  responsibilities:
+    description: >
+      Persistent Universe 负责世界生命周期。
+      时间。保存。恢复。升级。迁移。容灾。分片。跨世界。
+      而不是计算世界。计算是 Simulation Engine 的职责。
+
+  # ==========================================================
+  # Core Modules
+  # ==========================================================
+
+  modules:
+
+    world_lifecycle:
+      description: "管理整个世界生命周期"
+      states:
+        - "Create — 创建新世界实例"
+        - "Initialize — 加载 Canon + 生成初始状态"
+        - "Run — 持续运行 (Simulation Loop)"
+        - "Pause — 暂停 (维护/升级)"
+        - "Save — 保存当前状态"
+        - "Upgrade — 版本升级 + 数据迁移"
+        - "Shutdown — 安全关闭"
+        - "Destroy — 销毁世界实例"
+
+    tick_scheduler:
+      description: "统一调度所有 Tick 相关系统"
+      guarantees:
+        - "所有系统按固定顺序运行"
+        - "不可跳过任何步骤"
+        - "每个 Tick 原子执行"
+      systems:
+        - "Simulation Tick"
+        - "Event Processing"
+        - "NPC Update"
+        - "Economy Update"
+        - "World Update"
+
+    persistence_layer:
+      description: "保存整个世界状态"
+      stores:
+        - "Entity — 所有实体状态"
+        - "NPC — 完整 NPC 数据 (含 memory)"
+        - "World — 世界状态 (时间/天气/灵气)"
+        - "Inventory — 所有物品"
+        - "Quest — 所有任务状态"
+        - "Economy — 经济数据"
+        - "Faction — 势力状态"
+        - "History — 历史记录"
+
+    snapshot_system:
+      description: "定期生成世界快照"
+      frequency: "每个 Tick 自动保存"
+      capabilities: ["Rollback", "Replay", "Recovery", "Migration"]
+      format: "全量状态 + seed + canon_version + engine_version"
+
+    event_log:
+      description: "记录所有状态变化"
+      examples: ["玩家突破", "宗门战争", "交易", "死亡", "飞升"]
+      guarantee: "不可修改。追加写入。"
+
+    replay_engine:
+      description: "从任意 Snapshot 重建世界"
+      process: "加载 Snapshot -> 按 Event Log 重放 -> 到达目标时间点"
+      use_cases: ["Debug", "Regression Test", "History Viewer"]
+
+    recovery_engine:
+      description: "崩溃后自动恢复"
+      guarantees:
+        - "恢复 World State (从最新 Snapshot)"
+        - "恢复 Tick (从最后保存位置)"
+        - "恢复所有玩家状态"
+        - "世界连续 — 玩家感知不到中断"
+
+    time_service:
+      description: "统一世界时间源"
+      provides: ["世界时间", "昼夜", "季节", "纪元", "灵潮周期"]
+      guarantee: "所有 Simulation 使用同一时间源"
+
+    sharding:
+      description: "多分片支持"
+      types: ["World Shard", "Region", "Instance", "Realm"]
+      capabilities: ["自动迁移", "扩容", "合并"]
+
+    multi_world:
+      description: "多世界共同存在"
+      worlds: ["正式服", "测试服", "Shadow World", "Experimental", "Private", "Development"]
+      guarantee: "共享 Runtime，互相隔离"
+
+  # ==========================================================
+  # Runtime Principles
+  # ==========================================================
+
+  principles:
+    persistent: "世界持续存在，不因重启而丢失状态"
+    recoverable: "任何故障后可恢复到最后一致状态"
+    replayable: "任意 Snapshot 可完全重放"
+    scalable: "从 1 个世界到 N 个分片"
+    deterministic: "相同初始状态 + seed -> 相同结果"
+    auditable: "所有操作可追溯到 Event Log"
+    upgradeable: "不停机版本升级和数据迁移"
+    observable: "世界状态可实时查询和监控"
+
+  # ==========================================================
+  # World OS Insight
+  # ==========================================================
+
+  insight: |
+    整个世界实际上运行在 Persistent Universe Runtime。
+    Simulation 只是 CPU。
+    Runtime 才是真正的 Kernel。
+    Narrative 只是 Render。
+    玩家只是连接到 Runtime。
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "世界可持续运行数年 — 永不停机"
+    - "任意时间恢复 — 从任意 Snapshot"
+    - "任意时间 Replay — 完整重现历史"
+    - "任意时间升级 — 不停机版本更新"
+    - "任意时间扩容 — 分片支持"
+    - "任意时间迁移 — 数据无损迁移"
+    - "多世界共同运行 — 正式/测试/Shadow/私有"
+    - "世界成为真正持续存在的 Universe"

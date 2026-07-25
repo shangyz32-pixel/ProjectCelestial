@@ -1,0 +1,159 @@
+# Entity Memory Specification
+#
+# Phase 4, Module 5: Universal Entity Memory
+# 所有实体（NPC/法宝/宗门/灵脉/地点/玩家）拥有长期记忆
+
+version: "1.0.0"
+status: Canon
+
+---
+
+entity_memory:
+
+  description: >
+    将 NPC Memory 扩展为所有实体的通用记忆系统。
+    复用 memory_schema.yaml 的 memory_entry 结构。
+    按实体类型附加不同的聚合和查询方式。
+
+  # ==========================================================
+  # Universal Memory Entry (继承 memory_schema.yaml)
+  # ==========================================================
+
+  memory_entry:
+    source: memory_schema.yaml
+    fields: [id, timestamp, type, title, narrative, importance, participants, location, emotional_valence, behavior_tags]
+    note: "此结构对任何实体类型通用——不需要改"
+
+  # ==========================================================
+  # Entity Types
+  # ==========================================================
+
+  entities:
+
+    character:
+      source: memory_schema.yaml
+      layers: [short_term, long_term]
+      special: active_tags (行为驱动)
+      status: "✅ 已在 Phase 3 Stage 4 实现"
+
+    treasure:
+      description: "法宝/物品记忆"
+      layers: [short_term, long_term]
+      special:
+        - ownership_chain: "历任主人时间线"
+        - forged_event: "锻造/创造事件"
+        - witnessed_events: "物品见证的事件"
+        - current_owner: "当前持有者"
+      query:
+        get_ownership_history:
+          returns: "历任主人 + 时间 + 获得方式"
+        get_witnessed_battles:
+          returns: "物品参与过的战斗"
+        get_age:
+          returns: "物品年龄（从锻造至今）"
+
+    faction:
+      description: "宗门/组织记忆"
+      layers: [long_term]
+      special:
+        - founding_event: "创立事件"
+        - crisis_events: "危机事件列表"
+        - golden_age_events: "黄金时代列表"
+        - leader_transitions: "领导者变更记录"
+        - institutional_memory: "制度记忆（不会因领导更替而消失）"
+      query:
+        get_chronology:
+          returns: "按时间排列的重大事件"
+        get_crisis_history:
+          returns: "宗门经历的所有危机及应对"
+        get_leader_lineage:
+          returns: "历任领导者时间线"
+      overlap: "与 civilization_engine.cultural_memory 统一"
+
+    spirit_vein:
+      description: "灵脉记忆"
+      layers: [long_term]
+      special:
+        - discovery_event: "发现事件"
+        - extraction_history: "开采记录（产量变化）"
+        - ownership_changes: "归属变更"
+        - decay_events: "衰减事件"
+      query:
+        get_quality_timeline:
+          returns: "灵脉品质随时间的变化"
+        get_extraction_history:
+          returns: "各级势力对灵脉的开采记录"
+        get_remaining_lifespan:
+          returns: "估计剩余寿命（基于衰减速度）"
+
+    location:
+      description: "地点记忆"
+      layers: [long_term]
+      special:
+        - establishment_event: "建立/发现事件"
+        - destruction_events: "毁灭/废弃事件"
+        - ownership_changes: "归属变更"
+        - significant_events: "在此地发生的重大事件"
+      query:
+        get_location_history:
+          returns: "地点的时间线"
+        get_battles_at_location:
+          returns: "在此地发生的战斗"
+
+    player:
+      description: "玩家记忆（同 character）"
+      layers: [short_term, long_term]
+      special: active_tags
+      note: "玩家也是 character 类型，不需要额外数据结构"
+
+  # ==========================================================
+  # Entity Memory Pipeline
+  # ==========================================================
+
+  pipeline:
+
+    on_event:
+      description: "事件发生时，为所有相关实体创建记忆"
+      trigger: "Step 9 Events → create_memories"
+      rules:
+        - "事件的每个 participant → 创建 memory_entry"
+        - "如果 participant 是 treasure → 创建 treasure_memory"
+        - "如果 participant 是 faction → 创建 faction_memory"
+        - "如果事件涉及灵脉 → 创建 vein_memory"
+        - "如果事件涉及地点 → 创建 location_memory"
+
+    ownership_change:
+      description: "物品所有权变更"
+      trigger: "Transaction: item.owner_id 变更"
+      creates:
+        - "旧主人: memory_entry (失去 XX)"
+        - "新主人: memory_entry (获得 XX)"
+        - "物品: ownership_chain 追加记录"
+
+    faction_event:
+      description: "宗门级事件"
+      trigger: "Step 6 Faction → decision_making 产生行动"
+      creates:
+        - "宗门: faction_memory (年鉴追加)"
+        - "相关 NPC: memory_entry (如领导决策)"
+
+  # ==========================================================
+  # Query Examples
+  # ==========================================================
+
+  queries:
+
+    treasure_chain:
+      description: "斩仙剑的所有权链"
+      query: "entity_memory(treasure, zhanxian_sword) → ownership_chain"
+      result_format: "[{owner, from_date, to_date, acquisition}, ...]"
+
+    faction_timeline:
+      description: "青云宗 400 年大事记"
+      query: "entity_memory(faction, qingyun) → get_chronology()"
+      result_format: "[{date, event, importance}, ...]"
+
+    vein_lifecycle:
+      description: "青云主脉从发现到枯竭"
+      query: "entity_memory(spirit_vein, qingyun_main) → get_quality_timeline()"
+      result_format: "[{date, qi_output, status}, ...]"

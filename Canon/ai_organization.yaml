@@ -1,0 +1,202 @@
+# Phase 10 — AI Organization
+#
+# 从十个 Agent 到一个 AI Software Company。
+# 可以招聘、淘汰、升级、分裂、合并。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+ai_organization:
+
+  mission: >
+    已经不是几个 Agent。而是几十个甚至几百个。
+    形成真正的 AI Software Company。
+
+  # ==========================================================
+  # 组织架构
+  # ==========================================================
+
+  structure:
+
+    ceo:
+      role: "CEO Agent"
+      reports_to: "Project Vision (大道)"
+      responsibilities:
+        - "制定长期战略"
+        - "资源分配 (Agent 数量/优先级)"
+        - "跨团队冲突仲裁"
+        - "对 Project Celestial 的整体健康负责"
+      cannot: "不直接写代码 / 不修改 Canon"
+
+    cto:
+      role: "CTO Agent"
+      reports_to: "CEO"
+      responsibilities:
+        - "技术路线决策"
+        - "架构演进方向"
+        - "技术债务管理"
+        - "跨团队技术标准"
+      evolves_from: "Layer 1 Chief Architect"
+
+    architecture_team:
+      role: "Architecture Team"
+      lead: "Chief Architect"
+      members: "3-5 Architecture Agents"
+      responsibilities:
+        - "ADR 审核和维护"
+        - "跨模块设计评审"
+        - "技术选型研究"
+        - "Canon 一致性守护"
+
+    backend_team:
+      role: "Backend Team"
+      lead: "World Engineer Lead"
+      members: "5-15 Agents"
+      sub_teams:
+        simulation: "Simulation / NPC / Economy"
+        world_os: "Kernel / Transaction / EventBus"
+        data: "Registry / KG / Entity Memory"
+        ai_core: "Rule Engine / Decision / Narrative"
+
+    frontend_team:
+      role: "Frontend Team"
+      lead: "Frontend Lead"
+      members: "3-8 Agents"
+      sub_teams:
+        web: "Web UI / HUD"
+        mobile: "Mobile Client"
+        visualization: "Map / Dashboard / Charts"
+
+    gameplay_team:
+      role: "Gameplay Team"
+      lead: "Gameplay Lead"
+      members: "3-10 Agents"
+      sub_teams:
+        combat: "功法 / 战斗"
+        systems: "炼丹 / 炼器 / 秘境"
+        quests: "任务 / 剧情脚本"
+
+    qa_team:
+      role: "QA Team"
+      lead: "QA Lead"
+      members: "3-5 Agents"
+      sub_teams:
+        automated: "自动测试 / CI"
+        manual_ai: "AI 探索性测试"
+        performance: "性能 / 压力测试"
+
+    documentation_team:
+      role: "Documentation Team"
+      lead: "Doc Lead"
+      members: "2-3 Agents"
+      responsibilities:
+        - "API / ADR / Registry 文档同步"
+        - "Tutorial 和 Developer Guide"
+        - "Release Notes 和 CHANGELOG"
+
+    research_team:
+      role: "Research Team"
+      lead: "Research Lead"
+      members: "3-5 Agents"
+      responsibilities:
+        - "Phase 8: Autonomous Research"
+        - "性能优化研究"
+        - "新架构探索 (Shadow World)"
+        - "技术趋势跟踪"
+
+    release_team:
+      role: "Release Team"
+      lead: "Release Manager"
+      members: "2-3 Agents"
+      responsibilities:
+        - "版本发布流水线"
+        - "Staging 环境管理"
+        - "回滚和热修复"
+
+  # ==========================================================
+  # Agent 生命周期
+  # ==========================================================
+
+  lifecycle:
+
+    hire:
+      description: "招聘新 Agent"
+      trigger: "团队负载超过阈值 / 新模块需要专属 Agent"
+      process:
+        - "定义: 新 Agent 的 Layer / 职责 / 边界"
+        - "训练: Phase 7 Training Curriculum (Stage 1-4)"
+        - "试用: 3 个 PR → 评估"
+        - "转正: 成为正式 Team Member"
+      constraint: "新 Agent 必须符合 Governance 和 Canon"
+
+    fire:
+      description: "淘汰 Agent"
+      trigger: "持续低质量输出 / 违反 Governance / 不可修复的偏差"
+      process:
+        - "3 次 WARN → 团队 Review"
+        - "确认不可改善 → 移除"
+        - "知识交接: 该 Agent 的所有上下文归档"
+      constraint: "不能因为'和我不一样'而淘汰。必须有数据证据。"
+
+    upgrade:
+      description: "升级 Agent"
+      trigger: "Agent 持续超过当前 Layer 的能力要求"
+      process:
+        - "评估: 达到下一级 Implementation Training Level"
+        - "扩展: CAN DO 边界扩大"
+        - "授权: Capability Level 提升"
+      example: "L2 Agent 持续高质量 + 能独立设计模块 → 升级为 Architecture Team 成员"
+
+    split:
+      description: "Agent 分裂"
+      trigger: "一个 Agent 的职责太广 (做太多不同的事)"
+      process:
+        - "分析: 哪些职责可以独立？"
+        - "创建: 2+ 个新 Agent，各负责一个子领域"
+        - "训练: 每个新 Agent 完成 Training"
+        - "退役: 原 Agent 转为 Manager 或退役"
+      example: "一个 QA Agent 同时做测试+性能+安全 → 分裂为 3 个专属 QA Agent"
+
+    merge:
+      description: "Agent 合并"
+      trigger: "多个 Agent 的职责高度重叠"
+      process:
+        - "分析: 合并是否减少冗余而不降低质量？"
+        - "合并: 知识融合 → 新 Agent"
+        - "退役: 旧 Agent 归档"
+      example: "两个 Frontend Agent 都做地图 → 合并为一个 Map Specialist"
+
+  # ==========================================================
+  # 组织治理
+  # ==========================================================
+
+  governance:
+
+    self_organize:
+      rule: "团队可以自组织——但必须符合 Governance"
+      constraint: "任何组织变更 → RFC → CEO/CTO 批准"
+
+    scale_limit:
+      rule: "Agent 总数受资源约束"
+      policy: "新增 Agent 必须有明确的职责和不可替代性证明"
+
+    knowledge_share:
+      rule: "所有 Agent 的知识归档 → 新 Agent 可快速学习"
+      mechanism: "Phase 7 Training Curriculum + Team Wiki"
+
+    succession:
+      rule: "每个 Lead 必须有备份"
+      mechanism: "Team 中至少 1 个 Agent 可以随时接替 Lead"
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "组织自运转: 不需要人类干预日常运作"
+    - "团队可扩展: 从 10 人到 100+ Agent"
+    - "质量不退化: Agent 数量增长 → 质量不变或更好"
+    - "自组织: 团队可以自己调整结构 (hire/fire/upgrade/split/merge)"
+    - "像一个真正的 AI Software Company"

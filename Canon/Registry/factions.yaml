@@ -1,0 +1,47 @@
+# Faction Registry
+# 势力类型——所有动态组织的基础分类
+
+faction_types:
+  - id: sect
+    name: 宗门
+    description: 修炼者组织，以传承功法为核心
+    structure: [掌门, 长老, 执事, 内门弟子, 外门弟子, 杂役]
+    
+  - id: kingdom
+    name: 国家
+    description: 凡人或修士王朝
+    structure: [帝王, 官员, 军队, 平民]
+    
+  - id: guild
+    name: 商会
+    description: 商业组织，以贸易为核心
+    structure: [会长, 管事, 商队, 伙计]
+    
+  - id: demonic_sect
+    name: 魔教
+    description: 魔道修炼者组织
+    structure: [教主, 护法, 魔将, 魔兵]
+    
+  - id: clan
+    name: 家族
+    description: 血缘关系的修炼势力
+    structure: [族长, 长老, 族人, 旁系]
+    
+  - id: alliance
+    name: 联盟
+    description: 多势力临时或长期联合
+    structure: [盟主, 成员势力]
+
+faction_attributes:
+  - population
+  - treasury
+  - resources
+  - spirit_veins
+  - influence
+  - diplomatic_relations
+  - war_state
+
+# 规则
+# - 势力是动态组织，每日演化
+# - 势力可以根据资源和目标自主决策
+# - 此文件是唯一定义源

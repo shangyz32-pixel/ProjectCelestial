@@ -1,0 +1,228 @@
+# Canon Loader Specification
+#
+# Phase 4, Module 1: Canon Loader
+# 将所有 Volume/Registry/ADR/Engine 加载为统一 World Model
+
+version: "1.0.0"
+status: Canon
+phase: "4.0"
+
+---
+
+canon_loader:
+
+  description: >
+    将 61 个 Canon 文件加载为统一、可查询、可验证、可热更新的
+    Canonical World Model。这是 Phase 4 所有 Engine 的基础设施。
+
+  # ==========================================================
+  # Step 1: File Discovery
+  # ==========================================================
+
+  discovery:
+    scan_paths:
+      - "docs/"          # Volume I~V
+      - "canon/registry/" # Registry YAML
+      - "engine/"         # Engine Specs
+      - "adr/"            # ADR 决策记录
+      - "canon/INDEX.md"  # Canon 索引
+
+    file_types:
+      yaml: [".yaml", ".yml"]
+      markdown: [".md"]
+
+    dependency_graph:
+      action: 构建文件依赖图
+      from: "文件中的引用声明（如 rule_engine.yaml → registry/realms.yaml）"
+      to: "被引用文件"
+      check: "所有引用目标必须存在 → 否则 ERROR"
+
+  # ==========================================================
+  # Step 2: Parse
+  # ==========================================================
+
+  parse:
+
+    yaml_files:
+      description: 结构化数据解析
+      rules:
+        - "Registry/*.yaml → 数据表（Realm/SpiritRoot/...）"
+        - "rule_engine.yaml → 规则管线定义"
+        - "knowledge_graph.yaml → 图结构定义"
+        - "simulation_loop.yaml → 循环步骤定义"
+        - "world_kernel.yaml → Kernel 配置"
+        - "canon_validator.yaml → 校验规则"
+      output: "structured_data"
+
+    markdown_volumes:
+      description: 叙事性文档解析
+      rules:
+        - "Volume I~V → 章节树 + 关键概念提取"
+        - "ADR-0001~0011 → 决策记录（标题/日期/状态/决策/后果）"
+      output: "semantic_documents"
+
+    cross_reference_extraction:
+      description: 从所有文件中提取交叉引用
+      patterns:
+        - "registry/<name>.yaml"
+        - "volume<num>_<topic>.md"
+        - "adr-<num>-<topic>.md"
+        - "rule_engine.yaml → actions.<name>"
+        - "knowledge_graph.yaml → node_types.<name>"
+        - "参见 <file>"
+        - "source: <file>"
+
+  # ==========================================================
+  # Step 3: Cross-Validate
+  # ==========================================================
+
+  validate:
+
+    registry_completeness:
+      description: Registry 中每个概念必须在 Volume 中有对应描述
+      checks:
+        - "realms.yaml 的每个境界 → Volume III 中有定义"
+        - "spirit_roots.yaml 的品质/属性 → Volume III 中有定义"
+        - "tribulation.yaml 的天劫类型 → Volume III 中有定义"
+        - "weather.yaml 的天气类型 → Volume II 中有定义"
+
+    reference_integrity:
+      description: 所有文件引用必须指向存在的文件
+      checks:
+        - "rule_engine.yaml 引用的 Registry 文件必须存在"
+        - "simulation_loop.yaml 引用的 Engine 必须存在"
+        - "knowledge_graph.yaml 引用的 Schema 必须存在"
+
+    cross_consistency:
+      description: 同一概念在不同文件中的定义不冲突
+      checks:
+        - "Volume III: 境界数 = Registry/Realm.yaml: 条目数"
+        - "Volume II: 天气类型 ⊆ Registry/weather.yaml: 类型"
+        - "Volume IV: Tick 步数 = simulation_loop.yaml: steps 数"
+        - "ENGINE_COUNT in world_state = 实际注册 Engine 数"
+
+    adr_coverage:
+      description: 每个 Phase 3 Stage 至少有一个 ADR
+      checks:
+        - "Stage 1 (Canon Ingestion) → ADR-0001, ADR-0002"
+        - "Stage 2 (Rule Engine) → ADR-0003"
+        - "Stage 3 (Knowledge Graph) → ADR-0004"
+        - "Stage 4 (NPC Memory) → ADR-0005"
+        - "Stage 5 (Narrative) → ADR-0007"
+        - "Stage 6 (Simulation Loop) → ADR-0006"
+        - "Stage 7 (Emergent Narrative) → ADR-0007"
+        - "Stage 8 (Canon Validator) → ADR-0008"
+
+    severity:
+      ERROR:
+        action: "阻止加载，返回错误详情"
+        examples:
+          - "引用不存在的文件"
+          - "Registry 与 Volume 数据矛盾"
+      WARN:
+        action: "加载继续，记录警告"
+        examples:
+          - "ADR 覆盖不完整"
+          - "概念在 Volume 中缺少定义"
+
+  # ==========================================================
+  # Step 4: Index
+  # ==========================================================
+
+  index:
+    description: 为 World Model 建立多维索引
+
+    by_concept:
+      example: "查询 '金丹境' → 返回所有提及的文件和位置"
+
+    by_file:
+      example: "查询 'rule_engine.yaml' → 返回文件所有引用和被引用关系"
+
+    by_adr:
+      example: "查询 'ADR-0005' → 返回决策内容和影响范围"
+
+    by_version:
+      example: "查询 'v1.0.0' → 返回该版本的完整 World Model 快照"
+
+  # ==========================================================
+  # Step 5: Build Model
+  # ==========================================================
+
+  build:
+    output: canonical_world_model (见 canonical_world_model.yaml)
+    components:
+      - "world_rules:         来自 Volume I~II"
+      - "cultivation_system:  来自 Volume III + Registry"
+      - "engine_specs:        来自 engine/*.yaml"
+      - "entity_templates:    来自 Registry + world/npcs/"
+      - "decision_records:    来自 adr/*.md"
+      - "validation_rules:    来自 canon_validator.yaml"
+
+  # ==========================================================
+  # Step 6: Version Snapshot
+  # ==========================================================
+
+  snapshot:
+    action: "保存当前加载的完整状态"
+    includes:
+      - "canon_version: '1.0.0'"
+      - "file_manifest: { path: sha256 }  (每个文件的哈希)"
+      - "parse_timestamp"
+      - "validation_report: { errors, warnings }"
+      - "model_checksum: 整个 World Model 的哈希"
+    storage: "canon/snapshots/v1.0.0.yaml"
+
+  # ==========================================================
+  # Step 7: Diff (加载新版本时)
+  # ==========================================================
+
+  diff:
+    trigger: "加载版本号与当前版本不同时"
+    output:
+      added_files: ["新文件列表"]
+      removed_files: ["删除的文件列表"]
+      modified_files:
+        - path: "文件路径"
+          diff: "内容变更摘要"
+          impact: "受影响的 Engine 列表"
+      breaking_changes:
+        - description: "破坏性变更"
+          affected: "受影响组件"
+          migration: "迁移建议"
+
+  # ==========================================================
+  # Step 8: Hot-Reload
+  # ==========================================================
+
+  hot_reload:
+    procedure:
+      1_load_new:
+        action: "加载新 Canon 到临时 Model"
+        isolation: "不影响当前运行的世界"
+
+      2_validate:
+        action: "对新 Model 执行完整 Step 3 校验"
+        on_failure: "保留旧 Model，返回校验错误"
+
+      3_compare:
+        action: "生成 diff 报告 (Step 7)"
+        check: "是否有破坏性变更？"
+
+      4_atomic_switch:
+        action: "原子替换: old_model → new_model"
+        guarantee: "切换在单次操作中完成，无中间状态"
+
+      5_notify:
+        action: "通知受影响 Engine 重新加载规则"
+        via: EventBus → CanonUpdated event
+        payload: { old_version, new_version, affected_engines }
+
+      6_verify:
+        action: "验证新 Model 下的世界状态一致性"
+        check: "现有世界状态是否与新 Canon 兼容？"
+        on_conflict: "标记为 [migration_needed]，不强制修改世界状态"
+
+    guarantees:
+      - "世界运行不中断"
+      - "当前世界状态不丢失"
+      - "切换失败 → 自动回滚到旧 Model"

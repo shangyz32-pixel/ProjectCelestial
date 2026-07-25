@@ -1,0 +1,226 @@
+# Causal Chain Detection
+#
+# 因果链检测规则
+# 在每次 Tick 的 Step 9 Events 之后运行
+#
+# 核心命题：叙事 = 因果链。故事不是写的，是检测出来的。
+
+version: "1.0"
+status: Canon
+
+---
+
+# ============================================================
+# 检测时机
+# ============================================================
+
+pipeline_position:
+  after: simulation_loop.step_09_events
+  before: simulation_loop.step_10_history
+  description: >
+    在所有事件生成并写入 NPC 记忆之后，
+    在写入历史之前，检测事件之间的因果关系。
+
+---
+
+# ============================================================
+# 四种因果类型
+# ============================================================
+
+causality_types:
+
+  # --- 类型 1: 资源因果 ---
+  resource:
+    description: >
+      事件 A 改变了某种资源的状态（灵脉/灵石/丹药/灵药...），
+      事件 B 是对该资源变化的直接响应。
+
+    detection:
+      scan:
+        - "事件 A 的 state_changes 中包含资源字段（qi_density, treasury, herb_count...）"
+        - "事件 B 的 trigger 或 narrative 中引用了该资源"
+        - "事件 B 的参与者中包含了受该资源影响最大的实体"
+
+      time_window: "1-30 世界日（越近越强）"
+      confidence_formula: >
+        confidence = 1.0 / (time_gap_days + 1)
+                   × resource_impact_factor
+                   × entity_dependency_factor
+
+      example:
+        event_a:
+          type: "qi_depletion"
+          description: "青云主脉灵气下降 60%"
+          resource_changed: "青云山脉.qi_density: 150 → 60"
+
+        event_b:
+          type: "resource_crisis"
+          description: "青云宗宣布减少弟子月俸"
+          trigger: "treasury < safety_threshold"
+          time_gap: "5 天后"
+
+        chain: "灵脉枯竭 → 宗门资源不足"
+        confidence: 0.95
+
+  # --- 类型 2: 位置因果 ---
+  location:
+    description: >
+      事件 A 导致实体移动到新位置，
+      事件 B 在该新位置发生，且 B 的参与者中包含被移动的实体。
+
+    detection:
+      scan:
+        - "事件 A 的 state_changes 包含 location 变更"
+        - "事件 B 的 location 与 A 的目标位置相同或相邻"
+        - "事件 B 的参与者中有事件 A 中移动的实体"
+
+      time_window: "0-7 世界日"
+      confidence_formula: >
+        confidence = 1.0 / (time_gap_days + 1)
+                   × location_match (same=1.0, adjacent=0.7, same_region=0.4)
+
+      example:
+        event_a:
+          type: "resource_expedition"
+          description: "青云宗弟子外出寻找替代灵脉"
+          entity_moved: "npc_disciples × 10"
+          target_location: "黑风岭"
+
+        event_b:
+          type: "beast_encounter"
+          description: "弟子在黑风岭遭遇金瞳妖狼群"
+          location: "黑风岭"
+          time_gap: "3 天后"
+
+        chain: "弟子外出寻找资源 → 遭遇妖兽"
+        confidence: 0.85
+
+  # --- 类型 3: 关系因果 ---
+  relationship:
+    description: >
+      事件 A 改变了 KG 中的关系边，
+      事件 B 是由新关系驱动的行为。
+
+    detection:
+      scan:
+        - "事件 A 触发 KG edge 变更（创建/更新/删除）"
+        - "事件 B 的 behavior_decision 来源标签与 KG 新边类型一致"
+        - "事件 B 的参与者与 KG 边的两端一致"
+
+      time_window: "1-365 世界日（关系变化影响持久）"
+      confidence_formula: >
+        confidence = 1.0 / (log(time_gap_days + 1) + 1)
+                   × edge_intensity_factor
+                   × behavior_tag_strength_factor
+
+      example:
+        event_a:
+          type: "betrayal"
+          description: "张三背叛李四"
+          kg_change: "CREATE BETRAYED edge: 张三→李四"
+
+        event_b:
+          type: "revenge_attack"
+          description: "李四伏击张三"
+          behavior_source: "BETRAYED_BY tag, intensity=9"
+          time_gap: "30 天后"
+
+        chain: "背叛 → 复仇"
+        confidence: 0.90
+
+  # --- 类型 4: 信息因果 ---
+  information:
+    description: >
+      事件 A 产生了信息（发现/传闻/秘密），
+      NPC 在事件 B 中获知该信息并采取行动。
+
+    detection:
+      scan:
+        - "事件 A 的类型属于 discovery/revelation/secret"
+        - "存在信息传播边（新 NPC 获知了事件 A 的内容）"
+        - "事件 B 的 narrative 或 trigger 引用了事件 A 的信息内容"
+
+      time_window: "1-90 世界日"
+      confidence_formula: >
+        confidence = 1.0 / (time_gap_days / 10 + 1)
+                   × information_rarity_factor
+                   × npc_relevance_factor
+
+      example:
+        event_a:
+          type: "discovery"
+          description: "弟子在黑风岭发现上古遗迹入口"
+          info_generated: "ancient_ruin_location: 黑风岭深处"
+
+        event_b:
+          type: "faction_mobilization"
+          description: "三大势力同时向黑风岭派遣精英"
+          trigger: "获知上古遗迹情报"
+          time_gap: "15 天后"
+
+        chain: "获得古遗迹地图 → 多个势力争夺"
+        confidence: 0.88
+
+---
+
+# ============================================================
+# 检测算法
+# ============================================================
+
+algorithm:
+
+  name: "滑动窗口因果链检测"
+
+  on_new_event:
+    description: 每个新事件产生时，回溯检测它可能是什么事件的结果
+
+    steps:
+      1_categorize:
+        action: 确定新事件改变了什么（资源/位置/关系/信息）
+
+      2_backward_scan:
+        action: 在时间窗口中扫描所有先前事件
+        match:
+          - "先前事件改变的资源 == 新事件响应"
+          - "新事件的位置 == 先前事件的目标位置"
+          - "新事件的行为驱动标签 == 先前事件产生的关系"
+          - "新事件引用的信息 == 先前事件产生的信息"
+
+      3_calculate_confidence:
+        action: 对每个匹配计算置信度
+        threshold: "confidence >= 0.6 → 创建 LED_TO 边"
+
+      4_chain_extend:
+        action: >
+          如果新事件链接到已有因果链的末端事件，
+          自动延长该链。如果同时链接到多条链 → 链交汇。
+        record: "更新 causal_chain_index"
+
+  chain_merge:
+    description: 两条因果链可能在某个点交汇
+    example: >
+      链 A: 灵脉枯竭 → 宗门危机 → 弟子外出
+      链 B: 妖兽繁殖 → 黑风岭妖兽增多
+      交汇点: 弟子在黑风岭遭遇妖兽（链 A 的位置事件 + 链 B 的生态事件）
+    action: "合并为一条分叉链，标注交汇点"
+
+---
+
+# ============================================================
+# 因果链数据结构
+# ============================================================
+
+causal_chain:
+  fields:
+    chain_id: "因果链唯一 ID"
+    root_event: "链的起始事件（根因）"
+    events: ["事件序列，按时间排序"]
+    edges: [{ from_event_id, to_event_id, causality_type, confidence }]
+    total_importance: "所有事件 importance 之和"
+    length: "事件数"
+    status: "active / completed / merged"
+    merge_points: ["与其他链的交汇点"]
+
+  promotion_threshold:
+    arc: "length >= 3 AND total_importance >= 15"
+    description: "满足条件 → 自动提升为叙事弧（见 narrative_arc.yaml）"

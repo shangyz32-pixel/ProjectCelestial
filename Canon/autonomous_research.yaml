@@ -1,0 +1,165 @@
+# Phase 8 — Autonomous Research
+#
+# AI 不再等待需求。自己发现问题、提出方案、实验、验证。
+# Hermes 像一个真正的高级工程师。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+autonomous_research:
+
+  mission: >
+    AI 不再等待需求。自己发现问题。自己提出方案。
+    自己实验。自己验证。Hermes 开始像真正的高级工程师。
+
+  # ==========================================================
+  # 自主循环
+  # ==========================================================
+
+  loop:
+    discover:
+      description: "自己发现问题"
+      sources:
+        - "Engineering Metrics (Phase 7 Ch11): Tick 时间趋势恶化"
+        - "Simulation Validator (Phase 5 Ch5): 经济崩溃预警"
+        - "Balance Validator (Phase 5 Ch7): 境界分布失衡"
+        - "Performance Validator (Phase 5 Ch9): 内存超线性增长"
+        - "Code Analysis: 模块复杂度 > 阈值"
+      output: "Problem Statement (问题描述 + 数据证据)"
+
+    analyze:
+      description: "分析根因"
+      process:
+        - "Profiling → 定位热点"
+        - "Code review → 找到瓶颈代码"
+        - "对比 Golden World → 确定退化时间点"
+        - "数据驱动: 不是猜测，是证据"
+      output: "Root Cause Analysis (根因 + 影响范围)"
+
+    propose:
+      description: "提出优化方案"
+      process:
+        - "方案设计: 怎么解决？"
+        - "替代方案: 还考虑过什么？"
+        - "预期效果: 预计提升多少？"
+        - "风险评估: 有什么副作用？"
+      output: "Proposal (方案 + 替代 + 预期 + 风险)"
+
+    experiment:
+      description: "Shadow World 实验"
+      process:
+        - "创建 Shadow World (克隆当前 World State)"
+        - "应用优化方案"
+        - "运行 10000 Tick → 对比生产"
+        - "验证: 功能一致 + 性能提升 + 无副作用"
+      output: "Experiment Results (数据对比)"
+
+    propose_rfc:
+      description: "生成 RFC"
+      condition: "实验验证通过"
+      process:
+        - "自动生成 RFC (背景/目标/设计/替代方案/实验结果/风险)"
+        - "提交给 Layer 1 Chief Architect"
+        - "等待批准: Approved → 纳入开发计划"
+      output: "RFC Document"
+
+    implement:
+      description: "实施 (Approved RFC)"
+      process:
+        - "Implementation Training Level 4/5 (重构/新子系统)"
+        - "Golden World 回归"
+        - "PR → Review → Merge"
+
+    verify:
+      description: "验证生产效果"
+      process:
+        - "部署后监控 Engineering Metrics"
+        - "确认指标改善 (如 Tick 时间 -35%)"
+        - "确认无 Regression"
+        - "记录: Problem → Solution → Result"
+
+  # ==========================================================
+  # Shadow World
+  # ==========================================================
+
+  shadow_world:
+    description: "生产世界的安全克隆——用于实验"
+    creation:
+      - "从最新 Snapshot 克隆完整 World State"
+      - "隔离: Shadow World 的修改不影响生产"
+    usage:
+      - "运行实验性修改"
+      - "N倍速运行 (100x → 快速验证长期效果)"
+      - "对比: Shadow vs Production (同样的 seed)"
+    cleanup:
+      - "实验结束后销毁 Shadow World"
+      - "实验结果保留 (对比数据)"
+
+  # ==========================================================
+  # 示例: Tick 性能优化
+  # ==========================================================
+
+  example_tick_optimization:
+
+    discover:
+      metric: "Engineering Metrics → tick_time_trend"
+      observation: "Tick 时间从 0.8s 增长到 1.4s (过去 500 Tick)"
+      problem: "Simulation Tick 太慢，持续恶化"
+
+    analyze:
+      profiling: "Step 4 NPC: 占 65% Tick 时间"
+      root_cause: "encounter_detection 是 O(N²) — 每个 NPC 扫描所有其他 NPC"
+      impact: "当前仅 50 NPC → 不明显。10000 NPC → Tick 会超 30 秒"
+
+    propose:
+      solution: "Spatial Index: 将 NPC 按位置分桶 (grid)，只检查相邻桶"
+      alternative: "KD-Tree → 更精确但实现复杂"
+      expected: "O(N²) → O(N × avg_bucket_size)，预计提升 60%"
+      risk: "分桶边界 NPC 可能漏检 (需 overlap 检测)"
+
+    experiment:
+      shadow_world: "克隆当前 50 NPC 世界"
+      scale_test: "注入 10000 NPC → Shadow World 中运行"
+      result:
+        before: "Tick: 32.4s"
+        after: "Tick: 1.1s"
+        improvement: "96.6% (在 10000 NPC 规模下)"
+        regression: "0 (Golden World 对比一致)"
+
+    propose_rfc:
+      rfc_title: "RFC: Spatial Index for NPC Encounter Detection"
+      rfc_content: "自动生成 (背景/根因/方案/实验数据/风险)"
+      submit: "→ Layer 1 Chief Architect"
+
+  # ==========================================================
+  # AI 行为准则
+  # ==========================================================
+
+  principles:
+    data_driven:
+      rule: "所有发现必须有数据证据，不凭直觉"
+
+    safe_experiment:
+      rule: "所有实验在 Shadow World 中——不影响生产"
+
+    rfc_required:
+      rule: "任何修改必须走 RFC 流程——即使是 AI 自己发现的"
+
+    no_bypass:
+      rule: "发现 Canon 矛盾 → 走 ADR。不变通，不绕过"
+
+    share_knowledge:
+      rule: "实验结果 → 团队共享 → 固化为知识"
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "AI 主动发现 ≥ 1 个性能/架构问题 per Release"
+    - "AI 独立完成: 发现 → 分析 → 实验 → RFC → 实施 → 验证"
+    - "Shadow World 实验机制运作正常"
+    - "Engineering Metrics 趋势持续向好"
+    - "AI 不需要等待人类需求来推动优化"

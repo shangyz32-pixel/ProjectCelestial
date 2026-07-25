@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Project Celestial — Gameplay</title>
+<style>
+:root{--bg:#080c14;--p:#0d1525;--b:#1a2a45;--t:#9ca3af;--d:#4b5563;--a:#38bdf8;--g:#22c55e;--y:#eab308;--r:#ef4444;--hp:#f87171;--s:#a78bfa;--rl:#38bdf8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t);font:13px monospace;display:flex;justify-content:center;align-items:center;min-height:100vh}
+main{width:700px;background:var(--p);border:1px solid var(--b);border-radius:6px;padding:24px}
+h1{font-size:18px;color:var(--a);text-align:center;margin-bottom:16px}
+h2{font-size:14px;color:var(--a);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--b)}
+.msg{text-align:center;color:var(--y);margin:8px 0;min-height:20px;font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:rgba(56,189,248,0.03);border:1px solid var(--b);border-radius:4px;padding:12px}
+.card .l{font-size:10px;color:var(--d)}.card .v{font-size:20px;color:var(--a);font-weight:bold}
+button{background:var(--p);color:var(--t);border:1px solid var(--b);padding:8px 16px;border-radius:4px;cursor:pointer;font:13px monospace;margin:4px}
+button:hover{border-color:var(--a);color:var(--a)}
+button.primary{background:rgba(56,189,248,0.1);border-color:var(--a);color:var(--a)}
+button.danger{color:var(--r)}
+input{background:var(--bg);color:var(--t);border:1px solid var(--b);padding:8px 12px;border-radius:4px;font:13px monospace;width:100%}
+.bar{height:6px;border-radius:3px;background:var(--b);overflow:hidden;margin:4px 0}
+.bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.bc{background:var(--rl)}.bh{background:var(--hp)}.bs{background:var(--s)}
+.area{background:var(--bg);border:1px solid var(--b);border-radius:4px;padding:10px;margin:6px 0;cursor:pointer}
+.area:hover{border-color:var(--a)}.area.locked{opacity:0.5}
+.area h3{font-size:12px;color:var(--a)}.area p{font-size:10px;color:var(--d)}
+.inv{font-size:11px;color:var(--d)}.inv span{color:var(--a);margin:0 8px}
+#log{max-height:200px;overflow-y:auto;font-size:10px;margin-top:8px;background:var(--bg);padding:8px;border-radius:4px}
+#log div{padding:1px 0;color:var(--d)}#log div.bt{color:var(--y)}
+</style></head><body>
+<main>
+<h1>◈ Project Celestial — 修炼</h1>
+<div id="msg" class="msg"></div>
+
+<div id="create-screen">
+  <h2>创建修士</h2>
+  <input id="char-name" placeholder="道号..." value="凌云子">
+  <div style="text-align:center;margin-top:12px"><button class="primary" onclick="createChar()">踏入修仙之路</button></div>
+</div>
+
+<div id="game-screen" style="display:none">
+  <div class="grid">
+    <div class="card"><div class="l">道号</div><div class="v" id="pn" style="font-size:16px">-</div></div>
+    <div class="card"><div class="l">境界</div><div class="v" id="pr" style="font-size:16px">Lv1</div></div>
+    <div class="card"><div class="l">修炼进度</div><div class="bar"><div class="bar-fill bc" id="pb"></div></div><div class="v" id="pv" style="font-size:13px">0%</div></div>
+    <div class="card"><div class="l">突破次数</div><div class="v" id="pbr" style="font-size:16px">0</div></div>
+    <div class="card"><div class="l">生命</div><div class="bar"><div class="bar-fill bh" id="hb"></div></div><div class="v" id="hv" style="font-size:13px">100/100</div></div>
+    <div class="card"><div class="l">体力</div><div class="bar"><div class="bar-fill bs" id="sb"></div></div><div class="v" id="sv" style="font-size:13px">100/100</div></div>
+    <div class="card"><div class="l">当前区域</div><div class="v" id="pa" style="font-size:13px">翠竹林</div></div>
+    <div class="card"><div class="l">背包</div><div class="inv" id="pinv">-</div></div>
+  </div>
+
+  <h2>修炼</h2>
+  <div style="text-align:center">
+    <div id="bt-ready" style="display:none;margin:8px 0;padding:10px;background:rgba(234,179,8,0.08);border:1px solid var(--y);border-radius:4px">
+      <div style="color:var(--y);font-weight:bold;margin-bottom:8px">⚡ 修为已满 — 准备突破！</div>
+      <div style="font-size:11px;color:var(--d)" id="bt-info"></div>
+      <div style="margin-top:8px">
+        <button class="primary" onclick="attemptBreakthrough(false)">突破！(成功率 <span id="bt-chance">30</span>%)</button>
+        <button class="primary" onclick="attemptBreakthrough(true)" id="bt-jade" style="display:none">用灵石突破 (成功率 <span id="bt-jade-chance">50</span>%)</button>
+        <button onclick="cultivate('normal')">压制修为 (+2%成功率)</button>
+      </div>
+    </div>
+    <div id="bt-normal">
+      <button onclick="cultivate('normal')">普通修炼 (+2%)</button>
+      <button onclick="cultivate('safe')">稳妥修炼 (+0.5%)</button>
+      <button onclick="cultivate('risky')" style="color:var(--hp)">冒险修炼 (+5%, 15%走火入魔)</button>
+      <button onclick="cultivate('normal',true)" id="bt-herb" style="display:none">服用灵草 (+10%)</button>
+    </div>
+  </div>
+
+  <h2>探索区域</h2>
+  <div id="areas"></div>
+
+  <div id="log"></div>
+</div>
+</main>
+
+<script>
+let _tick=0;
+const $=s=>document.getElementById(s);
+
+function log(msg,cls){const d=document.createElement("div");if(cls)d.className=cls;d.textContent=`T${_tick}: ${msg}`;$("log").prepend(d)}
+
+async function G(p){return(await fetch(p)).json()}
+async function P(p,b){return(await fetch(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})})).json()}
+
+async function createChar(){
+  const name=$("char-name").value||"修士";
+  await P("/api/game/player/create",{name});
+  $("create-screen").style.display="none";
+  $("game-screen").style.display="block";
+  refresh();
+}
+
+async function refresh(){
+  const p=await G("/api/game/player");
+  if(!p.player)return;
+  const d=p.player;
+  $("pn").textContent=d.name;$("pr").textContent="Lv"+d.realm_id;
+  const cv=(d.cultivation*100).toFixed(1);$("pb").style.width=cv+"%";$("pv").textContent=cv+"%";
+  $("pbr").textContent=d.breakthroughs;
+  $("hb").style.width=Math.round(d.hp_current/d.hp_max*100)+"%";$("hv").textContent=d.hp_current+"/"+d.hp_max;
+  $("sb").style.width=Math.round(d.stamina_current/d.stamina_max*100)+"%";$("sv").textContent=d.stamina_current+"/"+d.stamina_max;
+  $("pa").textContent=d.current_area;
+
+  const res=await G("/api/game/player/resources");
+  const rdata = res.resources||{};
+  $("pinv").innerHTML=Object.entries(rdata).map(([k,v])=>`<span>${k}: ${v}</span>`).join("")||"空";
+
+  // Show herb/jade buttons if resources available
+  $("bt-herb").style.display = (rdata.spirit_herb > 0) ? "inline" : "none";
+  $("bt-jade").style.display = (rdata.jade_shard > 0) ? "inline" : "none";
+
+  const areas=await G("/api/game/areas");
+  $("areas").innerHTML=areas.areas.map(a=>{
+    const unlocked=a.unlocked||a.req_realm<=d.realm_id;
+    return`<div class="area${unlocked?'':' locked'}" onclick="${unlocked?`explore('${a.id}')`:'void(0)'}"><h3>${a.name} ${unlocked?'':'🔒 Lv'+a.req_realm}</h3><p>${a.desc} | Qi:${a.qi} | ${a.resources.join(", ")}</p>${unlocked&&a.id===d.current_area?`<button onclick="event.stopPropagation();gather('${a.resources[0]}')">采集 ${a.resources[0]}</button>`:""}</div>`;
+  }).join("");
+}
+
+async function cultivate(mode, useHerb){
+  const r=await P("/api/game/cultivate",{mode,use_herb:useHerb});
+  $("msg").textContent=r.msg||""; $("msg").style.color="var(--y)";
+  if (r.breakthrough_ready) {
+    $("bt-ready").style.display="block"; $("bt-normal").style.display="none";
+    const bonus = (r.bonus || 0) * 100;
+    $("bt-info").textContent = bonus > 0 ? `已压制修为，额外成功率 +${bonus.toFixed(0)}%` : "";
+    $("bt-chance").textContent = Math.round(30 + bonus);
+    $("bt-jade-chance").textContent = Math.round(50 + bonus);
+  }
+  refresh();
+}
+
+async function attemptBreakthrough(useJade){
+  const r=await P("/api/game/breakthrough/attempt",{use_jade:useJade});
+  $("msg").textContent=r.msg||""; $("msg").style.color = r.success ? "var(--g)" : "var(--r)";
+  $("bt-ready").style.display="none"; $("bt-normal").style.display="block";
+  setTimeout(()=>{$("msg").style.color="var(--y)"},3000);
+  refresh();
+}
+async function cultivateBulk(){for(let i=0;i<10;i++){await P("/api/game/cultivate");}refresh();$("msg").textContent="苦修完毕";}
+async function explore(area){await P("/api/game/explore",{area});$("msg").textContent="前往新区域...";refresh()}
+async function gather(resource){await P("/api/game/gather",{resource});$("msg").textContent=`采集到 ${resource}`;refresh()}
+
+refresh();setInterval(refresh,3000);
+</script></body></html>

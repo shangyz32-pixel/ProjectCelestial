@@ -1,0 +1,119 @@
+# Spirit Root Registry
+# 灵根 = 品质 (Quality) × 属性 (Affinity)
+
+# 品质等级
+quality:
+  - id: waste
+    name: 废灵根
+    order: 0
+    cultivation_speed: 0.3
+    realm_cap: foundation
+    description: 几乎无法修炼
+
+  - id: mortal
+    name: 凡灵根
+    order: 1
+    cultivation_speed: 0.6
+    realm_cap: golden_core
+    description: 资质平庸
+
+  - id: true
+    name: 真灵根
+    order: 2
+    cultivation_speed: 1.0
+    realm_cap: nascent_soul
+    description: 资质良好
+
+  - id: earth
+    name: 地灵根
+    order: 3
+    cultivation_speed: 1.5
+    realm_cap: spirit_severing
+    description: 一方天才
+
+  - id: heaven
+    name: 天灵根
+    order: 4
+    cultivation_speed: 2.0
+    realm_cap: void_refining
+    description: 天骄之资
+
+  - id: saint
+    name: 圣灵根
+    order: 5
+    cultivation_speed: 3.0
+    realm_cap: great_vehicle
+    description: 圣人之资
+
+  - id: immortal
+    name: 仙灵根
+    order: 6
+    cultivation_speed: 5.0
+    realm_cap: true_immortal
+    description: 天生气运，注定成仙
+
+  - id: chaos
+    name: 混沌灵根
+    order: 7
+    cultivation_speed: 10.0
+    realm_cap: transcendence
+    description: 混沌之资，亿中无一
+
+# 属性亲和
+affinity:
+  # 基础五行
+  - id: metal
+    name: 金
+    category: basic
+  - id: wood
+    name: 木
+    category: basic
+  - id: water
+    name: 水
+    category: basic
+  - id: fire
+    name: 火
+    category: basic
+  - id: earth_element
+    name: 土
+    category: basic
+
+  # 变异属性
+  - id: wind
+    name: 风
+    category: variant
+  - id: thunder
+    name: 雷
+    category: variant
+  - id: ice
+    name: 冰
+    category: variant
+
+  # 高阶属性
+  - id: light
+    name: 光
+    category: advanced
+  - id: darkness
+    name: 暗
+    category: advanced
+
+  # 本源属性（极其稀有）
+  - id: space
+    name: 空间
+    category: origin
+  - id: time
+    name: 时间
+    category: origin
+  - id: life
+    name: 生命
+    category: origin
+  - id: death
+    name: 死亡
+    category: origin
+
+# 规则
+# - 每个角色有 1 个品质 + 1~N 个属性亲和
+# - 属性亲和数不限制品质
+# - 灵根可以通过极其稀有的机缘进化（品质提升 1 级）
+# - 属性亲和不可改变
+# - 此文件是唯一灵根定义源

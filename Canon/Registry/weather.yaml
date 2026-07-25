@@ -1,0 +1,61 @@
+# Weather Registry
+# 天气类型——影响修炼、战斗、农业、贸易
+
+weather:
+  basic:
+    - id: clear
+      name: 晴
+      cultivation_mod: 0
+      description: 正常修炼
+    - id: rain
+      name: 雨
+      cultivation_mod: -5
+      description: 轻微影响水灵气感知
+    - id: snow
+      name: 雪
+      cultivation_mod: -10
+      description: 冰灵气增强，其他灵气减弱
+    - id: wind
+      name: 风
+      cultivation_mod: 5
+      description: 风灵气增强
+    - id: thunder
+      name: 雷
+      cultivation_mod: -15
+      description: 雷灵气极强，但修炼风险增加
+    - id: fog
+      name: 雾
+      cultivation_mod: -5
+      description: 神识受限
+
+  extreme:
+    - id: qi_tide
+      name: 灵潮
+      cultivation_mod: 50
+      rarity: rare
+      description: 灵气浓度暂时 +50%
+    - id: qi_storm
+      name: 灵暴
+      cultivation_mod: -30
+      rarity: rare
+      description: 灵气紊乱，修炼危险
+    - id: heavenly_fire
+      name: 天火
+      cultivation_mod: -50
+      rarity: very_rare
+      description: 天降火焰，极度危险
+    - id: nine_heavens_tribulation
+      name: 九天雷劫
+      cultivation_mod: 0
+      rarity: legendary
+      description: 仅在大突破时出现
+    - id: extreme_cold
+      name: 极寒
+      cultivation_mod: -40
+      rarity: rare
+      description: 冰封千里
+
+# 天气影响维度
+# - cultivation_mod: 修炼速度百分比调整
+# - 天气由季节、地形、灵气浓度共同决定
+# - 此文件是唯一定义源

@@ -1,0 +1,130 @@
+{
+  "snapshot_id": "snap_000065",
+  "tick": 65000,
+  "timestamp": {
+    "tick": 0,
+    "year": 847,
+    "month": 7,
+    "day": 23,
+    "hour": 6,
+    "season": "夏",
+    "era": "天历纪元"
+  },
+  "canon_version": "1.0.0",
+  "engine_version": "1.0.0",
+  "seed": 42,
+  "label": "Tick_65000",
+  "parent_snapshot": "snap_000064",
+  "world_state": {
+    "global": {
+      "time": {
+        "tick": 0,
+        "year": 847,
+        "month": 7,
+        "day": 23,
+        "hour": 6,
+        "season": "夏",
+        "era": "天历纪元"
+      },
+      "weather": {},
+      "qi": {},
+      "economy": {
+        "priceTable": {
+          "spirit_stone": 50,
+          "pill": 25,
+          "herb": 20
+        },
+        "resourcePool": {}
+      },
+      "wars": []
+    },
+    "entities": [
+      {
+        "id": "npc_0001",
+        "type": "npc",
+        "version": 195278,
+        "state": "active",
+        "components": {
+          "Identity": {
+            "name": "陈玄",
+            "age": 65200
+          },
+          "Realm": {
+            "realm_id": 253,
+            "cultivation_value": 0.41238636544012897,
+            "breakthroughs": 248,
+            "breakthrough_pending": false
+          },
+          "HP": {
+            "current": 100,
+            "max": 100
+          },
+          "Stamina": {
+            "current": 100,
+            "max": 100
+          }
+        },
+        "createdAt": "2026-07-25T00:50:50.538Z"
+      },
+      {
+        "id": "npc_0002",
+        "type": "npc",
+        "version": 195295,
+        "state": "active",
+        "components": {
+          "Identity": {
+            "name": "赵灵儿",
+            "age": 65180
+          },
+          "Realm": {
+            "realm_id": 242,
+            "cultivation_value": 0.727421234348052,
+            "breakthroughs": 239,
+            "breakthrough_pending": false
+          },
+          "HP": {
+            "current": 80,
+            "max": 80
+          },
+          "Stamina": {
+            "current": 100,
+            "max": 100
+          }
+        },
+        "createdAt": "2026-07-25T00:50:50.539Z"
+      },
+      {
+        "id": "npc_0003",
+        "type": "npc",
+        "version": 195294,
+        "state": "active",
+        "components": {
+          "Identity": {
+            "name": "王虎",
+            "age": 65220
+          },
+          "Realm": {
+            "realm_id": 244,
+            "cultivation_value": 0.9564864076804487,
+            "breakthroughs": 240,
+            "breakthrough_pending": false
+          },
+          "HP": {
+            "current": 120,
+            "max": 120
+          },
+          "Stamina": {
+            "current": 100,
+            "max": 100
+          }
+        },
+        "createdAt": "2026-07-25T00:50:50.539Z"
+      }
+    ],
+    "meta": {
+      "created_at": "2026-07-25T00:50:50.537Z",
+      "snapshot_id": 65
+    }
+  },
+  "event_log_length": 585867
+}

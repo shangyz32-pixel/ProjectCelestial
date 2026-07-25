@@ -1,0 +1,109 @@
+# Phase X — Autonomous Testing Agent
+#
+# 测试 Agent 的职责不是寻找 Bug。
+# 而是保证任何修改都经过完整验证。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+autonomous_testing_agent:
+
+  mission: >
+    Testing Agent 的职责不是寻找 Bug。
+    而是保证任何修改都经过完整验证。
+
+  workflow:
+    - "Developer Agent 提交代码"
+    - "Build — 自动编译"
+    - "Launch Game — 启动测试环境"
+    - "Create Test World — 一致性测试世界"
+    - "Create Test Character — 标准角色"
+    - "Execute Test Cases"
+    - "Collect Results"
+    - "Analyze Failures → Root Cause"
+    - "Generate Fix → 自动修复"
+    - "Run Tests Again → 重复直到通过"
+    - "Submit PR"
+
+  pipeline:
+
+    step_1_build:
+      checks: ["编译0错误", "依赖检查", "资源检查", "启动无崩溃"]
+      on_fail: "立即停止，输出错误"
+
+    step_2_environment:
+      creates:
+        test_world: "固定seed + 固定配置"
+        test_map: "标准测试地图"
+        test_character: "各境界标准角色"
+        test_enemy: "标准测试敌人"
+        test_equipment: "标准测试装备"
+
+    step_3_execute:
+      skill_checks:
+        - "是否成功释放"
+        - "是否进入冷却"
+        - "是否消耗资源"
+        - "是否造成伤害 (数值正确)"
+        - "是否播放动画/音效/特效"
+        - "是否记录日志"
+        - "是否同步 (多人模式)"
+
+    step_4_verify:
+      description: "Expected vs Actual"
+      tolerance: "伤害±2% / 冷却±1% / 资源消耗±0"
+
+    step_5_failure_analysis:
+      collects: ["Console Log", "Engine Log", "Stack Trace", "Performance Data", "World State", "Character State", "Skill State"]
+
+    step_6_repair:
+      rules: "生成修复方案 → 修改代码 → 重新编译 → 重跑测试"
+      forbidden: ["修改测试掩盖问题", "绕过验证", "修改Canon数据"]
+
+    step_7_regression:
+      scope: "全部相关测试 (旧技能/旧角色/旧地图)"
+      guarantee: "不引入新Bug"
+
+    step_8_performance:
+      metrics: ["CPU", "Memory", "FPS", "Network", "TickTime"]
+      budget: "Tick < 1s"
+
+    step_9_simulation:
+      config: "1000 Tick连续运行"
+      checks: ["NPC正常", "无内存泄漏", "无世界崩溃", "Validator 0 REJECT"]
+
+    step_10_release:
+      all_pass: "Generate Report → Create PR → 等待Review"
+      any_fail: "继续修复 → 重新测试 → 直到通过"
+
+  principles:
+    - "先测试。后发布。"
+    - "所有Bug必须可复现 (seed/steps)。"
+    - "任何修复必须自动验证。"
+    - "测试不得依赖人工。"
+    - "Regression必须全部通过。"
+    - "修复不得降低Canon一致性。"
+    - "失败必须定位Root Cause。"
+    - "测试结果永久保存。"
+
+  example:
+    feature: "新技能《九霄雷诀》"
+    steps:
+      build: "✅ 编译通过"
+      environment: "创建 Lv100 修士 + 木桩"
+      execute: "释放九霄雷诀"
+      verify:
+        damage: "expected=100, actual=100 ✅"
+        cooldown: "expected=3s, actual=3s ✅"
+        mana_cost: "expected=-50, actual=0 ❌ 蓝耗未扣除"
+        animation: "✅"
+        particles: "✅"
+        log: "✅"
+      analysis: "定位 SkillManaComponent.Consume() 未调用"
+      repair: "在 SkillExecutor 中添加 mana.Consume(cost)"
+      regression: "全部旧技能重新测试 ✅"
+      performance: "Tick +12ms (预算内) ✅"
+      simulation: "1000 Tick 正常 ✅"
+      result: "1 Bug → 自动修复 → 全部通过 → PR submitted"

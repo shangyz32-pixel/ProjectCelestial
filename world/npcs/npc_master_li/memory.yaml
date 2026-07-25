@@ -1,0 +1,236 @@
+# NPC Memory: 李长风（沉默的师父）
+#
+# 与陈玄 (npc_001) 共享事件：天历827年被逐、天历847年遣密使
+# 视角：愧疚者——二十年前沉默，二十年后试图弥补
+
+npc_id: "npc_master_li"
+npc_name: "李长风"
+realm: "化神境"
+spirit_root: "天灵根·风"
+faction: "青云宗"
+faction_status: "内门长老"
+
+# ============================================================
+# 短期记忆
+# ============================================================
+short_term:
+
+  - id: 1
+    timestamp: "天历 847 年 7 月 23 日"
+    type: faction
+    title: "密使回报：陈玄拒绝回归"
+    narrative: >
+      遣去散修盟的密使今日回报。
+      "他说了什么？" 李长风问。
+      "他说……冷笑了一声，然后让我走。"
+      李长风沉默了很久。
+      其实二十年前他就知道会有这一天。
+      那个站在雨里不回头的少年，不会原谅任何人。
+      他不怪陈玄。他只怪自己。
+    importance: 8
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: target
+    location: "青云宗·长老殿"
+    emotional_valence: -7
+    behavior_tags:
+      - tag: DETERMINED
+        target: ""
+        intensity: 6
+        decay: medium_decay
+
+  - id: 2
+    timestamp: "天历 847 年 7 月 10 日"
+    type: faction
+    title: "听闻王虎通过内门考核初试"
+    narrative: >
+      外门执事呈报内门晋升名单，王虎赫然在列。
+      李长风盯着这个名字看了很久。
+      三年前此人杀害了陈玄的大弟子林远，李长风是后来才得知的。
+      他试过追问，但宗主以"维护宗门声誉"为由压下。
+      如今此人还要晋升内门。还要顶着青冥剑。
+    importance: 7
+    participants:
+      - entity_id: "npc_002"
+        entity_type: character
+        role: subject
+      - entity_id: "npc_linyuan"
+        entity_type: character
+        role: referenced
+    location: "青云宗·执事殿"
+    emotional_valence: -6
+    behavior_tags:
+      - tag: SUSPICIOUS_OF
+        target: "npc_002"
+        intensity: 7
+        decay: medium_decay
+
+# ============================================================
+# 长期记忆
+# ============================================================
+long_term:
+
+  - id: 101
+    timestamp: "天历 827 年 3 月 15 日"
+    type: faction
+    title: "陈玄被逐出青云宗"
+    narrative: >
+      那一天下着大雨。
+      大长老当众宣布陈玄"勾结魔道"，逐出师门。
+      李长风知道这是诬陷。陈玄只是偶然得到了一卷上古功法残卷，
+      大长老想要，陈玄不给。于是就有了"勾结魔道"的罪名。
+      李长风本可以站出来。他是陈玄的师父，化神境长老，
+      他的话有分量。但他没有。他告诉自己——
+      大长老势大，闹翻了对谁都不好。等风头过了再接他回来。
+      可那天陈玄站在雨里，回头看了他一眼。
+      那一眼李长风记了二十年。里面不是恨，是——失望。
+      从那以后，陈玄再没有叫过他一声"师父"。
+    importance: 10
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: expelled
+      - entity_id: "faction_qingyun"
+        entity_type: faction
+        role: expeller
+    location: "青云宗·山门"
+    emotional_valence: -10
+    behavior_tags:
+      - tag: LOYAL_TO
+        target: "npc_001"
+        intensity: 8
+        decay: permanent
+      - tag: BETRAYED_BY
+        target: ""
+        intensity: 9
+        decay: permanent
+    kg_trigger:
+      action: create
+      edge_type: STUDENT_OF
+      from: "npc_001"
+      to: "npc_master_li"
+
+  - id: 102
+    timestamp: "天历 807 年 4 月 3 日"
+    type: social
+    title: "收陈玄为徒"
+    narrative: >
+      在青云宗入门考核中，一个叫陈玄的少年惊艳全场。
+      天灵根·火，根骨极佳，更重要的是——眼神里有火。
+      李长风亲自收他为内门弟子。二十年来收过无数弟子，
+      陈玄是最像他的一个。倔强、骄傲、不愿低头。
+      李长风曾以为陈玄会继承他的衣钵。
+    importance: 9
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: disciple
+    location: "青云宗·内门"
+    emotional_valence: +9
+    behavior_tags:
+      - tag: TRUSTS
+        target: "npc_001"
+        intensity: 9
+        decay: permanent
+
+  - id: 103
+    timestamp: "天历 844 年 10 月 5 日"
+    type: social
+    title: "陈玄来青云宗追查林远之死"
+    narrative: >
+      听到山门通报"散修盟陈玄求见"时，李长风心头一紧。
+      他终于又见到了陈玄。二十年过去了，少年变成了中年，
+      但眼里的火还在——更烈了。
+      陈玄要求青云宗交出杀害林远的凶手。
+      李长风想帮他。但宗主一句"私人恩怨"就挡了回去。
+      那天陈玄离开山门时，李长风追了出去。
+      "陈玄——"
+      陈玄没有回头。和二十年前一样。
+    importance: 9
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: pursuer
+      - entity_id: "npc_linyuan"
+        entity_type: character
+        role: referenced
+    location: "青云宗·山门"
+    emotional_valence: -9
+    behavior_tags:
+      - tag: HOSTILE_TOWARD
+        target: "faction_qingyun"
+        intensity: 6
+        decay: slow_decay
+
+  - id: 104
+    timestamp: "天历 835 年 4 月 1 日"
+    type: faction
+    title: "被架空——实权旁落"
+    narrative: >
+      大长老一系逐步掌控青云宗实权。
+      李长风名义上是化神境长老，但在重大事务上已无发言权。
+      他开始明白：二十年前的沉默不只是害了陈玄，
+      也让自己变成了一个可以被无视的人。
+      一个不说话的人，别人就不会再问你意见。
+    importance: 7
+    location: "青云宗"
+    emotional_valence: -7
+    behavior_tags:
+      - tag: DETERMINED
+        target: ""
+        intensity: 6
+        decay: slow_decay
+
+# ============================================================
+# 活跃行为标签
+# ============================================================
+active_tags:
+  - tag: TRUSTS
+    target: "npc_001"
+    intensity: 9
+    source: [102]
+
+  - tag: BETRAYED_BY
+    target: ""
+    intensity: 9
+    source: [101]
+
+  - tag: LOYAL_TO
+    target: "npc_001"
+    intensity: 8
+    source: [101]
+
+  - tag: SUSPICIOUS_OF
+    target: "npc_002"
+    intensity: 7
+    source: [2]
+
+  - tag: DETERMINED
+    target: ""
+    intensity: 6
+    source: [104, 1]
+
+  - tag: HOSTILE_TOWARD
+    target: "faction_qingyun"
+    intensity: 6
+    source: [103]
+
+# ============================================================
+# 四角色交叉视角总览
+# ============================================================
+# 天历 844 年 9 月 11 日 — 断魂崖，林远之死
+#
+# 陈玄 (npc_001):  爱徒被杀。importance=10, valence=-10
+# 王虎 (npc_002):  得剑。    importance=7,  valence=+6
+# 李长老 (master): 追责无果。importance=9,  valence=-9
+#
+# 天历 847 年 7 月 23 日 — 坊市相遇
+#
+# 陈玄 (npc_001):  仇人当面。importance=8,  valence=-8
+# 王虎 (npc_002):  路人而已。importance=3,  valence=+5
+# 李长老 (master): 听闻拒绝。importance=8,  valence=-7
+# 赵灵儿 (npc_003): 毫不知情。(当天在修炼)
+#
+# 同一世界，四条平行的记忆线。
+# 叙事的意义就是让它们在某一个时刻交汇。

@@ -1,0 +1,127 @@
+# World Policy Engine
+#
+# The Governance Layer of Project Celestial.
+# Policy 永远高于 Capability。
+# Capability 定义能做什么。Policy 定义什么时候能做。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+world_policy_engine:
+
+  mission: >
+    Capability 定义能够做什么。
+    Policy 定义什么时候可以做、在什么条件下做、由谁批准、如何执行。
+    Policy 永远高于 Capability。
+
+  # ==========================================================
+  # Architecture
+  # ==========================================================
+
+  architecture: |
+    Project Consciousness -> Governance -> Policy Engine
+         -> Capability Model -> World Kernel API
+         -> Persistent Universe Runtime -> World State
+
+  rule: "任何操作: 先经过 Policy, 再调用 Capability, 最后 Kernel API。"
+
+  # ==========================================================
+  # Example Policies
+  # ==========================================================
+
+  examples:
+
+    time_policy:
+      capability: "Advance Time"
+      policy:
+        production: "只能 1x Speed"
+        maintenance: "禁止推进"
+        shadow_world: "允许 10x Speed"
+
+    ai_policy:
+      capability: "Create Quest"
+      policy:
+        production: "必须 Review"
+        shadow_world: "允许自动部署"
+
+    economy_policy:
+      capability: "Modify Price"
+      policy:
+        daily_fluctuation: "≤ 5%"
+        over_limit: "自动进入人工审批"
+
+    mod_policy:
+      capability: "Register Component"
+      policy:
+        rule: "禁止覆盖核心组件"
+        allowed: "只能扩展"
+
+    multiplayer_policy:
+      capability: "Kick Player"
+      policy:
+        rule: "必须记录原因"
+        audit: "自动写入 Audit Log"
+
+  # ==========================================================
+  # Policy Types
+  # ==========================================================
+
+  policy_types:
+    - "Security Policy"
+    - "Release Policy"
+    - "Deployment Policy"
+    - "AI Policy"
+    - "Economy Policy"
+    - "World Policy"
+    - "Quest Policy"
+    - "Faction Policy"
+    - "Narrative Policy"
+    - "Research Policy"
+    - "Mod Policy"
+    - "Plugin Policy"
+
+  # ==========================================================
+  # Dynamic Policy
+  # ==========================================================
+
+  dynamic_policy:
+    description: "Policy 不是固定配置。Project Consciousness 可动态调整。"
+    factors:
+      - "项目阶段 (原型/Alpha/Beta/Production)"
+      - "风险等级 (低/中/高/紧急)"
+      - "玩家规模 (100/1000/10000/100000)"
+      - "运营状态 (正常/维护/事故)"
+    mechanism: "热更新，无需重启 Runtime"
+
+  # ==========================================================
+  # Rule Evaluation
+  # ==========================================================
+
+  evaluation:
+    flow: |
+      Request
+          |
+      Policy Engine
+          |
+      Allow | Deny | Review | Delay | Throttle | Sandbox
+          |
+      Capability Check
+          |
+      Kernel API
+          |
+      Runtime
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "所有能力都有策略约束"
+    - "所有修改都有治理规则"
+    - "Policy 可热更新"
+    - "Policy 可版本化"
+    - "Policy 可审计"
+    - "Policy 可模拟 (Shadow World 验证)"
+    - "Policy 成为世界治理核心"

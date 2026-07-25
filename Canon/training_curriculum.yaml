@@ -1,0 +1,79 @@
+# Agent Training Curriculum
+#
+# Phase 4 — 每个 Agent 的四阶段训练计划。
+# 从只读到协作。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+training_curriculum:
+
+  stage_1:
+    name: "Learn Canon"
+    mode: "只读"
+    checklist:
+      bible: "通读 Volume I~V"
+      registry: "查阅 8 个 Registry YAML + compiled_registry 查询接口"
+      adr: "通读 ADR-0001 到 ADR-0021"
+      architecture: "理解 World OS 10 条原则 + 10 层 Agent 边界 + 通信协议"
+    gate: "随机抽取 3 个 Canon 问题，全部答对"
+
+  stage_2:
+    name: "Learn Codebase"
+    mode: "只读"
+    checklist:
+      structure: "理解项目目录 (STRUCTURE.md)"
+      interfaces: "Canon Loader API / Registry Compiler / KG Query / SDK API"
+      standards: "注释规范 / Validator 6域 / deterministic 要求"
+    gate: "画出自己 Layer 的数据流图"
+
+  stage_3:
+    name: "Small Tasks"
+    mode: "可写代码 — 不合并到 main"
+
+    L2_world:
+      tasks: ["新增一种天气类型", "新增一个 NPC(带完整memory)", "修改 Economy 参数"]
+      check: "Canon Validator 0 REJECT + 10 Ticks 运行正常"
+
+    L3_gameplay:
+      tasks: ["新增一种丹药", "新增一个简单 Quest", "新增一个战斗技能"]
+      check: "数值在 Canon 范围内 + 测试通过"
+
+    L4_ai:
+      tasks: ["优化一个 Prompt 模板", "新增一个 Tool 定义"]
+      check: "响应准确率提升 + 不引入 Canon 幻觉"
+
+    L5_infra:
+      tasks: ["新增一个 API 端点", "配置一个 Cron Job"]
+      check: "API 返回正确 + Cron 正常运行"
+
+    L6_frontend:
+      tasks: ["新增一个 UI 组件", "修复一个显示 Bug"]
+      check: "正确调用 SDK API + 无直接状态修改"
+
+    L7_qa:
+      tasks: ["编写 3 个测试用例", "发现 1 个真实 Bug"]
+      check: "测试通过 + Bug report 完整可复现"
+
+  stage_4:
+    name: "Real Development"
+    mode: "提交 PR — 走完整 Review 流程"
+    workflow:
+      - "Task Queue 领取任务 (有 Accepted ADR)"
+      - "开发 → 测试 → Validator 0 REJECT"
+      - "提交 PR (What/Why/How/Test/Validator)"
+      - "Architecture Review"
+      - "Address comments"
+      - "Merge → CI/CD"
+    graduation: "3 PR merged + 0 REJECT + 至少 1 次 Review 他人 PR"
+
+  definition_of_done:
+    ai_can_add_gameplay: "L3 成功合并新玩法"
+    ai_can_fix_bugs: "L7 发现 → L2/L3 修复 → 合并"
+    ai_can_write_tests: "每模块有测试 + CI 运行"
+    ai_can_maintain_docs: "L9 自动同步文档"
+    ai_can_review_pr: "L1 Architecture Review (非自己代码)"
+    ai_can_maintain_canon: "每次 commit: Validator 0 REJECT"
+    ai_team_collaborates: "完整 Feature: ADR→Dev→Test→Review→Merge→Deploy"

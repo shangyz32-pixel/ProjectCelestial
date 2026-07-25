@@ -1,0 +1,204 @@
+# Simulation Engine Runtime Specification
+#
+# Phase 4, Module 6: Simulation Engine Runtime
+# 世界的心跳。固定顺序。不可跳过。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+simulation_engine:
+
+  description: >
+    10 步固定顺序的世界循环。每步调用具体运行时模块。
+    不可跳过。不可乱序。确定性执行。
+
+  constraints:
+    - "固定顺序: Time → Weather → Qi → NPC → Economy → Faction → War → Events → History → Snapshot"
+    - "不可跳过: SHALL 执行每一步"
+    - "不可乱序: step N+1 的输入来自 step N 的输出"
+    - "确定性: PRNG(seed) → 相同 state → 相同 result"
+
+  # ==========================================================
+  # Step 1: Time
+  # ==========================================================
+
+  step_01:
+    name: Time
+    queries:
+      - "compiled_registry: 时间相关常量"
+    executes:
+      - "推进 world_state.time: +1 天"
+      - "检查季节性事件触发"
+      - "检查 NPC 寿元到期"
+    writes:
+      - "Transaction: world_state.time"
+      - "Event: TickStarted, SeasonChanged (if any)"
+
+  # ==========================================================
+  # Step 2: Weather
+  # ==========================================================
+
+  step_02:
+    name: Weather
+    queries:
+      - "compiled_registry.weather: 天气类型 + 季节权重"
+      - "world_state.locations: 各地 qi_density + terrain"
+    executes:
+      - "对每个 location: season × terrain × qi → 抽取天气"
+      - "PRNG(seed + tick + location_id) → 确定性随机"
+    writes:
+      - "Transaction: world_state.locations[].weather"
+      - "Event: WeatherChanged"
+
+  # ==========================================================
+  # Step 3: Qi
+  # ==========================================================
+
+  step_03:
+    name: Qi
+    queries:
+      - "KG: spirit_vein 的 CONTROLS 边 → 谁控制灵脉"
+      - "compiled_registry: 灵脉基础产出"
+    executes:
+      - "对每个 spirit_vein: grade × weather_mod × season_mod → qi_density"
+      - "灵脉衰减检查"
+    writes:
+      - "Transaction: world_state.locations[].qi_density"
+      - "Event: QiChanged"
+
+  # ==========================================================
+  # Step 4: NPC
+  # ==========================================================
+
+  step_04:
+    name: NPC
+    queries:
+      - "entity_memory: 每个 NPC 的 short_term + long_term + active_tags"
+      - "KG: LOCATED_AT, RIVAL_OF → 遭遇检测"
+      - "compiled_registry: spirit_roots, realms → 修炼进度"
+    executes:
+      - "RuleEngine.memory.on_tick → 标签衰减 + 短期清理"
+      - "RuleEngine.cultivation → 修炼进度 + 突破检测"
+      - "encounter_detection: 同位置 NPC → RuleEngine.memory.on_encounter"
+      - "daily_action: 基于 active_tags 选择行为"
+    writes:
+      - "Transaction: world_state.npcs[]"
+      - "entity_memory: 新记忆条目"
+      - "Event: NPCMoved, EncounterDetected, BreakthroughAttempt"
+
+  # ==========================================================
+  # Step 5: Economy
+  # ==========================================================
+
+  step_05:
+    name: Economy
+    queries:
+      - "KG: TRADES_WITH, PRODUCES, CONSUMES → 供需网络"
+    executes:
+      - "price = base × (demand/supply) × transport_mod"
+    writes:
+      - "Transaction: world_state.economy.price_table"
+      - "Event: ResourcePriceChanged"
+
+  # ==========================================================
+  # Step 6: Faction
+  # ==========================================================
+
+  step_06:
+    name: Faction
+    queries:
+      - "entity_memory.faction: 宗门年鉴 + 目标"
+      - "KG: CONTROLS, HOSTILE_TO, ALLY_OF"
+    executes:
+      - "resource_accounting"
+      - "goal_evaluation"
+      - "decision_making (基于文化记忆 + 当前状态)"
+    writes:
+      - "Transaction: world_state.factions[]"
+      - "entity_memory.faction: 年鉴追加"
+      - "Event: FactionDecision"
+
+  # ==========================================================
+  # Step 7: War
+  # ==========================================================
+
+  step_07:
+    name: War
+    queries:
+      - "KG: HOSTILE_TO, CONTROLS → 交战方 + 争夺目标"
+    executes:
+      - "battle_simulation: 兵力 × 地形 × 天气 × 灵脉"
+    writes:
+      - "Transaction: world_state.wars[]"
+      - "Event: Battle, TerritoryChange"
+
+  # ==========================================================
+  # Step 8: Events
+  # ==========================================================
+
+  step_08:
+    name: Events
+    queries:
+      - "收集 Step 1~7 的所有 raw_events"
+    executes:
+      - "deduplicate"
+      - "assign_importance"
+      - "RuleEngine.memory.on_event → 创建 Entity Memory"
+      - "KG.sync → 更新图边"
+      - "causal_chain.detect → 因果链扩展"
+      - "narrative.generate → 场景/弧"
+  # 注意: Step 8 内的执行顺序不可变
+    writes:
+      - "entity_memory: 所有相关实体"
+      - "KG: 新增节点/边"
+      - "Event: EventGenerated"
+
+  # ==========================================================
+  # Step 9: History
+  # ==========================================================
+
+  step_09:
+    name: History
+    queries:
+      - "Step 8 的 validated_events"
+    executes:
+      - "追加写入 world_state.history"
+    writes:
+      - "append-only history entry"
+    constraint: "不可修改。不可删除。SHALL NOT overwrite."
+
+  # ==========================================================
+  # Step 10: Snapshot
+  # ==========================================================
+
+  step_10:
+    name: Snapshot
+    queries:
+      - "完整 world_state"
+    executes:
+      - "序列化全量快照"
+      - "绑定 canon_version + seed"
+    writes:
+      - "文件: snapshots/tick_{N}_{date}.yaml"
+    constraint: "只允许新增。SHALL NOT overwrite."
+    note: "快照包含 seed → 完全可重放"
+
+  # ==========================================================
+  # Enforcement
+  # ==========================================================
+
+  enforcement:
+    validator_rule:
+      description: "Canon Validator 检查循环完整性"
+      rule_id: "r_step_order"
+      checks:
+        - "steps executed in fixed order"
+        - "no step skipped"
+        - "each step produced expected output"
+      severity: BLOCK
+
+    seed_reproducibility:
+      description: "相同 seed + 相同初始 State → 相同结果"
+      test: "replay from snapshot with same seed → identical state"

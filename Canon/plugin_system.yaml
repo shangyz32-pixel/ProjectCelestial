@@ -1,0 +1,167 @@
+# Plugin System + Script Engine
+#
+# 插件系统 — 扩展不侵入 Kernel
+# 脚本引擎 — 沙箱化任务/副本/对话
+
+version: "1.0.0"
+status: Canon
+
+---
+
+plugin_system:
+
+  description: 任何新功能必须通过插件实现。不得修改 Kernel。
+
+  lifecycle:
+
+    register:
+      action: 向 Kernel 注册插件
+      required:
+        - plugin_id
+        - plugin_name
+        - version
+        - engines
+        - events
+        - commands
+        - apis
+        - capability_required
+
+    load:
+      action: Kernel 加载插件
+      checks:
+        - "版本兼容性检查"
+        - "依赖检查"
+        - "安全性检查"
+        - "权限检查"
+
+    activate:
+      action: 插件进入活跃状态
+      effects:
+        - "Engine 加入 Tick 调度序列"
+        - "Event 加入 Event Bus 订阅"
+        - "Command 加入命令注册表"
+        - "API 加入 SDK 路由"
+
+    deactivate:
+      action: 暂停插件
+      effects:
+        - "Engine 从调度移除"
+        - "Event 取消订阅"
+
+    unload:
+      action: 完全卸载插件
+      cleanup:
+        - "移除所有注册项"
+        - "清理插件数据"
+        - "释放资源"
+
+  built_in_plugins:
+    - weather_engine
+    - npc_engine
+    - faction_engine
+    - economy_engine
+    - war_engine
+    - memory_engine
+    - narrative_engine
+
+  extendable_plugins:
+
+    alchemy:
+      description: "炼丹系统"
+      engine: "AlchemyEngine"
+      events: ["PillCreated", "PillConsumed"]
+      commands: ["/craft_pill", "/consume_pill"]
+      api: ["getPillRecipes", "craftPill"]
+
+    auction:
+      description: "拍卖行"
+      engine: "AuctionEngine"
+      events: ["AuctionStarted", "BidPlaced", "AuctionEnded"]
+      commands: ["/bid", "/list_auction"]
+      api: ["getActiveAuctions", "placeBid"]
+
+    tournament:
+      description: "比武大会"
+      engine: "TournamentEngine"
+      events: ["TournamentStarted", "MatchResult", "TournamentEnded"]
+      commands: ["/register_tournament"]
+      api: ["getBracket", "getMatchResult"]
+
+    formation:
+      description: "阵法系统"
+      engine: "FormationEngine"
+      events: ["FormationActivated", "FormationBroken"]
+      commands: ["/deploy_formation"]
+      api: ["getFormations", "activateFormation"]
+
+    guild:
+      description: "公会系统"
+      engine: "GuildEngine"
+      events: ["GuildCreated", "MemberJoined", "GuildDisbanded"]
+      commands: ["/create_guild", "/join_guild"]
+      api: ["getGuilds", "getGuildMembers"]
+
+    ocean:
+      description: "海洋探索"
+      engine: "OceanEngine"
+      events: ["IslandDiscovered", "SeaMonsterEncounter"]
+      commands: ["/sail"]
+      api: ["getOceanMap", "setSailDirection"]
+
+  security:
+    rules:
+      - "插件不得访问 Kernel 内部方法"
+      - "插件不得修改其他插件数据（除非通过 Event Bus）"
+      - "插件不得提升自身 Capability Level"
+      - "插件崩溃不影响 Kernel 和其他插件"
+
+---
+
+script_engine:
+
+  description: "沙箱化脚本执行环境。脚本只调用 SDK API。"
+
+  script_types:
+
+    quest:
+      structure:
+        trigger: "条件表达式"
+        objectives: ["目标列表"]
+        rewards: "奖励定义"
+        time_limit: "世界日"
+
+    festival:
+      structure:
+        trigger: "时间或事件"
+        phases: ["阶段列表"]
+        rules: "参与条件"
+        rewards: "奖励定义"
+
+    dungeon:
+      structure:
+        entrance: "入口地点"
+        floors: "层数"
+        encounters: ["遭遇列表"]
+        boss: "Boss定义"
+        loot: ["掉落列表"]
+
+    dialogue:
+      structure:
+        nodes: "对话节点树"
+        conditions: "分支条件"
+
+  sandbox:
+    rules:
+      - "只允许调用 SDK 公开 API"
+      - "不允许直接访问 World State"
+      - "不允许修改其他脚本数据"
+      - "执行超时: 30秒自动终止"
+      - "异常不影响 Kernel"
+      - "脚本执行写入 audit_log"
+
+  debug_commands:
+    - "list: 列出所有已加载脚本"
+    - "run <id>: 手动触发脚本"
+    - "state <id>: 查看脚本执行状态"
+    - "reset <id>: 重置脚本进度"
+    - "reload <id>: 重载脚本"

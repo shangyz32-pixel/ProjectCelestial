@@ -1,0 +1,147 @@
+# Phase 14 — Autonomous Operation & Evolution
+#
+# Hermes 不再只是开发软件。
+# Hermes 开始运营一个持续存在的世界。
+# 开发 → 运营 → 维护 → 优化 → 形成闭环。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+autonomous_operation:
+
+  mission: >
+    Hermes 不再只是开发软件。
+    Hermes 开始运营一个持续存在的世界。
+    开发。运营。维护。优化。形成闭环。
+
+  # ==========================================================
+  # Daily Operation Loop
+  # ==========================================================
+
+  daily_loop:
+    steps:
+      - "Collect Metrics — 收集所有指标"
+      - "Analyze World — 世界运行分析"
+      - "Analyze Players — 玩家行为分析"
+      - "Analyze Code — 代码质量分析"
+      - "Analyze Infrastructure — 基础设施分析"
+      - "Find Opportunities — 发现改进机会"
+      - "Generate RFC — 自动生成 RFC"
+      - "Run Shadow Validation — Shadow World 验证"
+      - "Generate PR — 自动生成 PR"
+      - "Human Approval — 人类批准"
+      - "Production Release — 生产发布"
+      - "Monitor — 持续监控"
+      - "Repeat Forever"
+
+  # ==========================================================
+  # Continuous Code Evolution
+  # ==========================================================
+
+  code_evolution:
+    daily_scan:
+      - "代码质量 — 复杂度/重复/死代码"
+      - "性能问题 — 热点/瓶颈"
+      - "安全漏洞 — 依赖/注入/越权"
+      - "依赖升级 — 过期库/安全补丁"
+      - "技术债 — TODO/FIXME 积累"
+    auto: "发现 → RFC → 重构 → 测试 → PR"
+
+  # ==========================================================
+  # Continuous World Evolution
+  # ==========================================================
+
+  world_evolution:
+    analyze: ["经济", "资源", "战争", "宗门", "NPC", "玩家", "灵气", "文明指数"]
+    detect: "长期失衡 (如灵石通胀/宗门灭绝/NPC境界分布异常)"
+    propose: "平衡方案"
+    validate: "Shadow World 10000 Tick 验证"
+    if_stable: "生成更新建议 → RFC"
+
+  # ==========================================================
+  # Continuous Player Analysis
+  # ==========================================================
+
+  player_analysis:
+    analyze:
+      - "玩家行为模式"
+      - "成长曲线"
+      - "留存率"
+      - "失败率 (何处卡关/死亡)"
+      - "探索路径"
+      - "交易行为"
+      - "社交网络"
+    example:
+      problem: "新玩家 3 小时内 80% 放弃"
+      action: "Hermes 自动定位原因 → 提出改进方案 → RFC"
+
+  # ==========================================================
+  # Continuous LiveOps
+  # ==========================================================
+
+  liveops:
+    auto_operate:
+      - "节日活动 (基于世界历法)"
+      - "世界事件 (基于模拟状态)"
+      - "排行榜"
+      - "限时挑战"
+      - "世界 Boss"
+      - "宗门大会"
+      - "跨服战争"
+    constraint: "所有内容必须符合 Canon 和世界历史"
+
+  # ==========================================================
+  # Continuous Infrastructure
+  # ==========================================================
+
+  infrastructure:
+    monitor: ["CPU", "Memory", "Latency", "Database", "Server", "Cache", "Queue"]
+    auto: "扩容 / 迁移 / 恢复 / 报警"
+    on_anomaly: "自动响应 + 生成事后分析"
+
+  # ==========================================================
+  # Continuous Security
+  # ==========================================================
+
+  security:
+    detect: ["外挂", "异常交易", "脚本", "机器人", "数据篡改"]
+    auto: "隔离 / 调查 / 生成审计报告"
+    proactive: "漏洞扫描 + 依赖审计"
+
+  # ==========================================================
+  # Continuous Learning
+  # ==========================================================
+
+  learning:
+    sources: ["开发经验", "玩家反馈", "测试结果", "Bug 记录", "运营数据"]
+    output: "Project Knowledge Base"
+    effect: "下一次开发越来越快，越来越准确"
+
+  # ==========================================================
+  # Human Role
+  # ==========================================================
+
+  human_role:
+    defines:
+      - "Vision — 项目愿景"
+      - "World Building — 世界观方向"
+      - "Goals — 战略目标"
+      - "Principles — 核心原则"
+    approves: "重大变更 (RFC involving Canon modification)"
+    trusts: "Hermes 负责执行/优化/维护/运营"
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "Hermes 成为 Autonomous Software Company"
+    - "持续开发 — 新功能不断上线"
+    - "持续运营 — 世界永不停机"
+    - "持续优化 — 代码/世界/基础设施不断改进"
+    - "持续学习 — 每次迭代都比上一次更好"
+    - "持续交付 — 从发现到上线全自动"
+    - "持续维护 — 安全/性能/稳定性主动管理"
+    - "项目形成永不停机的软件工程闭环"

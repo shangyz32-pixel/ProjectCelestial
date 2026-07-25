@@ -1,0 +1,300 @@
+# Rule Engine Specification
+# 将 Canon Registry 转换为 World Engine 可执行的规则检查
+# 不是生成式。是确定性的。
+
+version: "1.0"
+status: Canon
+
+pipeline:
+  description: >
+    World Engine 执行任何操作时，按以下管线逐项检查。
+    不靠 LLM 猜测。同一输入 = 同一输出（seed 可复现）。
+
+  steps:
+    - load_entity:    加载目标 Entity 完整状态
+    - load_rules:     加载对应 Canon Registry 规则
+    - check_conditions: 逐项检查前置条件 -> { passed, failures }
+    - calculate_probability: 计算成功率 -> { base_rate, modifiers, final_rate }
+    - execute_rng:    确定性随机判定（可设 seed）-> { success, roll }
+    - apply_consequences: 成功/失败结果 -> { state_changes, events }
+    - record_history: 写入 History Engine
+
+actions:
+
+  breakthrough:
+    description: 突破判定管线
+
+    conditions:
+      qi_available:
+        check: location.qi_density >= target_realm.min_qi
+        source: registry/realms.yaml
+        fail: 灵气不足，无法突破
+
+      realm_cap:
+        check: spirit_root.quality.realm_cap >= target_realm
+        source: registry/spirit_roots.yaml
+        fail: 灵根无法支撑此境界
+
+      lifespan_sufficient:
+        check: entity.age < entity.max_lifespan
+        source: registry/lifespan.yaml
+        fail: 寿元不足
+
+      resources:
+        check: has_breakthrough_pill OR allows_hard_attempt
+        fail: 缺少突破丹药（可硬冲但成功率降低）
+
+    probability:
+      base: registry/realms.yaml.target_realm.breakthrough_rate
+      modifiers:
+        pill_bonus:
+          field: active_pill_effects
+          operation: multiply
+          range: [1.0, 1.3]
+
+        qi_density:
+          field: location.qi_density
+          operation: multiply
+          formula: 1.0 + (qi_density - 50) * 0.01
+
+        comprehension:
+          field: entity.comprehension
+          operation: multiply
+          formula: 0.8 + comprehension * 0.004
+
+        dao_heart:
+          field: entity.dao_heart
+          operation: multiply
+          formula: 0.7 + dao_heart * 0.006
+
+        destiny:
+          field: entity.destiny
+          operation: multiply
+          formula: 0.9 + destiny * 0.002
+
+    consequences:
+      success:
+        state_changes:
+          - upgrade_realm: target_realm
+          - reset_cultivation
+          - extend_lifespan: from registry/lifespan.yaml
+        events:
+          - breakthrough_success
+
+      failure:
+        state_changes:
+          - cultivation_loss:
+              formula: current_cultivation * failure_loss_rate
+              source: registry/realms.yaml
+          - possible_meridian_damage:
+              probability: 0.3
+          - possible_soul_damage:
+              probability: 0.3
+          - possible_lifespan_loss:
+              probability: 0.2
+        events:
+          - breakthrough_failure
+        heart_demon_risk:
+          formula: 0.1 + (1.0 - dao_heart) * 0.3
+
+  tribulation:
+    description: 天劫判定管线
+
+    trigger: breakthrough_target >= nascent_soul
+    type_source: registry/tribulation.yaml
+
+    checks:
+      body_strength:
+        field: entity.body.strength
+        threshold: from registry/tribulation.yaml
+
+      soul_stability:
+        field: entity.soul.integrity
+        threshold: 0.8
+
+      dao_comprehension:
+        field: entity.dao_comprehension_level
+        threshold: from registry/tribulation.yaml
+
+    consequences:
+      success:
+        state_changes:
+          - strengthen_body: +20%
+          - purify_soul
+        events:
+          - tribulation_passed
+          - proceed_to_breakthrough
+
+      failure:
+        events:
+          - tribulation_failed
+        outcomes:
+          body_destruction:
+            probability: 0.90
+            then: death_pipeline
+          soul_dispersal:
+            probability: 0.10
+            then: death_pipeline(force_soul_dispersal)
+          nascent_soul_escape:
+            condition: entity.realm >= nascent_soul
+            probability: 0.50
+
+  death:
+    description: 死亡路径判定管线
+
+    triggers:
+      - lifespan = 0
+      - hp = 0 AND cannot_recover
+      - tribulation_death
+
+    paths:
+      reincarnation:
+        weight: 900
+        condition: default
+        action: clear_memories + reroll_spirit_root + preserve_partial_karma
+
+      ghost:
+        weight: 70
+        condition: has_unresolved_attachment
+        action: become_ghost + retain_consciousness
+
+      ghost_cultivation:
+        weight: 20
+        condition: ghost AND has_ghost_art
+
+      body_possession:
+        weight: 5
+        condition: realm >= nascent_soul
+        action: possess_target + heavy_karma_penalty
+
+      nascent_soul_escape:
+        weight: 4
+        condition: realm >= nascent_soul AND body_destroyed
+
+      soul_dispersal:
+        weight: 1
+        condition: tribulation_extreme_failure
+        action: permanent_deletion + karma_severed
+
+      resurrection:
+        weight: 0
+        condition: has_divine_pill OR has_divine_art
+        action: soul_returns + body_restored + caster_pays_cost
+
+  memory:
+    description: 记忆处理管线
+
+    on_event:
+      description: 当 NPC 经历事件时触发
+
+      conditions:
+        npc_exists:
+          check: npc_id is valid
+          fail: 跳过记忆处理
+
+      steps:
+        create_entry:
+          action: 创建 memory_entry
+          fields: [timestamp, type, title, narrative, participants, location]
+          source: memory_schema.yaml
+
+        score_importance:
+          action: 根据事件类型和叙事计算重要性
+          rules:
+            death_of_close_one: importance = 10
+            breakthrough_success: importance = max(7, 5 + realm_tier)
+            breakthrough_failure: importance = max(6, 4 + realm_tier)
+            tribulation: importance = 9
+            faction_expelled: importance = 9
+            betrayal: importance = target_trust_level + 2
+            saved_life: importance = 7
+            kill: importance = min(7, 3 + victim_realm_tier)
+            rare_treasure: importance = 6
+            new_rival: importance = 5
+            new_friend: importance = 4
+            trade: importance = 2
+            routine: importance = 1
+
+        assign_tags:
+          action: 根据类型 + 参与者生成行为标签
+          mapping:
+            betrayal: [HOSTILE_TOWARD, BETRAYED_BY]
+            saved_life: [GRATEFUL_TOWARD, TRUSTS]
+            kill_my_ally: [HOSTILE_TOWARD, SEEKS_REVENGE]
+            defeat_in_battle: [FEARFUL_OF 或 DETERMINED，取决于 personality]
+            faction_expelled: [SEEKS_POWER 或 TRAUMATIZED]
+            breakthrough_success: [CONFIDENT]
+            breakthrough_failure: [DESPERATE 或 DETERMINED]
+            master_died: [SEEKS_REVENGE, TRAUMATIZED]
+            rare_discovery: [CONFIDENT, SEEKS_POWER]
+
+        assign_emotion:
+          action: 计算 emotional_valence (-10 ~ 10)
+          mapping:
+            betrayal: -8
+            death_of_close_one: -10
+            saved_life: +7
+            breakthrough_success: +9
+            breakthrough_failure: -5
+            tribulation_passed: +10
+            faction_expelled: -7
+            kill: varies (revenge=+5, innocent=-8)
+            rare_treasure: +6
+            new_friend: +4
+
+        store:
+          action: 写入 short_term 数组
+
+        promote:
+          condition: importance >= 5
+          action: 同时写入 long_term 数组
+
+        kg_sync:
+          condition: 事件涉及人际关系（participants 非空）
+          action: |
+            根据 memory_entry.kg_trigger 更新 Knowledge Graph。
+            若未显式指定 kg_trigger，自动推断：
+            - HOSTILE_TOWARD → RIVAL_OF 或 HOSTILE_TO 边
+            - GRATEFUL_TOWARD → SAVED 或 ALLY_OF 边
+            - BETRAYED_BY → BETRAYED 边
+            - 死亡事件 → 标记节点 [deceased]
+
+        cleanup:
+          action: 清理 short_term 中时间戳超过 30 世界日的条目
+
+    on_encounter:
+      description: 当 NPC 遇到另一个实体时触发
+
+      steps:
+        scan_memory:
+          action: 扫描 short_term + long_term，匹配 target 的 behavior_tags
+
+        aggregate_tags:
+          action: 按 target 聚合所有匹配标签，取最高 intensity
+
+        decide_behavior:
+          action: 根据聚合标签选择行为
+          rules:
+            HOSTILE_TOWARD intensity >= 7: attack
+            HOSTILE_TOWARD intensity 4-6: threaten_or_avoid
+            FEARFUL_OF intensity >= 5: flee
+            GRATEFUL_TOWARD: offer_help_or_gift
+            TRUSTS: share_information
+            BETRAYED_BY: confront_or_avoid
+            no_tags: neutral_interaction
+
+    on_tick:
+      description: 每个世界 Tick 触发
+
+      steps:
+        decay_tags:
+          action: 按 decay_rules 降低 active_tags intensity
+
+        purge_weak:
+          action: 移除 intensity <= 0 的标签
+
+        rebuild_active:
+          action: 从 long_term 重新聚合 active_tags（以防遗漏）
+
+        short_term_cleanup:
+          action: 移除超过 30 世界日的短期记忆（不重要事件）

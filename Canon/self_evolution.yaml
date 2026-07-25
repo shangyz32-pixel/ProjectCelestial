@@ -1,0 +1,152 @@
+# Phase 9 — Self-Evolution
+#
+# Hermes 优化自身。但不能修改 Canon、绕过 Governance、绕过 Validation。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+self_evolution:
+
+  mission: >
+    Hermes 可以优化自身。Prompt / Memory / Agent 分工 / Tool 调用 / Workflow。
+    但不能修改 Canon。不能绕过 Governance。不能绕过 Validation。
+
+  # ==========================================================
+  # 允许优化
+  # ==========================================================
+
+  allowed:
+
+    prompt:
+      description: "优化 Prompt"
+      scope:
+        - "Prompt 模板结构优化"
+        - "Few-shot 示例调整"
+        - "Canon 引用格式优化"
+        - "响应风格和详细度"
+      constraint: "Prompt 中引用的 Canon 数据必须来自 Canon Loader"
+      example: "发现 Hermes 频繁误解突破概率 → 在 Prompt 中增加 Registry 查询优先规则"
+
+    memory:
+      description: "优化 Memory 系统"
+      scope:
+        - "会话记忆优先级调整"
+        - "记忆检索策略优化"
+        - "记忆压缩和摘要算法"
+        - "跨会话上下文传递"
+      constraint: "不修改 Entity Memory 的数据结构"
+      example: "发现大量短期记忆影响响应速度 → 优化压缩策略"
+
+    agent_specialization:
+      description: "优化 Agent 分工"
+      scope:
+        - "Agent Layer 内部职责细分"
+        - "新增 Layer 内部的 Sub-Agent"
+        - "任务路由规则优化"
+        - "Agent 负载均衡"
+      constraint: "不修改 Agent 的 Layer 边界 (CAN/CANNOT)"
+      example: "L7 QA 过载 → 拆分为 QA-Analyzer + QA-Reporter"
+
+    tool_calling:
+      description: "优化 Tool 调用"
+      scope:
+        - "Tool 选择策略优化"
+        - "Tool 调用顺序优化 (batching)"
+        - "Tool 结果缓存策略"
+        - "Tool 超时和重试参数"
+      constraint: "Tool 的输入输出格式不变"
+      example: "KG 查询频繁触发 → 增加查询结果缓存"
+
+    workflow:
+      description: "优化 Workflow"
+      scope:
+        - "PR Review 流程优化"
+        - "CI/CD Pipeline 调整"
+        - "Task Queue 优先级算法"
+        - "Release 流程加速"
+      constraint: "Gate 数量不能减少 (只能增加)"
+      example: "Review 等待时间过长 → 自动分配 backup reviewer"
+
+  # ==========================================================
+  # 绝对禁止
+  # ==========================================================
+
+  forbidden:
+
+    no_canon_modification:
+      rule: "不能修改 Canon"
+      scope: "任何 Registry / Volume / ADR / Bible 的修改 → 走 ADR 流程"
+      reason: "Canon 是根基。自我优化不等于自我立法。"
+
+    no_governance_bypass:
+      rule: "不能绕过 Governance"
+      scope: "任何跳过 RFC / ADR / PR Review / Quality Gate 的行为"
+      reason: "自治不等于无政府。Governance 是团队的宪法。"
+
+    no_validation_bypass:
+      rule: "不能绕过 Validation"
+      scope: "任何跳过 Validator / 降低门禁 / 静默通过的行为"
+      reason: "验证是安全的最后防线。不能自我豁免。"
+
+  # ==========================================================
+  # 优化流程
+  # ==========================================================
+
+  process:
+    observe:
+      description: "观察自身运行"
+      sources:
+        - "Engineering Metrics (Phase 7 Ch11): 响应延迟/错误率"
+        - "Agent 日志: Tool 调用失败率 / 重复查询"
+        - "Review 反馈: 常见问题类型"
+        - "用户反馈: 响应不满意的地方"
+
+    identify:
+      description: "识别优化机会"
+      example: "Tool 调用 30% 是冗余的 (相同查询重复调用)"
+
+    design:
+      description: "设计优化方案"
+      requirements:
+        - "明确: 优化什么 + 预期效果 + 不改变什么"
+        - "安全: 不触及 forbidden 边界"
+        - "可度量: 优化前后有对比数据"
+
+    shadow_test:
+      description: "Shadow 环境测试"
+      process:
+        - "Shadow World 中应用优化"
+        - "运行标准测试集 → 对比指标"
+        - "验证: 0 Regression (Golden World)"
+        - "验证: 0 Canon Validator REJECT"
+
+    propose:
+      description: "提交优化 Proposal"
+      format:
+        - "What: 优化了什么"
+        - "Why: 为什么需要优化 (数据证据)"
+        - "How: 实现方式"
+        - "Result: Shadow 环境测试结果"
+        - "Risk: 风险评估"
+      route: "→ Layer 1 Chief Architect 审批"
+
+    apply:
+      description: "应用优化"
+      condition: "Proposal Approved"
+      process:
+        - "部署到生产 (热更新，不中断)"
+        - "监控: Engineering Metrics → 确认改善"
+        - "回滚: 如果退化 → 自动回滚"
+
+  # ==========================================================
+  # Definition of Done
+  # ==========================================================
+
+  definition_of_done:
+    - "Hermes 定期分析自身运行数据 (每 Release)"
+    - "Hermes 独立发现并完成 ≥ 1 个自优化 per Release"
+    - "所有自优化在 Shadow 环境中验证"
+    - "0 次 forbidden 边界违反"
+    - "Hermes 像有自我意识的工程师——不断变得更好"

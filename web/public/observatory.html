@@ -1,0 +1,191 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Project Celestial — Runtime Observatory (WOC)</title>
+<style>
+:root{--bg:#060b14;--p:#0d1525;--b:#1a2a45;--t:#9ca3af;--d:#4b5563;--a:#38bdf8;--g:#22c55e;--y:#eab308;--r:#ef4444;--hp:#f87171;--s:#a78bfa;--rl:#38bdf8}
+*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--t);font:12px monospace;display:flex;height:100vh}
+aside{width:220px;background:var(--p);border-right:1px solid var(--b);padding:10px 0;overflow-y:auto;flex-shrink:0}
+aside h2{font-size:13px;color:var(--a);padding:0 10px 6px;border-bottom:1px solid var(--b);margin-bottom:2px}
+aside .n{display:block;padding:5px 10px;color:var(--t);cursor:pointer;font-size:11px;border-left:2px solid transparent;text-decoration:none}
+aside .n:hover,.n.a{color:var(--a);background:rgba(56,189,248,0.05);border-left-color:var(--a)}
+main{flex:1;overflow-y:auto;padding:12px}
+.pn{background:var(--p);border:1px solid var(--b);border-radius:4px;padding:12px;margin-bottom:10px}
+.pn h2{font-size:13px;color:var(--a);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--b)}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}
+.s{background:rgba(56,189,248,0.03);border:1px solid var(--b);border-radius:4px;padding:8px}
+.s .l{font-size:9px;color:var(--d)}.s .v{font-size:15px;color:var(--a);font-weight:bold;margin-top:1px}
+.cmds{display:flex;gap:4px;flex-wrap:wrap}
+.cmds button{background:var(--p);color:var(--t);border:1px solid var(--b);padding:5px 10px;border-radius:3px;cursor:pointer;font:11px monospace}
+.cmds button:hover{border-color:var(--a);color:var(--a)}
+.cmds button.dg:hover{border-color:var(--r);color:var(--r)}
+.cmds input{background:var(--bg);color:var(--t);border:1px solid var(--b);padding:5px 8px;border-radius:3px;font:11px monospace;width:100px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;padding:3px 6px;color:var(--d);border-bottom:1px solid var(--b)}
+td{padding:3px 6px;border-bottom:1px solid rgba(26,42,69,0.4)}tr:hover td{background:rgba(56,189,248,0.02)}
+.bar{height:4px;border-radius:2px;background:var(--b);overflow:hidden}.bar-fill{height:100%;border-radius:2px}
+.bh{background:var(--hp)}.bc{background:var(--rl)}.bs{background:var(--s)}
+.badge{display:inline-block;padding:1px 4px;border-radius:2px;font-size:9px}
+.bg{background:rgba(34,197,94,.15);color:var(--g)}.bi{background:rgba(56,189,248,.15);color:var(--a)}.bw{background:rgba(234,179,8,.15);color:var(--y)}.br{background:rgba(239,68,68,.15);color:var(--r)}
+.v{display:none}.v.a{display:block}
+#evts,#hst{max-height:350px;overflow-y:auto;font-size:10px}
+#evts div,#hst div{padding:2px 4px;border-bottom:1px solid rgba(26,42,69,0.3)}
+.sb{background:var(--p);border-top:1px solid var(--b);padding:3px 10px;font-size:10px;color:var(--d);display:flex;gap:14px}
+</style></head><body>
+
+<aside>
+<h2>◈ WOC</h2>
+<div class="n a" data-v="dash">Dashboard</div>
+<div class="n" data-v="world">World</div>
+<div class="n" data-v="ents">Entities</div>
+<div class="n" data-v="npcs">NPCs</div>
+<div class="n" data-v="sys">Systems</div>
+<div class="n" data-v="evts">Events</div>
+<div class="n" data-v="hst">History</div>
+<div class="n" data-v="snaps">Snapshots</div>
+<div class="n" data-v="tx">Transactions</div>
+<div class="n" data-v="api">API Explorer</div>
+<div class="n" data-v="perf">Performance</div>
+<div class="n" data-v="dtrm">Determinism</div>
+<div class="n" data-v="diff">World Diff</div>
+<div class="n" data-v="alerts">Alerts</div>
+<div class="n" data-v="debug">Debug</div>
+</aside>
+
+<div style="display:flex;flex-direction:column;flex:1">
+<main id="mc"></main>
+<div class="sb"><span id="bst">⚫ ...</span><span id="btk">Tick:0</span><span id="bnp">NPCs:0</span><span id="bev">Events:0</span><span id="bmm">Mem:0MB</span></div>
+</div>
+
+<script>
+const $=s=>document.getElementById(s);
+async function G(p){return(await fetch(p)).json()}
+async function P(p,b){return(await fetch(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})})).json()}
+function mk(...p){let h="";for(let i=0;i<p.length;i+=2)h+=`<div class="s"><div class="l">${p[i]}</div><div class="v">${p[i+1]}</div></div>`;return h}
+function hpp(s){if(!s)return 0;const[a,b]=s.split("/").map(Number);return b?Math.round(a/b*100):0}
+
+function navTo(v){
+  document.querySelectorAll(".n").forEach(n=>n.classList.remove("a"));
+  document.querySelector(`[data-v="${v}"]`).classList.add("a");
+  R[v]();
+}
+
+const R={
+dash:async()=>{
+  const w=await G("/api/world"),p=await G("/api/perf"),a=await G("/api/alerts");
+  $("mc").innerHTML=`<div class="pn"><h2>Runtime Observatory</h2><div class="g">${mk("State",w.sim_state,"Time",w.time,"Tick",w.tick,"Season",w.season,"Weather",w.weather,"Qi",(w.qi||0).toFixed(3),"Entities",w.entities,"NPCs",w.npcs,"Snapshots",w.snapshots,"Events",p.events,"Memory",p.memory_mb+"MB","Uptime",p.uptime+"s")}</div></div>
+  <div class="pn"><h2>Controls</h2><div class="cmds">
+    <button onclick="Cmds.tick(1)">+1</button><button onclick="Cmds.tick(10)">+10</button><button onclick="Cmds.tick(100)">+100</button><button onclick="Cmds.tick(1000)">+1k</button>
+    <button onclick="Cmds.pause()">Pause</button><button onclick="Cmds.resume()">Resume</button>
+    <button onclick="Cmds.snap()">Snapshot</button><button onclick="Cmds.npc()">+NPC</button>
+  </div></div>
+  <div class="pn"><h2>Alerts</h2>${a.alerts.map(x=>`<div style="color:${x.level==='warn'?'var(--y)':'var(--g)'}">⬤ ${x.msg}</div>`).join("")}</div>`;
+},
+world:async()=>{
+  const w=await G("/api/world");
+  $("mc").innerHTML=`<div class="pn"><h2>World Inspector</h2><table>${[["World ID",w.world_id],["Seed",w.seed],["Tick",w.tick],["Time",w.time],["Season",w.season],["Weather",w.weather],["Qi",(w.qi||0).toFixed(4)],["Era",w.era],["Entities",w.entities],["NPCs",w.npcs],["Snapshots",w.snapshots],["State",w.sim_state]].map(([k,v])=>`<tr><td style="color:var(--d)">${k}</td><td>${v}</td></tr>`).join("")}</table></div>`;
+},
+ents:async()=>{
+  const e=await G("/api/entities");
+  $("mc").innerHTML=`<div class="pn"><h2>Entity Explorer (${e.length})</h2>
+    <input id="ef" placeholder="Filter..." oninput="document.querySelectorAll('#et tr').forEach(r=>{const t=r.dataset.q||'';r.style.display=t.includes($('ef').value.toLowerCase())?'':'none'})" style="margin-bottom:6px;width:250px">
+    <table><thead><tr><th>ID</th><th>Type</th><th>Ver</th><th>State</th><th>Components</th></tr></thead>
+    <tbody id="et">${e.map(x=>`<tr data-q="${x.id} ${x.type}"><td><a href="#" onclick="viewEnt('${x.id}')">${x.id}</a></td><td>${x.type}</td><td>v${x.version}</td><td><span class="badge ${x.state==='active'?'bg':'bw'}">${x.state}</span></td><td>${x.components.join(", ")}</td></tr>`).join("")}</tbody></table></div>`;
+},
+npcs:async()=>{
+  const n=await G("/api/npcs");
+  $("mc").innerHTML=`<div class="pn"><h2>NPCs (${n.length})</h2><table><thead><tr><th>Name</th><th>Age</th><th>Realm</th><th>Cultivation</th><th>HP</th><th>Stamina</th><th>Brk</th></tr></thead>
+    <tbody>${n.map(x=>`<tr><td>${x.name}</td><td>${x.age}</td><td><span class="badge bi">Lv${x.realm_id}</span></td><td><div class="bar"><div class="bar-fill bc" style="width:${(x.cultivation*100).toFixed(0)}%"></div></div>${(x.cultivation*100).toFixed(1)}%</td><td><div class="bar"><div class="bar-fill bh" style="width:${hpp(x.hp)}%"></div></div>${x.hp}</td><td><div class="bar"><div class="bar-fill bs" style="width:${hpp(x.stamina)}%"></div></div>${x.stamina}</td><td><span class="badge bg">${x.breakthroughs}</span></td></tr>`).join("")}</tbody></table></div>`;
+},
+sys:async()=>{
+  const s=await G("/api/systems");
+  $("mc").innerHTML=`<div class="pn"><h2>System Monitor</h2><div class="g">${s.systems.map(x=>`<div class="s"><div class="l">${x.name}</div><div class="v" style="font-size:12px;color:var(--g)">${x.status}</div></div>`).join("")}</div><div style="margin-top:6px;font-size:10px;color:var(--d)">Order: ${s.systems.map(x=>x.name).join(" → ")}</div></div>`;
+},
+evts:async()=>{
+  const e=await G("/api/events?limit=200");
+  $("mc").innerHTML=`<div class="pn"><h2>Event Feed (${e.length})</h2><div id="evts">${e.map(x=>`<div>T${x.tick} <b>${x.type}</b> → ${x.target} ${x.payload?JSON.stringify(x.payload).slice(0,40):""}</div>`).join("")}</div></div>`;
+},
+hst:async()=>{
+  const h=await G("/api/history");
+  $("mc").innerHTML=`<div class="pn"><h2>History Timeline (${h.length})</h2><div id="hst">${h.slice().reverse().map(x=>`<div><span style="color:var(--a)">T${x.tick}</span> ${x.time} | ${x.weather} | Qi:${x.qi}</div>`).join("")||"<span style='color:var(--d)'>None</span>"}</div></div>`;
+},
+snaps:async()=>{
+  const s=await G("/api/snapshots");
+  $("mc").innerHTML=`<div class="pn"><h2>Snapshot Center (${s.list.length})</h2>
+    ${s.list.slice(-20).map(id=>`<div style="padding:4px 0;border-bottom:1px solid var(--b);display:flex;justify-content:space-between"><span>${id}</span><button onclick="P('/api/snapshot/load',{snapshot_id:'${id}'})">Load</button></div>`).join("")||"<span style='color:var(--d)'>None</span>"}
+    <div style="margin-top:6px"><button onclick="P('/api/snapshot/take')">Take Snapshot</button></div></div>`;
+},
+tx:async()=>{
+  const t=await G("/api/transactions");
+  $("mc").innerHTML=`<div class="pn"><h2>Transaction Center</h2><table>${[["Active",t.active],["Event Log",t.event_log_size]].map(([k,v])=>`<tr><td style="color:var(--d)">${k}</td><td>${v}</td></tr>`).join("")}</table></div>`;
+},
+api:async()=>{
+  const apis=["/api/world","/api/npcs","/api/entities","/api/systems","/api/events","/api/history","/api/snapshots","/api/transactions","/api/perf","/api/hash","/api/alerts"];
+  $("mc").innerHTML=`<div class="pn"><h2>API Explorer</h2><div class="g">${apis.map(p=>`<div class="s" style="cursor:pointer" onclick="testApi('${p}')"><div class="l">GET</div><div class="v" style="font-size:11px">${p}</div></div>`).join("")}</div>
+    <div id="ar" style="margin-top:8px;background:var(--bg);padding:8px;border-radius:4px;max-height:300px;overflow:auto;font-size:10px;white-space:pre-wrap"></div></div>`;
+},
+perf:async()=>{
+  const p=await G("/api/perf");
+  $("mc").innerHTML=`<div class="pn"><h2>Performance Monitor</h2><div class="g">${mk("Tick",p.tick,"Entities",p.entities,"NPCs",p.npcs,"Events",p.events,"Snapshots",p.snapshots,"Memory",p.memory_mb+"MB","Total",p.memory_total_mb+"MB","Uptime",p.uptime+"s")}</div></div>`;
+},
+dtrm:async()=>{
+  const h=await G("/api/hash");
+  $("mc").innerHTML=`<div class="pn"><h2>Determinism Center</h2><table>${[["History Hash",h.history_hash?.slice(0,16)+"..."],["Events",h.event_count],["Tick",h.tick]].map(([k,v])=>`<tr><td style="color:var(--d)">${k}</td><td>${v}</td></tr>`).join("")}</table>
+    <div style="margin-top:8px;color:var(--g)">✓ Full determinism verification: run verify_sprint1_alpha.js</div></div>`;
+},
+diff:async()=>{
+  const s=await G("/api/snapshots");
+  if(s.list.length<2){$("mc").innerHTML=`<div class="pn"><h2>World Diff</h2><span style="color:var(--d)">Need 2+ snapshots</span></div>`;return}
+  const opts=s.list.slice(-2);
+  $("mc").innerHTML=`<div class="pn"><h2>World Diff</h2>
+    <div class="cmds" style="margin-bottom:8px">
+      From: <select id="dff"><option>${opts[0]}</option></select>
+      To: <select id="dft"><option>${opts[1]}</option></select>
+      <button onclick="runDiff()">Compare</button>
+    </div><div id="dr"></div></div>`;
+  document.getElementById("dff").innerHTML=s.list.slice(-10).map(id=>`<option>${id}</option>`).join("");
+  document.getElementById("dft").innerHTML=s.list.slice(-10).map(id=>`<option>${id}</option>`).join("");
+},
+alerts:async()=>{
+  const a=await G("/api/alerts");
+  $("mc").innerHTML=`<div class="pn"><h2>Alert Center</h2>
+    ${a.alerts.map(x=>`<div style="padding:4px 0;border-bottom:1px solid var(--b);color:${x.level==='warn'?'var(--y)':'x.level==='error'?'var(--r)':'var(--g)'}">⬤ [${x.level}] ${x.msg}</div>`).join("")}</div>`;
+},
+debug:async()=>{
+  $("mc").innerHTML=`<div class="pn"><h2>Developer Tools</h2><div class="cmds">
+    <button onclick="Cmds.tick(10)">+10</button>
+    <button onclick="Cmds.tick(100)">+100</button>
+    <button onclick="Cmds.tick(1000)">+1k</button>
+    <button onclick="Cmds.snap()">Snapshot</button>
+    <button onclick="Cmds.npc()">+NPC</button>
+    <button class="dg" onclick="Cmds.reset()">Reset World</button>
+  </div></div>`;
+}};
+
+const Cmds={
+  tick:n=>P("/api/tick/advance",{count:n}).then(()=>navTo(document.querySelector(".n.a").dataset.v)),
+  pause:()=>P("/api/sim/pause").then(()=>navTo("dash")),
+  resume:()=>P("/api/sim/resume").then(()=>navTo("dash")),
+  snap:()=>P("/api/snapshot/take"),
+  npc:()=>P("/api/npc/create",{name:"NPC_"+Date.now().toString(36),age:20,realm:1}),
+  reset:()=>{if(confirm("Reset world?"))location.reload()}
+};
+
+async function testApi(p){const r=await G(p);$("ar").textContent=JSON.stringify(r,null,2)}
+async function viewEnt(id){const e=await G("/api/entity?id="+id);alert(JSON.stringify(e,null,2))}
+async function runDiff(){
+  const from=$("dff").value,to=$("dft").value;
+  const d=await G(`/api/world_diff?from=${from}&to=${to}`);
+  $("dr").innerHTML=`<div style="font-size:11px"><b>${from}</b> (T${d.from_tick}) → <b>${to}</b> (T${d.to_tick}) — ${d.total_changes} changes</div>
+    ${d.changed.map(c=>`<div style="padding:2px 0;font-size:10px">${c.id}: ${c.change==='modified'?'v'+c.v1+'→v'+c.v2:c.change}</div>`).join("")}`;
+}
+
+async function barUpdate(){
+  try{const w=await G("/api/world"),p=await G("/api/perf");
+    $("bst").innerHTML=`<span style="color:${w.sim_state==='running'?'var(--g)':'var(--y)'}">⬤</span> ${w.sim_state}`;
+    $("btk").textContent=`Tick:${w.tick}`;$("bnp").textContent=`NPCs:${w.npcs}`;
+    $("bev").textContent=`Events:${p.events}`;$("bmm").textContent=`Mem:${p.memory_mb}MB`}catch(e){$("bst").innerHTML='<span style="color:var(--r)">⬤</span> Offline'}
+}
+
+document.querySelectorAll(".n").forEach(n=>n.addEventListener("click",()=>navTo(n.dataset.v)));
+setInterval(barUpdate,2000);
+navTo("dash");
+</script></body></html>

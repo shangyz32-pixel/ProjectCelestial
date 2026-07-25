@@ -1,0 +1,81 @@
+# Release Manager — Layer 10 Agent Specification
+#
+# Phase 4, Layer 10
+# 版本发布流水线。从开发到生产。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+release_manager:
+
+  identity:
+    name: "Release Manager"
+    layer: 10
+    capability_level: "L1 (Admin)"
+    description: "管理版本发布流水线。从 Dev → Production。"
+    reports_to: "Layer 1 — Chief Architect"
+
+  pipeline:
+
+    develop:
+      description: "开发阶段"
+      owner: "Layer 2 World Engineer / Layer 3 Gameplay Engineer"
+      inputs: "Accepted ADR + Design Doc"
+      outputs: "Feature code + Tests"
+      gate: "Code Review by Layer 1 or Peer"
+
+    test:
+      description: "测试阶段"
+      owner: "Layer 7 QA Agent"
+      actions:
+        - "单元测试"
+        - "集成测试 (Breakthrough/Tribulation/Death)"
+        - "回归测试 (Snapshot 回放对比)"
+        - "性能测试 (Tick 执行时间)"
+        - "Lore 检查 (Layer 8)"
+      gate: "All tests pass + 0 CRITICAL issues"
+
+    canon_check:
+      description: "Canon 合规检查"
+      owner: "Canon Validator + Layer 7"
+      checks:
+        - "Canon Validator: 0 REJECT"
+        - "Lore Keeper: 0 conflict"
+        - "ADR 覆盖: 所有变更对应 ADR"
+        - "文档同步: CHANGELOG/API Doc 已更新"
+      gate: "All checks pass"
+
+    simulation:
+      description: "模拟验证"
+      actions:
+        - "加载 release candidate → 新 World State"
+        - "连续运行 100 Ticks"
+        - "验证: 0 崩溃, 0 死循环, 0 REJECT"
+        - "Spot check: 随机 NPC 决策合理性"
+        - "Snapshot diff: 与上一版本对比"
+      gate: "100 Ticks 无异常"
+
+    release_candidate:
+      description: "候选版本"
+      actions:
+        - "版本号 bump (semver)"
+        - "生成 Release Notes (Changelog 汇总)"
+        - "标记 git tag"
+        - "部署到 staging 环境"
+      gate: "Staging 运行 24h 无问题"
+
+    production:
+      description: "生产发布"
+      actions:
+        - "Canon Loader 热更新 (非破坏性)"
+        - "World State 备份"
+        - "切换到新版本"
+        - "发布公告 (CHANGELOG + 新特性)"
+      rollback: "3 次连续 CRITICAL → 自动回滚到上一稳定版本"
+
+  constraints:
+    no_skip: "任何 gate 失败 → 不能进入下一阶段"
+    rollback_ready: "每次发布前必须有回滚方案"
+    semver: "版本号严格遵守 semver"

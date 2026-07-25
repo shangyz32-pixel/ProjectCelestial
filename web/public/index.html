@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Celestial — World Observer</title>
+<style>
+:root {
+  --bg: #0a0e17; --panel: #111827; --border: #1e293b;
+  --text: #cbd5e1; --dim: #64748b; --accent: #38bdf8;
+  --green: #22c55e; --yellow: #eab308; --red: #ef4444;
+  --hp: #f87171; --stamina: #a78bfa; --realm: #38bdf8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:monospace; font-size:13px; line-height:1.5; }
+header { background:var(--panel); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; justify-content:space-between; align-items:center; }
+header h1 { font-size:16px; color:var(--accent); }
+header .status { font-size:12px; }
+header .status .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
+.dot.running { background:var(--green); }
+.dot.paused { background:var(--yellow); }
+nav { background:var(--panel); border-bottom:1px solid var(--border); padding:0 20px; display:flex; gap:2px; }
+nav button { background:none; border:none; color:var(--dim); padding:8px 16px; cursor:pointer; font-family:monospace; font-size:12px; border-bottom:2px solid transparent; }
+nav button:hover, nav button.active { color:var(--accent); border-bottom-color:var(--accent); }
+main { padding:20px; max-width:1200px; margin:0 auto; }
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:4px; padding:16px; margin-bottom:16px; }
+.panel h2 { font-size:14px; color:var(--accent); margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.stat { background:rgba(56,189,248,0.05); border:1px solid var(--border); border-radius:4px; padding:12px; }
+.stat .label { font-size:11px; color:var(--dim); }
+.stat .value { font-size:18px; color:var(--accent); font-weight:bold; margin-top:4px; }
+.controls { display:flex; gap:8px; flex-wrap:wrap; }
+.controls button { background:var(--panel); color:var(--text); border:1px solid var(--border); padding:8px 16px; border-radius:4px; cursor:pointer; font-family:monospace; font-size:12px; }
+.controls button:hover { border-color:var(--accent); color:var(--accent); }
+table { width:100%; border-collapse:collapse; }
+th { text-align:left; padding:6px 12px; font-size:11px; color:var(--dim); border-bottom:1px solid var(--border); }
+td { padding:6px 12px; border-bottom:1px solid rgba(30,41,59,0.5); }
+tr:hover td { background:rgba(56,189,248,0.03); }
+.bar { height:6px; border-radius:3px; background:var(--border); overflow:hidden; }
+.bar-fill { height:100%; border-radius:3px; transition:width .3s; }
+.bar-hp { background:var(--hp); }
+.bar-cv { background:var(--realm); }
+.bar-stamina { background:var(--stamina); }
+.badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:10px; }
+.badge-success { background:rgba(34,197,94,0.15); color:var(--green); }
+.badge-info { background:rgba(56,189,248,0.15); color:var(--accent); }
+.section { display:none; }
+.section.active { display:block; }
+#event-log { max-height:400px; overflow-y:auto; font-size:11px; }
+.event-line { padding:2px 8px; border-bottom:1px solid rgba(30,41,59,0.3); }
+.event-line .tick { color:var(--dim); margin-right:8px; }
+.event-line .type { color:var(--accent); }
+#log-status { font-size:11px; color:var(--dim); margin-top:8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>◈ Project Celestial — World Observer</h1>
+  <div class="status"><span class="dot running" id="status-dot"></span> <span id="status-text">Running</span></div>
+</header>
+
+<nav>
+  <button class="active" data-section="dashboard">Dashboard</button>
+  <button data-section="npcs">NPCs</button>
+  <button data-section="events">Events</button>
+  <button data-section="snapshots">Snapshots</button>
+</nav>
+
+<main>
+  <section id="dashboard" class="section active">
+    <div class="panel">
+      <h2>World Status</h2>
+      <div class="grid" id="world-stats"></div>
+    </div>
+    <div class="panel">
+      <h2>Controls</h2>
+      <div class="controls">
+        <button onclick="apiPost('/api/tick/advance',{count:1})">Advance Tick</button>
+        <button onclick="apiPost('/api/tick/advance',{count:10})">+10 Ticks</button>
+        <button onclick="apiPost('/api/tick/advance',{count:100})">+100 Ticks</button>
+        <button onclick="apiPost('/api/sim/pause')">Pause</button>
+        <button onclick="apiPost('/api/sim/resume')">Resume</button>
+        <button onclick="apiPost('/api/snapshot/take')">Save Snapshot</button>
+        <button onclick="apiPost('/api/npc/create',{name:'New NPC',age:25,realm:1})">Create NPC</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Recent History</h2>
+      <div id="history-list"></div>
+    </div>
+  </section>
+
+  <section id="npcs" class="section">
+    <div class="panel">
+      <h2>NPCs</h2>
+      <table><thead><tr><th>Name</th><th>Age</th><th>Realm</th><th>Cultivation</th><th>HP</th><th>Stamina</th><th>Breakthroughs</th><th>State</th></tr></thead>
+      <tbody id="npc-list"></tbody></table>
+    </div>
+  </section>
+
+  <section id="events" class="section">
+    <div class="panel">
+      <h2>Event Log</h2>
+      <div id="event-log"></div>
+      <div id="log-status"></div>
+    </div>
+  </section>
+
+  <section id="snapshots" class="section">
+    <div class="panel">
+      <h2>Snapshots</h2>
+      <div id="snapshot-list"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = "";
+
+async function apiGet(path) {
+  const r = await fetch(API + path);
+  return r.json();
+}
+
+async function apiPost(path, body) {
+  const r = await fetch(API + path, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body||{}) });
+  const d = await r.json();
+  refresh();
+  return d;
+}
+
+async function refresh() {
+  try {
+    const w = await apiGet("/api/world");
+    document.getElementById("status-dot").className = "dot " + (w.sim_state === "running" ? "running" : "paused");
+    document.getElementById("status-text").textContent = w.sim_state === "running" ? "Running" : "Paused";
+
+    document.getElementById("world-stats").innerHTML = `
+      <div class="stat"><div class="label">Time</div><div class="value">${w.time}</div></div>
+      <div class="stat"><div class="label">Season</div><div class="value">${w.season}</div></div>
+      <div class="stat"><div class="label">Tick</div><div class="value">${w.tick}</div></div>
+      <div class="stat"><div class="label">Weather</div><div class="value">${w.weather}</div></div>
+      <div class="stat"><div class="label">Qi Density</div><div class="value">${(w.qi||0).toFixed(3)}</div></div>
+      <div class="stat"><div class="label">Entities</div><div class="value">${w.entities}</div></div>
+      <div class="stat"><div class="label">NPCs</div><div class="value">${w.npcs}</div></div>
+      <div class="stat"><div class="label">Snapshots</div><div class="value">${w.snapshots}</div></div>
+    `;
+
+    // NPCs
+    const npcs = await apiGet("/api/npcs");
+    document.getElementById("npc-list").innerHTML = npcs.map(n => `
+      <tr>
+        <td>${n.name}</td><td>${n.age}</td>
+        <td><span class="badge badge-info">Lv${n.realm_id}</span></td>
+        <td><div class="bar"><div class="bar-fill bar-cv" style="width:${(n.cultivation*100).toFixed(0)}%"></div></div><span style="font-size:10px;color:var(--dim)">${(n.cultivation*100).toFixed(1)}%</span></td>
+        <td><div class="bar"><div class="bar-fill bar-hp" style="width:${n.hp.split('/').map(Number).reduce((a,b)=>a/b*100,0).toFixed(0)}%"></div></div><span style="font-size:10px;color:var(--dim)">${n.hp}</span></td>
+        <td><div class="bar"><div class="bar-fill bar-stamina" style="width:${n.stamina.split('/').map(Number).reduce((a,b)=>a/b*100,0).toFixed(0)}%"></div></div><span style="font-size:10px;color:var(--dim)">${n.stamina}</span></td>
+        <td><span class="badge badge-success">${n.breakthroughs}</span></td>
+        <td>${n.state}</td>
+      </tr>
+    `).join("");
+
+    // Events
+    const events = await apiGet("/api/events?limit=30");
+    document.getElementById("event-log").innerHTML = events.map(e => `
+      <div class="event-line">
+        <span class="tick">T${e.tick}</span>
+        <span class="type">${e.type}</span>
+        ${e.target ? " → " + e.target : ""}
+      </div>
+    `).join("");
+    document.getElementById("log-status").textContent = `Showing last ${events.length} events`;
+
+    // Snapshots
+    const snaps = await apiGet("/api/snapshots");
+    document.getElementById("snapshot-list").innerHTML = snaps.list.map((s,i) => `
+      <div style="padding:4px 0">${s} <button onclick="apiPost('/api/snapshot/load',{snapshot_id:'${s}'})" style="font-size:10px;padding:2px 8px">Load</button></div>
+    `).join("") || "<span style='color:var(--dim)'>No snapshots</span>";
+
+    // History
+    const hist = await apiGet("/api/history");
+    document.getElementById("history-list").innerHTML = hist.slice(-5).reverse().map(h => `
+      <div style="padding:4px 0;font-size:12px">
+        <span style="color:var(--dim)">Tick ${h.tick}</span>
+        ${h.time} | ${h.weather} | Qi:${h.qi}
+      </div>
+    `).join("") || "<span style='color:var(--dim)'>No history yet</span>";
+
+  } catch(e) {
+    document.getElementById("world-stats").innerHTML = `<div style="color:var(--red)">Connection lost: ${e.message}</div>`;
+  }
+}
+
+// Navigation
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(btn.dataset.section).classList.add("active");
+  });
+});
+
+// Auto-refresh every 2 seconds
+setInterval(refresh, 2000);
+refresh();
+</script>
+</body>
+</html>

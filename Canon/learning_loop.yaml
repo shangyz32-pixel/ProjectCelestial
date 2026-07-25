@@ -1,0 +1,98 @@
+# Learning Loop Runtime Specification
+#
+# Phase 4, Module 10: Learning Loop
+# 每个 Tick 结束: 聚合 → 摘要 → 持久化
+
+version: "1.0.0"
+status: Canon
+
+---
+
+learning_loop:
+
+  description: >
+    每天结束, Hermes 停下来看看今天发生了什么。
+    生成结构化摘要。触发持久化。
+
+  # ==========================================================
+  # Pipeline
+  # ==========================================================
+
+  pipeline:
+
+    1_aggregate:
+      input: "Step 8 validated_events"
+      output: "统计数据"
+      stats:
+        new_factions: "新成立的宗门数"
+        destroyed_factions: "覆灭的宗门数"
+        deaths: "死亡 NPC 数 (含妖兽)"
+        breakthroughs: "成功突破数 + 失败数"
+        wars_started: "新爆发的战争数"
+        wars_ended: "结束的战争数"
+        ascensions: "飞升数"
+        discoveries: "新发现 (遗迹/功法/灵脉)"
+        births: "新出生数"
+        marriages: "道侣结合数"
+        betrayals: "背叛事件数"
+
+    2_summarize:
+      input: "统计数据 + major_events (imp >= 7 的事件)"
+      output: "World Summary (YAML 或 Markdown)"
+      format:
+        tick: "Tick 编号"
+        date: "世界日期"
+        stats: "统计数据"
+        major_events: "重要性 >= 7 的事件标题"
+        world_state_flags: "关键世界状态 (危机/战争/异常)"
+        narrative_hook: "一句话摘要 (给人类阅读)"
+
+    3_update_kg:
+      action: "将摘要中的关键关系同步到 KG"
+      auto_rules:
+        - "新战争 → HOSTILE_TO edge"
+        - "新联盟 → ALLY_OF edge"
+        - "势力覆灭 → mark [destroyed]"
+
+    4_persist:
+      actions:
+        - "写入 History (Step 9)"
+        - "保存 Snapshot (Step 10)"
+
+  # ==========================================================
+  # Integration
+  # ==========================================================
+
+  integration:
+    simulation_engine:
+      after: "Step 8 Events (validated)"
+      before: "Step 9 History"
+      position: "Step 8.5"
+
+  # ==========================================================
+  # Example — 一场大战的日子
+  # ==========================================================
+
+  example_war_day:
+    tick: 47
+    date: "天历 847-12-15"
+    stats:
+      new_factions: 0
+      destroyed_factions: 1
+      deaths: 82
+      breakthroughs: 3
+      breakthroughs_failed: 8
+      wars_started: 1
+      wars_ended: 0
+      ascensions: 0
+      discoveries: 0
+    major_events:
+      - "黑风岭战役: 青云宗 vs 散修盟, 82 人死亡"
+      - "公孙烈重伤"
+      - "陈玄击杀青云宗执法长老"
+      - "黑风岭矿脉争夺进入白热化"
+    world_state_flags:
+      active_war: "青云宗 ↔ 散修盟 (黑风岭)"
+      qi_crisis: "青云主脉 52 (decading)"
+      faction_leader_wounded: "公孙烈 (青云宗大长老)"
+    narrative_hook: "黑风岭的雪被血染红了。这是两派之间最大的一次战役。没有人赢。"

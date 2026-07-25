@@ -1,0 +1,202 @@
+# NPC Memory: 王虎（夺剑者）
+#
+# 与陈玄 (npc_001) 共享事件：天历844年杀林远、天历847年坊市相遇
+# 视角：施害者——不认为自己做错了什么
+
+npc_id: "npc_002"
+npc_name: "王虎"
+realm: "金丹境"
+spirit_root: "地灵根·金"
+faction: "青云宗"
+faction_status: "外门弟子"
+
+# ============================================================
+# 短期记忆（最近 30 世界日）
+# ============================================================
+short_term:
+
+  - id: 1
+    timestamp: "天历 847 年 7 月 23 日"
+    type: social
+    title: "坊市酒楼宴请灵宝阁掌柜"
+    narrative: >
+      在云来坊市请灵宝阁李掌柜喝酒，谈妥了下月丹药供应的分成。
+      出门时瞥见一个戴斗笠的人影闪入巷中，身形有几分眼熟，
+      但一时想不起是谁。大概是哪个落魄散修。
+      腰间青冥剑微微震颤——这剑偶尔会有反应，习惯了。
+    importance: 3
+    participants:
+      - entity_id: "npc_merchant_li"
+        entity_type: character
+        role: business_partner
+    location: "云来坊市·醉仙楼"
+    emotional_valence: +5
+    behavior_tags:
+      - tag: CONFIDENT
+        target: ""
+        intensity: 6
+        decay: medium_decay
+
+  - id: 2
+    timestamp: "天历 847 年 7 月 18 日"
+    type: cultivation
+    title: "青冥剑认主有所松动"
+    narrative: >
+      最近修炼时感觉青冥剑的认主印记有细微松动。
+      找宗门炼器师检查，说是此剑原主执念未消，
+      建议用更高修为强行压制。王虎不以为意——
+      一个死人的执念能有多强。
+    importance: 4
+    location: "青云宗·外门"
+    emotional_valence: -3
+    behavior_tags:
+      - tag: DETERMINED
+        target: ""
+        intensity: 5
+        decay: medium_decay
+
+  - id: 3
+    timestamp: "天历 847 年 7 月 10 日"
+    type: faction
+    title: "晋升内门考核通过初试"
+    narrative: >
+      通过了青云宗内门晋升考核的第一轮。
+      考官对青冥剑赞不绝口，说"有此剑，金丹境内无敌手"。
+      王虎得意之下透露此剑来历——"从一散修手中所得"。
+    importance: 6
+    location: "青云宗·演武场"
+    emotional_valence: +7
+    behavior_tags:
+      - tag: CONFIDENT
+        target: ""
+        intensity: 8
+        decay: medium_decay
+
+# ============================================================
+# 长期记忆
+# ============================================================
+long_term:
+
+  - id: 101
+    timestamp: "天历 844 年 9 月 11 日"
+    type: battle
+    title: "诛杀散修林远，夺得青冥剑"
+    narrative: >
+      在青云山脉巡逻时发现散修林远独自赶路，腰间佩剑剑气逼人。
+      王虎认出那是上古法宝青冥剑，起了贪念。
+      以"查验路引"为由上前盘查，趁其不备偷袭得手。
+      林远临死前说"我师父不会放过你"。
+      王虎嗤笑：一个散修的师父又能如何。
+      回宗后将林远定为"擅闯青云宗禁地"，宗门认可，
+      得以保留青冥剑。自此以青冥剑在金丹境横着走。
+    importance: 7
+    participants:
+      - entity_id: "npc_linyuan"
+        entity_type: character
+        role: victim
+      - entity_id: "faction_qingyun"
+        entity_type: faction
+        role: protector
+    location: "青云山脉·断魂崖"
+    emotional_valence: +6
+    behavior_tags:
+      - tag: CONFIDENT
+        target: ""
+        intensity: 7
+        decay: slow_decay
+    kg_trigger:
+      action: create
+      edge_type: KILLED
+      from: "npc_002"
+      to: "npc_linyuan"
+
+  - id: 102
+    timestamp: "天历 840 年 3 月 1 日"
+    type: faction
+    title: "加入青云宗外门"
+    narrative: >
+      出身小修仙家族，天赋平平（地灵根）。
+      靠家族关系和人脉运作，得以进入青云宗外门。
+      在宗门中不受重视，但学会了最重要的生存法则：
+      有靠山就可以颠倒黑白。
+    importance: 6
+    participants:
+      - entity_id: "faction_qingyun"
+        entity_type: faction
+        role: member
+    location: "青云宗"
+    emotional_valence: +4
+    behavior_tags:
+      - tag: LOYAL_TO
+        target: "faction_qingyun"
+        intensity: 7
+        decay: slow_decay
+
+  - id: 103
+    timestamp: "天历 844 年 10 月 5 日"
+    type: social
+    title: "有人来宗门追查林远之死"
+    narrative: >
+      听说有个叫陈玄的散修来青云宗要人。
+      长老出面挡了回去，说"私人恩怨宗门不管"。
+      王虎在远处看了一眼——一个中年修士，面色铁青。
+      心想：元婴境又怎样，还不是拿我没办法。
+      此后再没放在心上。
+    importance: 5
+    participants:
+      - entity_id: "npc_001"
+        entity_type: character
+        role: pursuer
+      - entity_id: "faction_qingyun"
+        entity_type: faction
+        role: protector
+    location: "青云宗·山门"
+    emotional_valence: +5
+    behavior_tags:
+      - tag: CONFIDENT
+        target: ""
+        intensity: 6
+        decay: medium_decay
+    kg_trigger:
+      action: create
+      edge_type: HOSTILE_TO
+      from: "npc_001"
+      to: "npc_002"
+
+# ============================================================
+# 活跃行为标签
+# ============================================================
+active_tags:
+  - tag: CONFIDENT
+    target: ""
+    intensity: 8
+    source: [3]
+
+  - tag: LOYAL_TO
+    target: "faction_qingyun"
+    intensity: 7
+    source: [102]
+
+  - tag: DETERMINED
+    target: ""
+    intensity: 5
+    source: [2]
+
+# ============================================================
+# 与陈玄 (npc_001) 的交叉视角对比
+# ============================================================
+# 同一事件——天历 844 年 9 月 11 日，断魂崖
+#
+# 陈玄眼中：爱徒被偷袭杀害，法宝被夺，凶手逍遥法外
+#   重要性: 10
+#   情感效价: -10
+#   标签: HOSTILE_TOWARD(10), SEEKS_REVENGE(10)
+#
+# 王虎眼中：在巡逻中顺手干掉一个散修，得了把好剑
+#   重要性: 7
+#   情感效价: +6
+#   标签: CONFIDENT(7)
+#
+# 同一事件，两个人的记忆完全相反。
+# 这正是双层记忆系统的价值：
+# 不是"谁对谁错"，而是"每个人记住的东西决定了他们的行为"。

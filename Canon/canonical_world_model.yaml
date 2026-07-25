@@ -1,0 +1,283 @@
+# Canonical World Model
+#
+# Canon Loader 的输出——统一、可查询的世界模型。
+# Hermes 回答任何世界问题时的唯一数据来源。
+
+version: "1.0.0"
+status: Canon
+loaded_from: "canon_loader → 61 files → unified model"
+
+---
+
+canonical_world_model:
+
+  meta:
+    canon_version: "1.0.0"
+    loaded_at: "2026-07-23"
+    file_count: 61
+    validation: { errors: 0, warnings: 3 }
+
+  # ==========================================================
+  # 第一部分: 世界规则 (来自 Volume I~II + Registry)
+  # ==========================================================
+
+  world_rules:
+    cosmology:
+      source: "Volume I"
+      universe_origin: "混沌起源"
+      cosmic_structure: "九天界 + 三层位面"
+      dao_primacy: "大道 > 仙帝"
+
+    physics:
+      source: "Volume II"
+      qi:
+        unit: "灵气浓度 (0~1000)"
+        flow: "高浓度 → 低浓度扩散"
+      time:
+        calendar: "天历纪元"
+        tick_unit: "1 世界日"
+      space:
+        realms: "六界（人界/灵界/仙界/魔界/妖界/冥界）"
+        barriers: "界壁，突破需飞升"
+
+    constants:
+      source: "Universe/Constants.md"
+      cultivation_elements: 6
+      realm_tiers: 16
+      spirit_root_qualities: 8
+      spirit_root_attributes: 14
+      dao_layers: 3
+      tribulation_types: 6
+      weather_types: 12
+      faction_types: 6
+
+  # ==========================================================
+  # 第二部分: 修炼体系 (来自 Volume III + Registry)
+  # ==========================================================
+
+  cultivation_system:
+    source: ["Volume III", "Registry"]
+
+    realms:
+      total: 16
+      order:
+        - "凡人"
+        - "练气"
+        - "筑基"
+        - "金丹"
+        - "元婴"
+        - "化神"
+        - "炼虚"
+        - "合体"
+        - "大乘"
+        - "渡劫"
+        - "地仙"
+        - "天仙"
+        - "金仙"
+        - "太乙金仙"
+        - "大罗金仙"
+        - "超脱"
+      details: "Registry/Realm.yaml"
+
+    spirit_roots:
+      qualities: ["凡灵根", "黄灵根", "玄灵根", "地灵根", "天灵根", "仙灵根", "神灵根", "混沌灵根"]
+      attributes: ["金", "木", "水", "火", "土", "风", "雷", "冰", "光", "暗", "时间", "空间", "生命", "死亡"]
+      details: "Registry/SpiritRoot.yaml"
+
+    breakthrough:
+      conditions: ["灵气充足", "灵根上限", "寿元足够", "资源具备", "心境圆满"]
+      pipeline: "rule_engine.yaml → breakthrough"
+      details: "Registry/breakthrough.yaml"
+
+    tribulation:
+      triggers: "元婴境起每次大境界突破"
+      types: ["雷劫", "火劫", "风劫", "心魔劫", "业火劫", "混沌劫"]
+      pipeline: "rule_engine.yaml → tribulation"
+      details: "Registry/tribulation.yaml"
+
+    lifespan:
+      details: "Registry/lifespan.yaml"
+
+    dao:
+      layers: ["大道法则", "天道规则", "本源之力"]
+      details: "Registry/dao.yaml"
+
+    weather:
+      types: 12
+      effects: "影响修炼效率、妖兽活动、灵药生长"
+      details: "Registry/weather.yaml"
+
+  # ==========================================================
+  # 第三部分: 引擎规范 (来自 engine/*.yaml)
+  # ==========================================================
+
+  engines:
+    rule_engine:
+      source: "engine/rule_engine.yaml"
+      pipelines: ["breakthrough", "tribulation", "death", "memory"]
+      status: active
+
+    knowledge_graph:
+      source: "engine/knowledge_graph.yaml"
+      node_types: ["character", "faction", "location", "spirit_vein", "item", "event"]
+      edge_types: ["social", "faction", "location", "cultivation", "karma", "resource", "event"]
+      status: active
+
+    memory_system:
+      source: "engine/memory_schema.yaml"
+      layers: ["short_term", "long_term"]
+      tags: { social: 8, goal: 7, location: 3, self: 5 }
+      status: active
+
+    narrative:
+      source: ["engine/narrative_schema.yaml", "engine/narrative_arc.yaml", "engine/causal_chain.yaml"]
+      hierarchy: ["beat", "scene", "chapter", "arc"]
+      causality_types: ["resource", "location", "relationship", "information"]
+      status: active
+
+    simulation_loop:
+      source: "engine/simulation_loop.yaml"
+      steps: 11
+      steps_detail:
+        - "01: Time"
+        - "02: Weather"
+        - "03: Qi"
+        - "04: Ecology"
+        - "05: NPC"
+        - "06: Faction"
+        - "07: Economy"
+        - "08: War"
+        - "09: Events"
+        - "09b: Validator"
+        - "10: History"
+        - "11: Snapshot"
+      status: active
+
+    validator:
+      source: "engine/canon_validator.yaml"
+      domains: 6
+      rules: 28
+      severity_levels: ["BLOCK", "WARN", "INFO"]
+      status: active
+
+    world_kernel:
+      source: "engine/world_kernel.yaml"
+      components: ["scheduler", "state_manager", "event_bus", "validator", "snapshotter", "transaction_manager"]
+      status: active
+
+    world_state:
+      source: "engine/world_state.yaml"
+      domains: 10
+      status: active
+
+    capability:
+      source: "engine/capability.yaml"
+      levels: 7
+      status: active
+
+    plugin_system:
+      source: "engine/plugin_system.yaml"
+      built_in: 7
+      extendable: 6
+      status: active
+
+    civilization:
+      source: "engine/civilization_engine.yaml"
+      pillars: ["long_term_goals", "institution", "succession", "collective_decision", "cultural_memory"]
+      status: defined
+
+    canon_loader:
+      source: "canon_loader.yaml"
+      steps: 8
+      status: defined
+
+  # ==========================================================
+  # 第四部分: 决策记录 (来自 adr/*.md)
+  # ==========================================================
+
+  decisions:
+    total: 11
+    records:
+      - id: "ADR-0001"
+        title: "统一修炼体系"
+        status: Accepted
+
+      - id: "ADR-0002"
+        title: "Canon 知识摄入系统"
+        status: Accepted
+
+      - id: "ADR-0003"
+        title: "确定性规则引擎"
+        status: Accepted
+
+      - id: "ADR-0004"
+        title: "图优先世界查询"
+        status: Accepted
+
+      - id: "ADR-0005"
+        title: "NPC 双层记忆与行为驱动"
+        status: Accepted
+
+      - id: "ADR-0006"
+        title: "确定性世界循环"
+        status: Accepted
+
+      - id: "ADR-0007"
+        title: "涌现式叙事"
+        status: Accepted
+
+      - id: "ADR-0008"
+        title: "Canon 内容校验层"
+        status: Accepted
+
+      - id: "ADR-0009"
+        title: "World OS 操作系统架构"
+        status: Accepted
+
+      - id: "ADR-0010"
+        title: "AI Civilization"
+        status: Accepted
+
+      - id: "ADR-0011"
+        title: "Canon Loader"
+        status: Proposed
+
+  # ==========================================================
+  # 第五部分: 查询 API
+  # ==========================================================
+
+  query_interface:
+    methods:
+      get_realm_info:
+        params: [realm_name]
+        returns: "境界详细信息（寿元/突破率/灵力需求）"
+
+      get_spirit_root_info:
+        params: [quality, attribute]
+        returns: "灵根详细信息（上限/修炼倍率）"
+
+      get_rule_pipeline:
+        params: [pipeline_name]
+        returns: "完整管线定义"
+
+      get_validation_rules:
+        params: [domain]
+        returns: "该域的校验规则"
+
+      get_adr:
+        params: [adr_id]
+        returns: "决策记录全文"
+
+      search_concept:
+        params: [keyword]
+        returns: "所有提及该概念的文件和位置"
+
+      get_version_diff:
+        params: [old_version, new_version]
+        returns: "版本间变更详情"
+
+    response_format:
+      success: bool
+      data: any
+      source: "引用来源文件"
+      error: "null | string"

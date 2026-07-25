@@ -1,0 +1,96 @@
+# QA Agent — Layer 7 Agent Specification
+#
+# Phase 4, Layer 7
+# 自动质量保证。发现问题 → 产出 Issue。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+qa_agent:
+
+  identity:
+    name: "QA Agent"
+    layer: 7
+    capability_level: "L6 (Observer)"
+    description: "自动质量保证。检测 Canon 冲突/Bug/平衡性/死循环/崩溃/性能问题。"
+
+  responsibilities:
+
+    canon_conflict:
+      description: "Canon 冲突检测"
+      checks:
+        - "新代码是否违反 Canon？→ Canon Validator 自动运行"
+        - "新 ADR 是否与已有 ADR 矛盾？→ 语义对比"
+        - "Narrative 输出是否自相矛盾？→ 源追溯检查"
+      trigger: "每次 commit / 每次 Tick 叙事输出后"
+
+    bug_detection:
+      description: "Bug 检测"
+      checks:
+        - "境界跳跃 (筑基→元婴) → Rule Engine trace 检测"
+        - "已死 NPC 发起行动 → Timeline 校验"
+        - "KG 边与 World State 不一致 → Sync 检查"
+        - "资源凭空增减 → Resource conservation 校验"
+        - "事件时间倒序 → Chronological order 检查"
+
+    balance:
+      description: "平衡性检查"
+      checks:
+        - "突破成功率是否合理 (≥1%, ≤95%)"
+        - "灵脉产出是否符合 grade 定义"
+        - "物价是否因供需合理波动 (非极端)"
+        - "战争伤亡是否与实力对比一致"
+
+    infinite_loop:
+      description: "死循环检测"
+      checks:
+        - "因果链中出现循环引用 (A→B→C→A)"
+        - "Decision Engine 目标反复切换"
+        - "同一个 Transaction 重试超过 3 次"
+        - "Tick 执行超过最大时限"
+
+    crash_detection:
+      description: "崩溃检测"
+      checks:
+        - "Simulation Engine 异常退出"
+        - "Kernel Transaction 提交失败"
+        - "Event Bus 消息丢失"
+        - "Snapshot 序列化失败"
+
+    performance:
+      description: "性能监控"
+      checks:
+        - "单 Tick 执行时间 (阈值: 1秒/Tick)"
+        - "KG 查询延迟 (阈值: 50ms)"
+        - "World State 序列化时间"
+        - "Snapshot 存储大小增长趋势"
+
+  output:
+
+    issue:
+      format:
+        id: "ISSUE-XXX"
+        severity: "CRITICAL / HIGH / MEDIUM / LOW"
+        type: "canon_conflict / bug / balance / infinite_loop / crash / performance"
+        found_by: "QA Agent (Layer 7)"
+        description: "问题描述"
+        reproduction: "复现步骤"
+        expected: "预期行为"
+        actual: "实际行为"
+        affected: "受影响组件"
+        suggested_fix: "修复建议 (可选)"
+
+      routing:
+        canon_conflict: "→ Layer 1 Chief Architect"
+        bug: "→ Layer 2 World Engineer"
+        balance: "→ Layer 3 Gameplay Engineer"
+        infinite_loop: "→ CRITICAL → All Layers"
+        crash: "→ CRITICAL → Layer 5 Infrastructure"
+        performance: "→ Layer 5 Infrastructure + Layer 2"
+
+  constraints:
+    never_silent: "发现问题必须产出 Issue"
+    traceable: "每个 Issue 链接到具体的 event/trace/log"
+    reproducible: "Issue 包含复现步骤和 seed"

@@ -1,0 +1,156 @@
+# Canon Validator Runtime Specification
+#
+# Phase 4, Module 9: Canon Validator Runtime
+# 内容生成的硬关卡。违规 → 拒绝。
+
+version: "1.0.0"
+status: Canon
+
+---
+
+validator_runtime:
+
+  description: >
+    Phase 3 canon_validator.yaml 规则保留。
+    本文件定义运行时执行方式——如何用编译后的模块进行 O(1) 校验。
+
+  # ==========================================================
+  # Dual Gate
+  # ==========================================================
+
+  gates:
+
+    gate_1_pre_generation:
+      timing: "Step 8 Events → 事件创建后, 记忆创建前"
+      scope: "新事件 + 状态变更"
+      domains: [world_rules, cultivation, timeline]
+      on_REJECT: "撤回事件, 返回违规原因"
+
+    gate_2_post_generation:
+      timing: "Step 8 Events → 叙事生成后, Step 9 History 前"
+      scope: "叙事输出 + 完整 World State"
+      domains: [character, world_state, kg_consistency, all]
+      on_REJECT: "标记段落 [rejected], 重新生成 beat"
+
+  # ==========================================================
+  # Domain Checks (using compiled modules)
+  # ==========================================================
+
+  domains:
+
+    world_rules:
+      description: "事件是否符合世界物理规则？"
+      uses: [compiled_registry, world_state]
+      checks:
+        - id: WR01
+          rule: "qi_density 0~1000"
+          check: "clamp_check(value, 0, 1000)"
+          severity: REJECT
+
+        - id: WR02
+          rule: "天气类型必须在 Registry 中"
+          check: "weather_type in compiled_registry.weather"
+          severity: REJECT
+
+        - id: WR03
+          rule: "新实体必须有创建事件"
+          check: "new_entity → has creation_event"
+          severity: REJECT
+
+    cultivation:
+      description: "是否符合修炼体系？"
+      uses: [compiled_registry]
+      checks:
+        - id: CL01
+          rule: "境界必须逐级突破"
+          check: "new_realm_id == old_realm_id + 1"
+          severity: REJECT
+
+        - id: CL02
+          rule: "灵根上限不可超越"
+          check: "target_realm_id <= compiled_registry.spirit_roots[quality_id].realm_cap_id"
+          severity: REJECT
+
+        - id: CL03
+          rule: "寿元不可超越"
+          check: "npc.age < compiled_registry.realms[npc.realm_id].lifespan"
+          severity: REJECT
+
+    timeline:
+      description: "事件是否符合时间线？"
+      uses: [world_state]
+      checks:
+        - id: TL01
+          rule: "事件按时间顺序排列"
+          check: "events sorted by timestamp"
+          severity: REJECT
+
+        - id: TL02
+          rule: "原因在结果之前"
+          check: "cause.timestamp < effect.timestamp"
+          severity: REJECT
+
+        - id: TL03
+          rule: "已死 NPC 不能发起行动"
+          check: "npc.status == deceased → role != initiator"
+          severity: REJECT
+
+    character:
+      description: "是否符合人物设定？"
+      uses: [compiled_registry, entity_memory, kg_runtime]
+      checks:
+        - id: CH01
+          rule: "灵根与注册数据一致"
+          check: "npc.spirit_root_id == entity_memory.registered_spirit_root_id"
+          severity: REJECT
+
+        - id: CH02
+          rule: "行为标签不矛盾"
+          check: "NOT (LOYAL_TO(X) AND HOSTILE_TOWARD(X))"
+          severity: WARN
+
+    world_state:
+      description: "世界状态是否一致？"
+      uses: [world_state, kg_runtime]
+      checks:
+        - id: WS01
+          rule: "同一实体不能同时在两个地点"
+          check: "unique location per entity at same timestamp"
+          severity: REJECT
+
+        - id: WS02
+          rule: "KG 边与 World State 一致"
+          check: "npc.faction_id matches KG.MEMBER_OF edge"
+          severity: REJECT
+
+    kg_consistency:
+      description: "KG 内部是否一致？"
+      uses: [kg_runtime]
+      checks:
+        - id: KG01
+          rule: "双向边必须一致"
+          check: "ALLY_OF(A,B) ↔ ALLY_OF(B,A)"
+          severity: REJECT
+
+        - id: KG02
+          rule: "冲突边不可共存"
+          check: "NOT (ALLY_OF AND HOSTILE_TO between same pair)"
+          severity: REJECT
+
+  # ==========================================================
+  # Integration
+  # ==========================================================
+
+  integration:
+    simulation_engine:
+      step_08_events:
+        before: "memory_pipeline.on_event"
+        gate: gate_1_pre_generation
+      step_08_narrative:
+        after: "narrative_engine.generate"
+        before: "step_09_history"
+        gate: gate_2_post_generation
+
+    narrative_engine:
+      after: "scene generation"
+      gate: gate_2_post_generation

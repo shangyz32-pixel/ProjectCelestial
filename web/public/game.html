@@ -209,6 +209,33 @@ async function attemptBreakthrough(useJade){
   notify(r.success?"🎉 突破成功！境界提升！":"💥 突破失败！",r.success?"success":"danger");
   $("bt-panel").style.display="none";refresh();
 }
-async function explore(area){const r=await P("/api/game/explore",{area});notify(`📍 前往 ${AREA_NAMES[area]||area}`,"info");const msg=r.discovery?`🔍 ${r.discovery}`:"踏入新区域...";if(r.discovery)notify(`🔍 ${r.discovery}`,"rare");showMsg(msg,r.discovery?"success":"info");refresh()}
+async function explore(area){const r=await P("/api/game/explore",{area});notify(`📍 前往 ${AREA_NAMES[area]||area}`,"info");
+  if(r.event){
+    // Show event dialog with choices
+    const e=r.event;
+    let html=`<div style="background:var(--dark);border:2px solid var(--gold);border-radius:8px;padding:12px;margin:8px 0">`;
+    html+=`<div style="color:var(--gold);font-weight:bold;font-size:14px">⚔ ${e.title}</div>`;
+    html+=`<div style="color:var(--dim);font-size:11px;margin:4px 0">${e.description}</div>`;
+    html+=`<div style="margin-top:8px">`;
+    for(const c of e.choices){
+      const riskLabel=c.success<0.5?"⚠":"";
+      html+=`<button class="btn" style="margin:2px 0" onclick="resolveEvent('${e.eventId}','${c.id}')">${riskLabel}${c.label}</button>`;
+    }
+    html+=`</div></div>`;
+    showMsg("",null);
+    const old=$("areas");old.insertAdjacentHTML("beforebegin",html);
+    notify(`⚔ ${e.title}`,"warn");
+  }else{
+    showMsg("踏入新区域...","info");
+  }
+  refresh()
+}
+async function resolveEvent(eventId,choiceId){
+  const r=await P("/api/game/event/resolve",{eventId,choice:choiceId});
+  const o=r.outcome;
+  showMsg(o.message||"",o.success?"success":"fail");
+  notify(o.success?"🎉 "+o.eventType+" 成功":"💥 "+o.eventType+" 失败",o.success?"success":"danger");
+  refresh()
+}
 async function gather(res){const r=await P("/api/game/gather",{resource:res});notify(`🌿 获得 ${RES_NAMES[res]||res} ×${r.count}`,"success");refresh()}
 </script></body></html>

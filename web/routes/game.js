@@ -209,32 +209,61 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       kernel.updateComponent(p.id, "Location", { area }, p.version);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
 
-      // Discovery chance on entering new area
-      let discovery = "";
+      // Discovery chance: use ExplorationEventSystem
+      let eventData = null;
       if (area !== oldArea && Math.random() < 0.40) {
-        const discoveries = [
-          { msg: "发现了一处隐秘洞穴！获得灵草×2", res: "spirit_herb", count: 2 },
-          { msg: "在溪水中捡到灵石碎片×1", res: "jade_shard", count: 1 },
-          { msg: "发现了前人留下的修炼笔记！（修行+5%）", res: null, cv_bonus: 0.05 },
-          { msg: "遭遇一头妖兽，费劲击退后捡到雷晶石×1", res: "thunder_ore", count: 1 },
-          { msg: "山间雾气中寻得古玉×1", res: "ancient_jade", count: 1 },
-          { msg: "发现废弃的炼丹炉残骸...", res: null },
-        ];
-        const d = discoveries[Math.floor(Math.random() * discoveries.length)];
-        discovery = d.msg;
-        if (d.res) {
-          const inv = p.getComponent("Inventory") || { items: {} };
-          const cur = inv.items[d.res] || 0;
-          const up = kernel.getEntity(p.id);
-          kernel.updateComponent(up.id, "Inventory", { items: { ...inv.items, [d.res]: cur + d.count } }, up.version);
-        }
-        if (d.cv_bonus) {
-          const realm = p.getComponent("Realm") || {};
-          const up = kernel.getEntity(p.id);
-          kernel.updateComponent(up.id, "Realm", { ...realm, cultivation_value: Math.min(1.0, realm.cultivation_value + d.cv_bonus) }, up.version);
+        const exploration = sim.engine?.exploration;
+        if (exploration) {
+          eventData = exploration.generateEvent(area);
+          if (eventData) exploration.activeEvents.set(eventData.eventId, eventData);
         }
       }
-      return send(200, { area, discovery: discovery || null, ok: true });
+      return send(200, { area, event: eventData, ok: true });
+    }
+
+    case "/api/game/event/resolve": {
+      const eventId = params.eventId;
+      const choiceId = params.choice;
+      if (!eventId || !choiceId) return send(400, { error: "Need eventId and choice" });
+      const exploration = sim.engine?.exploration;
+      if (!exploration) return send(500, { error: "Exploration system unavailable" });
+      // Retrieve event from active events
+      const event = exploration.activeEvents.get(eventId);
+      if (!event) return send(404, { error: "Event not found or expired" });
+      const outcome = exploration.resolveChoice(event, choiceId);
+      // Apply rewards
+      if (outcome.success && outcome.reward) {
+        const players = kernel.queryEntities("player", {}, 1, 0);
+        if (players.length > 0) {
+          const p = players[0];
+          const inv = p.getComponent("Inventory") || { items: {} };
+          const rewards = { ...inv.items };
+          if (outcome.reward.spirit_herb) rewards.spirit_herb = (rewards.spirit_herb||0) + outcome.reward.spirit_herb;
+          if (outcome.reward.spirit_stone) rewards.spirit_stone = (rewards.spirit_stone||0) + outcome.reward.spirit_stone;
+          if (outcome.reward.jade_shard) rewards.jade_shard = (rewards.jade_shard||0) + outcome.reward.jade_shard;
+          if (outcome.reward.dragon_scale) rewards.dragon_scale = (rewards.dragon_scale||0) + outcome.reward.dragon_scale;
+          if (outcome.reward.ancient_jade) rewards.ancient_jade = (rewards.ancient_jade||0) + outcome.reward.ancient_jade;
+          if (outcome.reward.random_item) rewards[outcome.reward.random_item] = (rewards[outcome.reward.random_item]||0) + 1;
+          if (outcome.reward.cultivation_bonus) {
+            const realm = p.getComponent("Realm") || {};
+            kernel.updateComponent(p.id, "Realm", { ...realm, cultivation_value: Math.min(1.0, realm.cultivation_value + outcome.reward.cultivation_bonus) }, p.version);
+          }
+          const up = kernel.getEntity(p.id);
+          kernel.updateComponent(up.id, "Inventory", { items: rewards }, up.version);
+        }
+        // Apply risk/damage
+        if (outcome.risk && outcome.risk.includes("受伤")) {
+          const players = kernel.queryEntities("player", {}, 1, 0);
+          if (players.length > 0) {
+            const p = kernel.getEntity(players[0].id);
+            const hp = p.getComponent("HP") || { current: 100, max: 100 };
+            kernel.updateComponent(p.id, "HP", { ...hp, current: Math.max(1, hp.current - 30) }, p.version);
+          }
+        }
+      }
+      exploration.activeEvents.delete(eventId);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, { outcome, ok: true });
     }
 
     case "/api/game/gather": {

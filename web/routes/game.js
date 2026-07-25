@@ -79,6 +79,15 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const mode = params.mode || "normal";
       const use_herb = params.use_herb;
 
+      // Area Qi bonus (higher realm areas = more qi)
+      const loc = p.getComponent("Location") || {};
+      const areaQi = { area_bamboo_grove:0.8, area_misty_peak:1.0, area_thunder_valley:1.2, area_dragon_vein:1.5 }[loc.area] || 0.8;
+
+      // Stamina check: require minimum stamina to cultivate
+      const stamina = p.getComponent("Stamina") || { current: 100, max: 100 };
+      const staminaCost = { safe: 2, normal: 3, risky: 5 }[mode] || 3;
+      if (stamina.current < staminaCost) return send(200, { msg: `体力不足！需要 ${staminaCost} 体力修炼（当前 ${stamina.current}）`, ok: false });
+
       if (realm.breakthrough_ready) {
         const bonus = (realm.breakthrough_bonus || 0) + 0.02;
         kernel.updateComponent(p.id, "Realm", { ...realm, breakthrough_bonus: bonus }, p.version);
@@ -102,8 +111,15 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         risky: { increment: 0.05, qi_mult: 1.0, risk: 0.15, label: "冒险修炼" },
       };
       const m = modes[mode] || modes.normal;
-      const increment = m.increment * qi * m.qi_mult + herbBonus;
+      // Qi multiplier: world qi × area qi × stamina efficiency
+      const staminaEfficiency = stamina.current > 20 ? 1.0 : 0.5; // tired = half speed
+      const qiMultiplier = qi * areaQi * staminaEfficiency;
+      const increment = m.increment * qiMultiplier * m.qi_mult + herbBonus;
       const newCV = Math.min(1.0, (realm.cultivation_value || 0) + increment);
+
+      // Consume stamina
+      const upStam = kernel.getEntity(p.id);
+      kernel.updateComponent(upStam.id, "Stamina", { ...stamina, current: Math.max(0, stamina.current - staminaCost) }, upStam.version);
       // Risk event: qi deviation
       let riskMsg = "";
       if (m.risk > 0 && Math.random() < m.risk) {
@@ -141,7 +157,9 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
 
       kernel.updateComponent(p.id, "Realm", { ...realm, cultivation_value: newCV }, p.version);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
-      return send(200, { msg: riskMsg || `${m.label}... (+${(increment*100).toFixed(1)}%)`, ok: true });
+      const pct = (increment*100).toFixed(1);
+      const areaLabel = { area_bamboo_grove:"翠竹林",area_misty_peak:"云雾峰",area_thunder_valley:"雷音谷",area_dragon_vein:"龙脉秘境"}[loc.area]||"?";
+      return send(200, { msg: riskMsg || `${m.label}... (+${pct}%) 📍${areaLabel} Qi${areaQi} ⚡-${staminaCost}`, ok: true });
     }
 
     case "/api/game/breakthrough/attempt": {

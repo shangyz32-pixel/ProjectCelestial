@@ -367,6 +367,21 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       return send(200, result);
     }
 
+    case "/api/game/dialogue": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const p = players[0];
+      const npcs = kernel.queryEntities("npc", {}, 10, 0);
+      if (npcs.length === 0) return send(400, { error: "No NPCs" });
+      const npc = npcs[0];
+      const topic = params.topic || "greeting";
+      const { generateConversation } = await import("../../runtime/dialogue/index.js");
+      const text = generateConversation(npc, p, topic, kernel);
+      const npcName = (npc.getComponent("Identity")||{}).name || "NPC";
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, { npc: npcName, topic, text, ok: true });
+    }
+
     case "/api/game/gather": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });

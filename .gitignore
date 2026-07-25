@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.env
+logs/
+cache/
+*.log
+data/snapshots/
+runtime/data/snapshots/
+.DS_Store

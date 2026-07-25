@@ -9,6 +9,7 @@ import { CombatEngine } from "../combat/index.js";
 import { MonsterSpawnSystem, MonsterAISystem, MonsterEncounterSystem } from "../monsters/index.js";
 import { HEART_DEMONS } from "../cultivation/index.js";
 import { PlantSystem, AnimalSystem, SpiritBeastSystem } from "../ecology/index.js";
+import { evolutionTick } from "../evolution/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -346,6 +347,21 @@ export const NPCSectBehaviorSystem = {
   },
 };
 
+// Evolution System (v2.0 Sprint 8) — bloodlines, mutations
+export const EvolutionSystem = {
+  tick(kernel, time, random) {
+    const npcs = kernel.queryEntities("npc", {}, 100, 0);
+    const beasts = kernel.queryEntities("spirit_beast", {}, 50, 0);
+    const allEntities = [...npcs, ...beasts];
+    for (const entity of allEntities) {
+      if (entity.state !== "active" && entity.state !== undefined) continue;
+      const realm = entity.getComponent("Realm")?.realm_id || 1;
+      // Evolution tick: check bloodline + mutation
+      evolutionTick(entity, kernel, random);
+    }
+  },
+};
+
 // Simulation Engine
 export class SimulationEngine {
   constructor(seed) {
@@ -372,6 +388,7 @@ export class SimulationEngine {
       { name: "plants",     fn: PlantSystem },
       { name: "animals",    fn: AnimalSystem },
       { name: "spirit_bst", fn: SpiritBeastSystem },
+      { name: "evolution", fn: EvolutionSystem },
     ];
   }
   tick(kernel, time) {

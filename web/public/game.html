@@ -89,6 +89,7 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","SimHe
       <div class="section"><div class="section-title">状态</div><div class="stat-row"><span class="stat-label">生命</span><span class="stat-val" id="hv">—</span></div><div class="progress-bar"><div class="progress-fill hp-fill" id="hb" style="width:100%"></div></div><div class="stat-row"><span class="stat-label">体力</span><span class="stat-val" id="sv">—</span></div><div class="progress-bar"><div class="progress-fill stamina-fill" id="sb" style="width:100%"></div></div></div>
       <div class="section"><div class="section-title">所在</div><div class="stat-row"><span class="stat-label">区域</span><span class="stat-val" id="pa">—</span></div></div>
       <div class="section"><div class="section-title">声望</div><div class="stat-row"><span class="stat-label">称号</span><span class="stat-val" id="p-rep-title">—</span></div><div class="stat-row"><span class="stat-label">分数</span><span class="stat-val" id="p-rep-score">0</span></div></div>
+      <div class="section"><div class="section-title">成就</div><div id="achievements" style="font-size:14px">—</div></div>
       <div class="section"><div class="section-title">背包</div><div id="pinv" style="font-size:11px;color:var(--dim)">空</div></div>
       <div class="section"><button class="btn btn-gold" onclick="foundSect()" id="bt-sect">🏛 创立宗门</button></div>
       <div id="save-indicator">💾 已自动保存</div>
@@ -147,7 +148,10 @@ function notify(t,lvl){
 
 async function refresh(){
   const p=await G("/api/game/player");if(!p.player)return;const d=p.player;
-  // Character
+  const d=p.player;
+  const newAch=p.newAchievements||[];
+  // Notify new achievements
+  for(const a of newAch){notify(`${a.icon} 成就解锁: ${a.name}`,"rare")}
   $("pn").textContent=d.name;$("pr").textContent="Lv"+d.realm_id;
   const cv=(d.cultivation*100).toFixed(1);$("pb").style.width=cv+"%";$("pv").textContent=cv+"%";
   $("pbr").textContent=d.breakthroughs;
@@ -162,6 +166,8 @@ async function refresh(){
   const rep=d.reputation||{};$("p-rep-title").textContent=rep.title||"无名修士";$("p-rep-score").textContent=rep.score||0;
   // Legacy — hide sect button if already founded
   if(d.legacy?.founded_sect){$("bt-sect").style.display="none"}
+  // Achievements
+  const achs=d.achievements||[];if(achs.length>0){$("achievements").textContent=achs.map(a=>a.icon).join(" ")}else{$("achievements").textContent="—"}
   // Inventory
   const res=await G("/api/game/player/resources");const rd=res.resources||{};
   $("pinv").innerHTML=Object.entries(rd).map(([k,v])=>`<div class="stat-row"><span class="stat-label">${RES_NAMES[k]||k}</span><span class="stat-val">${v}</span></div>`).join("")||"<span style='color:var(--dim);font-size:11px'>空空如也</span>";

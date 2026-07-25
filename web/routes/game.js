@@ -4,6 +4,7 @@
 import { buyItem as shopBuy, sellItem as shopSell, getShopForRegion } from "../../runtime/shop/index.js";
 import { generateConversation } from "../../runtime/dialogue/index.js";
 import { getPlayerSectInfo, joinSect, leaveSect, completeMission } from "../../runtime/sect/gameplay.js";
+import { checkAchievements, getEarnedAchievements } from "../../runtime/achievements/index.js";
 
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
@@ -31,6 +32,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         const hp = p.getComponent("HP") || { current: 100, max: 100 };
         const stamina = p.getComponent("Stamina") || { current: 100, max: 100 };
         return send(200, {
+          newAchievements: checkAchievements(p, kernel),
           player: {
             id: p.id, name: p.getComponent("Identity")?.name || "Unknown",
             realm_id: p.getComponent("Realm")?.realm_id || 1,
@@ -45,6 +47,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
             age: p.getComponent("Identity")?.age || 0,
             reputation: p.getComponent("Reputation") || { score: 0, title: "无名修士" },
             legacy: p.getComponent("Legacy") || {},
+            achievements: getEarnedAchievements(p),
           }
         });
       }

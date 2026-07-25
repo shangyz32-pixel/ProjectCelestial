@@ -8,6 +8,7 @@ import { WorldEventEngine } from "../events/exploration.js";
 import { CombatEngine } from "../combat/index.js";
 import { MonsterSpawnSystem, MonsterAISystem, MonsterEncounterSystem } from "../monsters/index.js";
 import { HEART_DEMONS } from "../cultivation/index.js";
+import { PlantSystem, AnimalSystem, SpiritBeastSystem } from "../ecology/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -314,6 +315,9 @@ export class SimulationEngine {
       { name: "m_ai",     fn: MonsterAISystem },
       { name: "m_encounter",fn: MonsterEncounterSystem },
       { name: "npc_sect",   fn: NPCSectBehaviorSystem },
+      { name: "plants",     fn: PlantSystem },
+      { name: "animals",    fn: AnimalSystem },
+      { name: "spirit_bst", fn: SpiritBeastSystem },
     ];
   }
   tick(kernel, time) {

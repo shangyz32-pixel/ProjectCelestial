@@ -63,6 +63,12 @@ export const SKILLS = {
   // Summon (new type)
   spirit_wolf:   { name:"召唤灵狼", category:"summon",  type:"summon",  damage:1.5, qiCost:25, cooldown:5, realmReq:4 },
 
+  // Elements (v2.2) — water/wood/metal/earth/light
+  water_whip:    { name:"水鞭",     category:"water",   type:"attack",  damage:1.5, qiCost:7,  cooldown:1, realmReq:2 },
+  vine_trap:     { name:"藤缚术",   category:"wood",    type:"debuff",  root:2,     qiCost:12, cooldown:2, realmReq:3 },
+  iron_spear:    { name:"金矛术",   category:"metal",   type:"attack",  damage:1.8, qiCost:10, cooldown:1, realmReq:3 },
+  holy_light:    { name:"圣光术",   category:"light",   type:"heal",    heal:0.25,  qiCost:15, cooldown:2, realmReq:3 },
+
   // Divine (realm 5+)
   sword_intent:  { name:"剑意",     category:"divine",  type:"attack",  damage:4.0, qiCost:50, cooldown:5, realmReq:6 },
   domain:        { name:"领域展开", category:"divine",  type:"aura",    allBoost:0.3, qiCost:80, cooldown:10, realmReq:8 },

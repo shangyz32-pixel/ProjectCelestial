@@ -19,6 +19,8 @@ export const DUNGEON_TYPES = {
   ancient_vault: { name:"远古宝库", rooms:{min:4,max:8},  difficulty:7, env:"palace",      treasure:"artifact",   bossChance:0.6, collapseChance:0.2 },
   ice_cavern:    { name:"冰魄洞",   rooms:{min:4,max:7},  difficulty:3, env:"ice",         treasure:"herbs",      bossChance:0.3, collapseChance:0.1 },
   volcano_core:  { name:"熔岩核心", rooms:{min:5,max:9},  difficulty:5, env:"volcano",     treasure:"equipment",  bossChance:0.5, collapseChance:0.2 },
+  sky_temple:    { name:"天空神殿", rooms:{min:5,max:10}, difficulty:7, env:"floating",    treasure:"artifact",   bossChance:0.6, collapseChance:0.15 },
+  void_rift:     { name:"虚空裂隙", rooms:{min:4,max:8},  difficulty:9, env:"void",        treasure:"legendary",  bossChance:0.7, collapseChance:0.3 },
 };
 
 // ══════════════════════════════════════

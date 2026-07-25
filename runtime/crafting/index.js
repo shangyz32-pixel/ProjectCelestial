@@ -31,6 +31,8 @@ export const MATERIALS = {
   shadow_essence: { name:"暗影精华", grade:3, source:"cave",    rarity:"rare",      value:200 },
   magma_core:     { name:"熔岩之核", grade:4, source:"volcano", rarity:"epic",      value:500 },
   star_fragment:  { name:"星辰碎片", grade:5, source:"celestial",rarity:"legendary",value:2000 },
+  light_crystal:  { name:"光明水晶", grade:3, source:"cave",    rarity:"rare",      value:180 },
+  dark_essence:   { name:"暗黑之核", grade:4, source:"void",   rarity:"epic",      value:450 },
 };
 
 // ══════════════════════════════════════
@@ -95,6 +97,16 @@ export const CRAFTING_RECIPES = {
   forge_celestial_bow: {
     name:"铸星辰弓", skillReq:5, output:"bow",
     materials:["star_fragment","spirit_wood","ancient_wood"], quantities:[1,2,1],
+    successRate:0.4, qualityChance:{ epic:0.3, legendary:0.08 },
+  },
+  forge_light_blade: {
+    name:"铸光明刃", skillReq:4, output:"spirit_sword",
+    materials:["light_crystal","spirit_ore","silver_ore"], quantities:[1,1,2],
+    successRate:0.55, qualityChance:{ rare:0.4, epic:0.08 },
+  },
+  forge_dark_ring: {
+    name:"铸暗影戒", skillReq:5, output:"dragon_ring",
+    materials:["dark_essence","crystal_shard","shadow_essence"], quantities:[1,2,1],
     successRate:0.4, qualityChance:{ epic:0.3, legendary:0.08 },
   },
 };

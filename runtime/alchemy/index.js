@@ -20,6 +20,8 @@ export const HERBS = {
   heavenly_peach:  { name:"仙桃",    grade:6, element:"light",  rarity:"legendary", region:["floating_island"],growthTime:500, value:5000 },
   dream_flower:    { name:"梦昙花",  grade:3, element:"dark",   rarity:"rare",      region:["cave","forest"],    growthTime:80, value:200 },
   sun_grass:       { name:"阳炎草",  grade:4, element:"fire",   rarity:"epic",      region:["desert","volcanic"],growthTime:150, value:500 },
+  moon_dew:        { name:"月华露",  grade:2, element:"water",  rarity:"uncommon",  region:["forest","mountain"],  growthTime:30, value:40 },
+  crystal_herb:    { name:"晶凝草",  grade:3, element:"metal",  rarity:"rare",      region:["cave","mountain"],    growthTime:70, value:150 },
 };
 
 // ══════════════════════════════════════
@@ -79,6 +81,18 @@ export const RECIPES = {
     ingredients:["sun_grass","soul_mushroom","dream_flower"], quantities:[1,1,1],
     successRate:0.3, refineTime:15,
     output:{ type:"cultivation_boost", value:0.25, duration:100, quality:"epic" },
+  },
+  crystal_pill: {
+    name:"晶凝丹", difficulty:3, furnaceReq:"spirit",
+    ingredients:["crystal_herb","moon_dew"], quantities:[2,1],
+    successRate:0.6, refineTime:5,
+    output:{ type:"qi_recovery", value:35, quality:"excellent" },
+  },
+  fate_pill: {
+    name:"天命丹", difficulty:4, furnaceReq:"ancient",
+    ingredients:["golden_ginseng","moon_dew","dream_flower"], quantities:[1,2,1],
+    successRate:0.35, refineTime:12,
+    output:{ type:"breakthrough", value:0.15, quality:"epic" },
   },
 };
 

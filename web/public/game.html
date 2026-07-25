@@ -90,6 +90,7 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","SimHe
       <div class="section"><div class="section-title">所在</div><div class="stat-row"><span class="stat-label">区域</span><span class="stat-val" id="pa">—</span></div></div>
       <div class="section"><div class="section-title">声望</div><div class="stat-row"><span class="stat-label">称号</span><span class="stat-val" id="p-rep-title">—</span></div><div class="stat-row"><span class="stat-label">分数</span><span class="stat-val" id="p-rep-score">0</span></div></div>
       <div class="section"><div class="section-title">成就</div><div id="achievements" style="font-size:14px">—</div></div>
+      <div class="section" id="cult-section"><div class="section-title">修仙根基</div><div id="cult-info" style="font-size:11px;color:var(--dim)">—</div></div>
       <div class="section"><div class="section-title">背包</div><div id="pinv" style="font-size:11px;color:var(--dim)">空</div></div>
       <div class="section"><button class="btn btn-gold" onclick="foundSect()" id="bt-sect">🏛 创立宗门</button></div>
       <div id="save-indicator">💾 已自动保存</div>
@@ -167,6 +168,16 @@ async function refresh(){
   if(d.legacy?.founded_sect){$("bt-sect").style.display="none"}
   // Achievements
   const achs=d.achievements||[];if(achs.length>0){$("achievements").textContent=achs.map(a=>a.icon).join(" ")}else{$("achievements").textContent="—"}
+  // Cultivation framework
+  const root=d.spiritual_root;const con=d.constitution;const method=d.cultivation_method;
+  if(root||con||method){
+    let cultTxt="";
+    if(root)cultTxt+=`灵根: ${root.name||"?"} (${root.rarity||"common"}) `;
+    if(con)cultTxt+=`体质: ${con.name||"?"} `;
+    if(method)cultTxt+=`功法: ${method.name||"?"}`;
+    $("cult-info").textContent=cultTxt||"—";
+    $("cult-section").style.display="block";
+  }else{$("cult-section").style.display="none"}
   // Inventory
   const res=await G("/api/game/player/resources");const rd=res.resources||{};
   $("pinv").innerHTML=Object.entries(rd).map(([k,v])=>`<div class="stat-row"><span class="stat-label">${RES_NAMES[k]||k}</span><span class="stat-val">${v}</span></div>`).join("")||"<span style='color:var(--dim);font-size:11px'>空空如也</span>";

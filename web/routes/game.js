@@ -5,6 +5,7 @@ import { buyItem as shopBuy, sellItem as shopSell, getShopForRegion } from "../.
 import { generateConversation } from "../../runtime/dialogue/index.js";
 import { getPlayerSectInfo, joinSect, leaveSect, completeMission } from "../../runtime/sect/gameplay.js";
 import { checkAchievements, getEarnedAchievements } from "../../runtime/achievements/index.js";
+import { calcCultivationMultiplier, resolveTribulation } from "../../runtime/cultivation/index.js";
 
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
@@ -48,6 +49,9 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
             reputation: p.getComponent("Reputation") || { score: 0, title: "无名修士" },
             legacy: p.getComponent("Legacy") || {},
             achievements: getEarnedAchievements(p),
+            spiritual_root: p.getComponent("SpiritualRoot") || null,
+            constitution: p.getComponent("Constitution") || null,
+            cultivation_method: p.getComponent("CultivationMethod") || null,
           }
         });
       }
@@ -136,9 +140,10 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         risky: { increment: 0.05, qi_mult: 1.0, risk: 0.15, label: "冒险修炼" },
       };
       const m = modes[mode] || modes.normal;
-      // Qi multiplier: world qi × area qi × stamina efficiency
-      const staminaEfficiency = stamina.current > 20 ? 1.0 : 0.5; // tired = half speed
-      const qiMultiplier = qi * areaQi * staminaEfficiency;
+      // Qi multiplier: world qi × area qi × stamina efficiency × cultivation bonus
+      const staminaEfficiency = stamina.current > 20 ? 1.0 : 0.5;
+      const cultMult = calcCultivationMultiplier(p); // v2.0 — root/constitution/method
+      const qiMultiplier = qi * areaQi * staminaEfficiency * cultMult;
       const increment = m.increment * qiMultiplier * m.qi_mult + herbBonus;
       const newCV = Math.min(1.0, (realm.cultivation_value || 0) + increment);
 
@@ -196,6 +201,10 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (!realm.breakthrough_ready) return send(400, { error: "Not ready for breakthrough" });
 
       let bonusChance = realm.breakthrough_bonus || 0;
+      // v2.0: cultivation framework bonus
+      const cultResist = calcTribulationResist(p);
+      bonusChance += cultResist * 0.005; // each resist point = +0.5% success
+
       if (params.use_jade) {
         const inv = p.getComponent("Inventory") || { items: {} };
         if ((inv.items.jade_shard || 0) > 0) {

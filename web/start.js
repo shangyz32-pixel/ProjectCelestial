@@ -6,12 +6,14 @@ import { RuntimeConfig } from "../runtime/bootstrap/config.js";
 import { World } from "../runtime/world/index.js";
 import { Kernel } from "../runtime/kernel/index.js";
 import { Snapshotter } from "../runtime/snapshot/index.js";
-import { SimulationManager } from "../runtime/simulation/index.js";
 import { HistorySystem } from "../runtime/history/index.js";
 import { TimeService } from "../runtime/time/index.js";
 import { Logger } from "../runtime/bootstrap/logger.js";
+import { SimulationManager } from "../runtime/simulation/index.js";
 import { createObserverServer } from "./server.js";
 import { execSync } from "node:child_process";
+import { WorldRandom } from "../runtime/random/index.js";
+import { assignRandomRoot, assignRandomConstitution, CULTIVATION_METHODS } from "../runtime/cultivation/index.js";
 
 const log = new Logger("Observer");
 const PORT = 3000;
@@ -35,6 +37,7 @@ const history = new HistorySystem(kernel);
 
 // Create some starter NPCs if world is empty
 if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
+  const rng = new WorldRandom(RuntimeConfig.world.seed);
   kernel.createEntity("npc", {
     Identity: { name: "陈玄", age: 200 },
     Realm: { realm_id: 5, cultivation_value: 0.7, breakthroughs: 0 },
@@ -42,6 +45,9 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     Stamina: { current: 100, max: 100 },
     Skills: { learned: ["sword_rain","fire_blast","iron_body","shadow_step","qi_shield"] },
     Equipment: { slots: { weapon:"thunder_edge", armor:"dragon_scale" }, equipped:["thunder_edge","dragon_scale"], totalAtk:32, totalDef:48 },
+    SpiritualRoot: assignRandomRoot(rng, 5),
+    Constitution: assignRandomConstitution(rng, 5),
+    CultivationMethod: { id:"sword_dao", ...CULTIVATION_METHODS.sword_dao },
   });
   kernel.createEntity("npc", {
     Identity: { name: "赵灵儿", age: 180 },
@@ -50,6 +56,9 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     Stamina: { current: 100, max: 100 },
     Skills: { learned: ["fire_blast","ice_lance","heal_pulse"] },
     Equipment: { slots: { weapon:"spirit_blade", armor:"spirit_vest" }, equipped:["spirit_blade","spirit_vest"], totalAtk:15, totalDef:23 },
+    SpiritualRoot: assignRandomRoot(rng, 3),
+    Constitution: assignRandomConstitution(rng, 3),
+    CultivationMethod: { id:"five_elements", ...CULTIVATION_METHODS.five_elements },
   });
   kernel.createEntity("npc", {
     Identity: { name: "王虎", age: 220 },
@@ -58,6 +67,9 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     Stamina: { current: 100, max: 100 },
     Skills: { learned: ["sword_slash","iron_palm","thunder_fist","iron_body","sharp_sense"] },
     Equipment: { slots: { weapon:"spirit_blade", armor:"spirit_vest", ring:"jade_ring" }, equipped:["spirit_blade","spirit_vest","jade_ring"], totalAtk:19, totalDef:28 },
+    SpiritualRoot: assignRandomRoot(rng, 4),
+    Constitution: assignRandomConstitution(rng, 4),
+    CultivationMethod: { id:"body_refining", ...CULTIVATION_METHODS.body_refining },
   });
   log.info("Created 3 starter NPCs");
 }

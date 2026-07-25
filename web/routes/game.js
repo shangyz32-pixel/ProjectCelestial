@@ -122,7 +122,8 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/breakthrough/attempt": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const p = players[0];
+      // Always get fresh entity — auto-tick may have changed version
+      let p = kernel.getEntity(players[0].id);
       const realm = p.getComponent("Realm") || {};
       if (!realm.breakthrough_ready) return send(400, { error: "Not ready for breakthrough" });
 
@@ -130,13 +131,14 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (params.use_jade) {
         const inv = p.getComponent("Inventory") || { items: {} };
         if ((inv.items.jade_shard || 0) > 0) {
-          const up = kernel.getEntity(p.id);
-          kernel.updateComponent(up.id, "Inventory", { items: { ...inv.items, jade_shard: inv.items.jade_shard - 1 } }, up.version);
+          p = kernel.getEntity(p.id); // refresh
+          kernel.updateComponent(p.id, "Inventory", { items: { ...inv.items, jade_shard: inv.items.jade_shard - 1 } }, p.version);
           bonusChance += 0.20;
         }
       }
 
       const totalChance = Math.min(0.95, 0.30 + bonusChance);
+      p = kernel.getEntity(p.id); // refresh before breakthrough
       if (Math.random() < totalChance) {
         kernel.updateComponent(p.id, "Realm", {
           ...realm, realm_id: realm.realm_id + 1, cultivation_value: 0.0,
@@ -145,11 +147,13 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         }, p.version);
         return send(200, { msg: `突破成功！境界提升至 Lv${realm.realm_id + 1}！`, ok: true, success: true, chance: totalChance });
       }
+      // FAILURE
       kernel.updateComponent(p.id, "Realm", {
         ...realm, cultivation_value: 0.5, breakthrough_ready: false, breakthrough_bonus: 0,
       }, p.version);
+      p = kernel.getEntity(p.id); // refresh for HP update
       const hp = p.getComponent("HP") || { current: 100, max: 100 };
-      kernel.updateComponent(p.id, "HP", { ...hp, current: Math.max(1, hp.current - 30) }, p.version + 1);
+      kernel.updateComponent(p.id, "HP", { ...hp, current: Math.max(1, hp.current - 30) }, p.version);
       return send(200, { msg: "突破失败！修为倒退，身受重伤...", ok: true, success: false, chance: totalChance });
     }
 

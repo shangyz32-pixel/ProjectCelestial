@@ -4,7 +4,7 @@
 
 import { WorldRandom } from "../random/index.js";
 import { Logger } from "../bootstrap/logger.js";
-import { ExplorationEventSystem } from "../events/exploration.js";
+import { WorldEventEngine } from "../events/exploration.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -186,7 +186,7 @@ export class SimulationEngine {
   constructor(seed) {
     this.random = new WorldRandom(seed);
     this.log = new Logger("Simulation");
-    this.exploration = new ExplorationEventSystem(seed);
+    this.exploration = new WorldEventEngine(seed);
     this.systems = [
       { name: "weather",  fn: WeatherSystem },
       { name: "qi",       fn: QiSystem },

@@ -230,7 +230,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       // Retrieve event from active events
       const event = exploration.activeEvents.get(eventId);
       if (!event) return send(404, { error: "Event not found or expired" });
-      const outcome = exploration.resolveChoice(event, choiceId);
+      const outcome = exploration.resolveChoice(event, choiceId, kernel);
       // Apply rewards
       if (outcome.success && outcome.reward) {
         const players = kernel.queryEntities("player", {}, 1, 0);

@@ -148,7 +148,8 @@ export function addContribution(player, amount, kernel) {
     }
   }
 
-  kernel.updateComponent(player.id, "SectMembership", { ...membership, contribution:newContrib, rank:newRank }, player.version);
+  const up = kernel.getEntity(player.id); // refresh for latest version
+  kernel.updateComponent(up.id, "SectMembership", { ...up.getComponent("SectMembership"), contribution:newContrib, rank:newRank }, up.version);
   return { contribution:newContrib, rank:newRank, promoted, rankName:SECT_RANKS[newRank]?.name };
 }
 
@@ -164,7 +165,8 @@ export function completeMission(player, missionType, kernel) {
     if (count < mission.req.count) return { ok:false, error:`需要 ${HERBS[mission.req.resource]?.name||mission.req.resource} x${mission.req.count}` };
     kernel.updateComponent(player.id, "Inventory", { items:{ ...inv.items, [mission.req.resource]:count-mission.req.count } }, player.version);
   }
-  const result = addContribution(player, mission.contrib, kernel);
+  const up = kernel.getEntity(player.id); // refresh
+  const result = addContribution(up, mission.contrib, kernel);
   const membership = player.getComponent("SectMembership") || {};
   if (membership.sect_name) {
     const sects = kernel.queryEntities("sect", {}, 10, 0);

@@ -10,6 +10,7 @@ import { MAJOR_REALMS, REGION_HIERARCHY, getRealmForArea } from "../../runtime/w
 import { createEquipment, generateLoot, equipItem, unequipItem, enhanceEquipment, getEquipmentModifiers } from "../../runtime/equipment/index.js";
 import { WorldRandom } from "../../runtime/random/index.js";
 import { RECIPES, HERBS, FURNACES, FIRES, refinePill, consumePill, gatherHerb } from "../../runtime/alchemy/index.js";
+import { MATERIALS, CRAFTING_RECIPES, gatherMaterial, forgeEquipment, enchantEquipment, ascendEquipment } from "../../runtime/crafting/index.js";
 
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
@@ -583,6 +584,45 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (!herb) return send(200, { empty: true, msg: "没有找到药材" });
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, herb);
+    }
+
+    // ═══ Crafting API (v2.1 Sprint 6) ═══
+    case "/api/game/crafting/recipes": {
+      return send(200, { recipes: Object.entries(CRAFTING_RECIPES).map(([id,r])=>({id,name:r.name,skillReq:r.skillReq,output:r.output,materials:r.materials.map(m=>MATERIALS[m]?.name||m)})) });
+    }
+
+    case "/api/game/crafting/materials": {
+      return send(200, { materials: Object.entries(MATERIALS).map(([id,m])=>({id,name:m.name,grade:m.grade,rarity:m.rarity,value:m.value})) });
+    }
+
+    case "/api/game/crafting/forge": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const rng = new WorldRandom(42);
+      const result = forgeEquipment(params.recipe, players[0], kernel, rng);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/crafting/enchant": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const rng = new WorldRandom(42);
+      const result = enchantEquipment(players[0], params.slot, kernel, rng);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/crafting/ascend": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const rng = new WorldRandom(42);
+      const result = ascendEquipment(players[0], params.slot, kernel, rng);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
     }
 
     default:

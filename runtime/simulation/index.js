@@ -7,6 +7,7 @@ import { Logger } from "../bootstrap/logger.js";
 import { WorldEventEngine } from "../events/exploration.js";
 import { CombatEngine } from "../combat/index.js";
 import { MonsterSpawnSystem, MonsterAISystem, MonsterEncounterSystem } from "../monsters/index.js";
+import { HEART_DEMONS } from "../cultivation/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -82,6 +83,13 @@ export const NPCSystem = {
           } else {
             const e5 = kernel.getEntity(npc.id);
             kernel.updateComponent(e5.id, "Realm", { ...e5.getComponent("Realm"), cultivation_value: 0.7, breakthrough_pending: false }, e5.version);
+            // v2.0: Heart demon may develop on failed breakthrough
+            if (random.chance(0.25)) {
+              const demonTypes = ["greed","fear","hatred","attachment","pride","madness"];
+              const demonId = demonTypes[random.nextInt(0, demonTypes.length - 1)];
+              const demon = HEART_DEMONS[demonId];
+              kernel.updateComponent(e5.id, "HeartDemon", { type: demonId, name: demon.name, active: true, developedAt: kernel.world.tickCount }, e5.version + 1);
+            }
           }
         }
       }
@@ -124,6 +132,15 @@ export const NPCSystem = {
       if (random.chance(0.20) && stam.current < stam.max) {
         const e8 = kernel.getEntity(npc.id);
         kernel.updateComponent(e8.id, "Stamina", { ...stam, current: Math.min(stam.max, stam.current + 10) }, e8.version);
+      }
+      // Heart demon recovery (2% chance per tick)
+      const hd = npc.getComponent("HeartDemon");
+      if (hd && hd.active && random.chance(0.02)) {
+        const demon = HEART_DEMONS[hd.type];
+        if (demon && random.chance(demon.recoveryChance || 0.3)) {
+          const e9 = kernel.getEntity(npc.id);
+          kernel.updateComponent(e9.id, "HeartDemon", { ...hd, active: false, recoveredAt: kernel.world.tickCount }, e9.version);
+        }
       }
     }
   },

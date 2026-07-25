@@ -94,6 +94,12 @@ export const RECIPES = {
     successRate:0.35, refineTime:12,
     output:{ type:"breakthrough", value:0.15, quality:"epic" },
   },
+  ice_soul_pill: {
+    name:"冰心丹", difficulty:5, furnaceReq:"immortal",
+    ingredients:["ice_crystal","soul_mushroom","moon_dew"], quantities:[2,1,1],
+    successRate:0.25, refineTime:18,
+    output:{ type:"cultivation_boost", value:0.20, duration:150, quality:"legendary" },
+  },
 };
 
 // ══════════════════════════════════════

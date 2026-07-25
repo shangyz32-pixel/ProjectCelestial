@@ -15,6 +15,10 @@ export function registerCoreRoutes(kernel, sim, snap, history, config, send, url
         qi: kernel.world.globalState.qi.get("world"),
         entities: kernel.world.entities.size,
         npcs: kernel.queryEntities("npc", {}, 100, 0).length,
+        beasts: kernel.queryEntities("spirit_beast", {}, 100, 0).length,
+        animals: kernel.queryEntities("animal", {}, 100, 0).length,
+        plants: kernel.queryEntities("plant", {}, 100, 0).length,
+        monsters: kernel.queryEntities("monster", {}, 100, 0).length,
         snapshots: snap ? snap.list().length : 0,
         sim_state: sim ? sim.state : "unknown",
       });

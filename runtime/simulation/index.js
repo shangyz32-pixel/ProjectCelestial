@@ -36,6 +36,56 @@ export const QiSystem = {
   },
 };
 
+// Qi Tide System (v2.0) — cyclic qi density waves
+export const QiTideSystem = {
+  TIDES: ["低潮","正常","高潮","灵潮","混沌潮"],
+  tick(kernel, time, random) {
+    const dayInSeason = time.day || 0;
+    const phase = dayInSeason % 30;
+    let tideIdx = 1;
+    if (phase < 5) tideIdx = 0; else if (phase < 20) tideIdx = 1;
+    else if (phase < 25) tideIdx = 2; else if (phase < 28) tideIdx = 3; else tideIdx = 4;
+    const tideMods = [0.7, 1.0, 1.3, 1.5, 0.9];
+    kernel.world.globalState.qiTide = QiTideSystem.TIDES[tideIdx];
+    kernel.world.globalState.qi.set("tide", tideMods[tideIdx]);
+  },
+};
+
+// Moon Phase System (v2.0)
+export const MoonPhaseSystem = {
+  PHASES: ["新月","蛾眉月","上弦月","盈凸月","满月","亏凸月","下弦月","残月"],
+  tick(kernel, time, random) {
+    const phaseIdx = (time.day || 0) % 8;
+    kernel.world.globalState.moonPhase = MoonPhaseSystem.PHASES[phaseIdx];
+    kernel.world.globalState.isFullMoon = phaseIdx === 4;
+  },
+};
+
+// Celestial Events System (v2.0) — rare world-wide phenomena
+export const CelestialEventSystem = {
+  tick(kernel, time, random) {
+    if ((time.day || 0) % 90 === 0 && random.chance(0.30)) {
+      const events = ["流星雨","日食","彗星","灵雨","天火"];
+      kernel.world.globalState.celestialEvent = events[random.nextInt(0, events.length - 1)];
+    }
+  },
+};
+
+// Spirit Vein System (v2.0) — dynamic qi sources per region
+export const SpiritVeinSystem = {
+  tick(kernel, time, random) {
+    kernel.world.globalState.spiritVeins = kernel.world.globalState.spiritVeins || {};
+    const regions = ["area_bamboo_grove","area_misty_peak","area_thunder_valley","area_dragon_vein"];
+    for (const region of regions) {
+      let vein = kernel.world.globalState.spiritVeins[region] || { strength: 50 };
+      vein.growth = random.nextFloat(-2, 3);
+      vein.strength = Math.max(10, Math.min(100, (vein.strength || 50) + vein.growth));
+      if (vein.strength > 90 && random.chance(0.02)) vein.strength = 20;
+      kernel.world.globalState.spiritVeins[region] = vein;
+    }
+  },
+};
+
 // NPC System (v0.4: aging, HP, stamina, cultivation, breakthrough, travel, gather, rest)
 export const NPCSystem = {
   tick(kernel, time, random) {
@@ -306,6 +356,10 @@ export class SimulationEngine {
     this.systems = [
       { name: "weather",  fn: WeatherSystem },
       { name: "qi",       fn: QiSystem },
+      { name: "qi_tide",  fn: QiTideSystem },
+      { name: "moon",     fn: MoonPhaseSystem },
+      { name: "celestial",fn: CelestialEventSystem },
+      { name: "spirit_vein",fn: SpiritVeinSystem },
       { name: "npc",      fn: NPCSystem },
       { name: "economy",  fn: EconomySystem },
       { name: "sect",     fn: SectSystem },

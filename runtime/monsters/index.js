@@ -1,186 +1,223 @@
 // runtime/monsters/index.js
-// Sprint 2 — Monster Ecology System
-// All state changes through Kernel API. Deterministic. Replay-compatible.
+// v2.2 Sprint 3 — Monster System Refactor
+// Bug fixes, Combat Engine integration, Loot to player, Boss framework.
+// Deterministic. Replay-compatible. ECS-integrated.
 
 import { WorldRandom } from "../random/index.js";
+import { getEquipmentModifiers } from "../equipment/index.js";
 
-// Monster type definitions
+// ══════════════════════════════════════
+// Monster Definitions
+// ══════════════════════════════════════
 export const MONSTER_TYPES = {
-  wild_beast:    { realm: 1, hp: 40,  attack: 8,  defense: 2, speed: 3, aggression: 0.3, loot: { spirit_herb: [1,3] }, habitat: "forest" },
-  spirit_wolf:   { realm: 2, hp: 60,  attack: 12, defense: 4, speed: 5, aggression: 0.5, loot: { jade_shard: [1,2] }, habitat: "mountain" },
-  thunder_eagle: { realm: 3, hp: 55,  attack: 18, defense: 3, speed: 8, aggression: 0.4, loot: { thunder_ore: [1,2] }, habitat: "mountain" },
-  demon_serpent: { realm: 4, hp: 90,  attack: 22, defense: 6, speed: 4, aggression: 0.7, loot: { dragon_scale: [1,2] }, habitat: "cave" },
-  ancient_guard: { realm: 5, hp: 120, attack: 28, defense: 10, speed: 3, aggression: 0.9, loot: { ancient_jade: [1,2], spirit_stone: [20,50] }, habitat: "ruins" },
-  boss_wyrm:     { realm: 8, hp: 250, attack: 40, defense: 15, speed: 6, aggression: 1.0, loot: { ancient_jade: [1,3], dragon_scale: [2,5], spirit_stone: [100,200] }, habitat: "dragon" },
+  wild_beast:    { name:"野兽",   realm:1, hp:40,  atk:8,  def:2, spd:3, aggression:0.3, loot:{spirit_herb:[1,3]},           habitat:"forest",   element:"wood" },
+  spirit_wolf:   { name:"灵狼",   realm:2, hp:60,  atk:12, def:4, spd:5, aggression:0.5, loot:{spirit_herb:[1,3],jade_shard:[1,2]},habitat:"mountain", element:"metal" },
+  thunder_eagle: { name:"雷鹰",   realm:3, hp:55,  atk:18, def:3, spd:8, aggression:0.4, loot:{thunder_ore:[1,2]},            habitat:"mountain", element:"lightning" },
+  demon_serpent: { name:"魔蛇",   realm:4, hp:90,  atk:22, def:6, spd:4, aggression:0.7, loot:{dragon_scale:[1,2]},           habitat:"cave",     element:"dark" },
+  ancient_guard: { name:"古卫",   realm:5, hp:120, atk:28, def:10,spd:3, aggression:0.9, loot:{ancient_jade:[1,2],spirit_stone:[20,50]},habitat:"ruins", element:"light" },
+  // Boss-tier monsters (Phase 5)
+  boss_wyrm:     { name:"龙蟒",   realm:8, hp:250, atk:40, def:15,spd:6, aggression:1.0, loot:{ancient_jade:[1,3],dragon_scale:[2,5],spirit_stone:[100,200]},habitat:"dragon",  element:"fire", boss:true, phases:["normal","enraged"], skills:["fire_blast","thunder_strike"] },
+  shadow_dragon: { name:"影龙",   realm:7, hp:300, atk:45, def:18,spd:5, aggression:1.0, loot:{dragon_scale:[3,6],ancient_jade:[2,4],spirit_stone:[200,400]},habitat:"dragon", element:"dark", boss:true, phases:["normal","enraged","desperate"], skills:["shadow_strike","curse","domain"] },
 };
 
 // Region habitat mapping
 const REGION_HABITATS = {
-  area_bamboo_grove: ["forest"],
-  area_misty_peak:   ["forest","mountain","cave"],
-  area_thunder_valley: ["mountain","cave"],
-  area_dragon_vein:  ["mountain","cave","ruins","dragon"],
+  area_bamboo_grove:  ["forest"],
+  area_misty_peak:    ["forest","mountain","cave"],
+  area_thunder_valley:["mountain","cave"],
+  area_dragon_vein:   ["mountain","cave","ruins","dragon"],
 };
 
-// Monster population caps per region
-const REGION_CAPS = {
-  area_bamboo_grove: 4,
-  area_misty_peak: 6,
-  area_thunder_valley: 8,
-  area_dragon_vein: 10,
-};
+// Population caps
+const REGION_CAPS = { area_bamboo_grove:4, area_misty_peak:6, area_thunder_valley:8, area_dragon_vein:10 };
+
+// Element reference (single source of truth — matches combat engine)
+const ELEMENT_STRONG = { metal:["wood"],wood:["earth"],water:["fire"],fire:["metal"],earth:["water"],lightning:["water"],ice:["wind"],wind:["lightning"],light:["dark"],dark:["light"] };
+const ELEMENT_WEAK   = { metal:["fire"],wood:["metal"],water:["earth"],fire:["water"],earth:["wood"],lightning:["earth"],ice:["fire"],wind:["ice"],light:[],dark:[] };
+
+function getElementMultiplier(attElement, defElement) {
+  if (!attElement || !defElement) return 1.0;
+  if (ELEMENT_STRONG[attElement]?.includes(defElement)) return 1.3;
+  if (ELEMENT_WEAK[attElement]?.includes(defElement)) return 0.7;
+  return 1.0;
+}
+
+// ══════════════════════════════════════
+// Phase 5 — Boss state tracking
+// ══════════════════════════════════════
+function getBossPhase(monster, template) {
+  if (!template.boss) return null;
+  const hp = monster.getComponent("HP") || { current:100, max:100 };
+  const ratio = hp.current / hp.max;
+  if (template.phases.includes("desperate") && ratio <= 0.2) return "desperate";
+  if (template.phases.includes("enraged") && ratio <= 0.5) return "enraged";
+  return "normal";
+}
 
 // ══════════════════════════════════════
 // Monster Spawn System
 // ══════════════════════════════════════
 export const MonsterSpawnSystem = {
   tick(kernel, time, random) {
-    const regions = Object.keys(REGION_HABITATS);
-    for (const region of regions) {
+    for (const region of Object.keys(REGION_HABITATS)) {
       const cap = REGION_CAPS[region] || 4;
-      const monsters = kernel.queryEntities("monster", { region }, cap, 0);
-      const alive = monsters.filter(m => m.state !== "dead" && m.state !== "inactive");
-      if (alive.length >= cap) continue;
-      // Spawn new monster
+      const monsters = kernel.queryEntities("monster", {}, cap + 10, 0);
+      const aliveInRegion = monsters.filter(m => (m.getComponent("Location")||{}).area === region && m.state !== "dead");
+      if (aliveInRegion.length >= cap) continue;
+
       const habitats = REGION_HABITATS[region];
       const types = Object.entries(MONSTER_TYPES).filter(([_,t]) => habitats.includes(t.habitat));
       if (types.length === 0) continue;
+
       const [typeId, template] = types[random.nextInt(0, types.length - 1)];
-      const hp = template.hp + random.nextInt(-5, 10);
-      const name = typeId.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const hpVar = random.nextInt(-5, 10);
+      const hp = Math.max(10, template.hp + hpVar);
+
       kernel.createEntity("monster", {
-        Identity: { name, type: typeId },
-        Realm: { realm_id: template.realm, cultivation_value: 0.5 },
+        Identity: { name: template.name, type: typeId },
+        Realm: { realm_id: template.realm, cultivation_value: 0.3 },
         HP: { current: hp, max: hp },
-        Combat: { attack: template.attack, defense: template.defense, speed: template.speed },
-        Behavior: { state: "patrol", aggression: template.aggression, target: null },
+        Stamina: { current: 100, max: 100 },
+        Combat: { attack: template.atk, defense: template.def, speed: template.spd },
+        Behavior: { state: "patrol", aggression: template.aggression, target: null, personality:"aggressive" },
         Location: { area: region },
-        Loot: { table: { ...template.loot } },
+        LootTable: { drops: { ...template.loot } },
+        SpiritualRoot: { id: template.element, element: template.element, rarity: "common", speedMultiplier: 1.0 },
+        Boss: template.boss ? { bossType: typeId, currentPhase: "normal", phases: template.phases, skills: template.skills||[] } : null,
       });
     }
   },
 };
 
 // ══════════════════════════════════════
-// Monster AI System
+// Monster AI System (fixed version)
 // ══════════════════════════════════════
 export const MonsterAISystem = {
   tick(kernel, time, random) {
     const monsters = kernel.queryEntities("monster", {}, 100, 0);
     for (const m of monsters) {
-      if (m.state === "dead" || m.state === "inactive") continue;
-      const beh = m.getComponent("Behavior") || {};
-      const hp = m.getComponent("HP") || { current: 100, max: 100 };
-      const loc = m.getComponent("Location") || {};
-      const template = MONSTER_TYPES[m.getComponent("Identity")?.type];
+      if (m.state === "dead") continue;
+      const hp = m.getComponent("HP") || { current:100, max:100 };
+      if (hp.current <= 0) { m.state = "dead"; continue; }
 
-      // Dead check
-      if (hp.current <= 0) {
-        m.state = "dead";
-        const e = kernel.getEntity(m.id);
-        kernel.updateComponent(e.id, "HP", { ...hp, current: 0 }, e.version);
-        continue;
-      }
+      const beh = m.getComponent("Behavior") || { state:"patrol", aggression:0.3, target:null };
+      const loc = m.getComponent("Location") || { area:"area_bamboo_grove" };
 
-      // Behavior state machine
+      // Low HP → rest and heal
       if (hp.current < hp.max * 0.3) {
-        // Low HP: flee or rest
-        beh.state = "rest";
         const e = kernel.getEntity(m.id);
-        kernel.updateComponent(e.id, "HP", { ...hp, current: Math.min(hp.max, hp.current + 5) }, e.version);
+        kernel.updateComponent(e.id, "HP", { ...e.getComponent("HP"), current: Math.min(hp.max, hp.current + 5) }, e.version);
+        kernel.updateComponent(e.id, "Behavior", { ...e.getComponent("Behavior"), state: "rest", target: null }, e.version + 1);
         continue;
       }
 
+      // Hunt
       if (random.chance(beh.aggression || 0.3)) {
-        // Hunt: find nearest NPC
-        const npcs = kernel.queryEntities("npc", {}, 10, 0);
+        const npcs = kernel.queryEntities("npc", {}, 10, 0).filter(n => n.state === "active");
         if (npcs.length > 0) {
           const target = npcs[random.nextInt(0, npcs.length - 1)];
-          beh.state = "hunt";
-          beh.target = target.id;
           const e = kernel.getEntity(m.id);
-          kernel.updateComponent(e.id, "Behavior", beh, e.version);
+          kernel.updateComponent(e.id, "Behavior", { ...e.getComponent("Behavior"), state: "hunt", target: target.id }, e.version);
         }
       } else if (random.chance(0.10)) {
-        // Patrol: move to random adjacent region
+        // Patrol — move region
         const regions = Object.keys(REGION_HABITATS);
         const ci = regions.indexOf(loc.area);
         if (ci >= 0) {
           const next = regions[(ci + random.nextInt(1, regions.length - 1)) % regions.length];
           const e = kernel.getEntity(m.id);
-          kernel.updateComponent(e.id, "Location", { ...loc, area: next }, e.version);
-          beh.state = "patrol";
-          kernel.updateComponent(e.id, "Behavior", beh, e.version);
+          kernel.updateComponent(e.id, "Location", { ...e.getComponent("Location"), area: next }, e.version);
+          kernel.updateComponent(e.id, "Behavior", { ...e.getComponent("Behavior"), state: "patrol", target: null }, e.version + 1);
         }
-      } else {
-        beh.state = "rest";
-        const e = kernel.getEntity(m.id);
-        kernel.updateComponent(e.id, "Behavior", { ...beh, state: "rest" }, e.version);
       }
     }
   },
 };
 
 // ══════════════════════════════════════
-// Monster-NPC Encounter System
+// Monster Encounter System (fixed with Combat Engine integration)
 // ══════════════════════════════════════
 export const MonsterEncounterSystem = {
   tick(kernel, time, random) {
     const monsters = kernel.queryEntities("monster", {}, 100, 0).filter(m => m.state !== "dead");
-    const npcs = kernel.queryEntities("npc", {}, 100, 0);
+    const npcs = kernel.queryEntities("npc", {}, 100, 0).filter(n => n.state === "active");
+
     for (const monster of monsters) {
       const beh = monster.getComponent("Behavior") || {};
       if (beh.state !== "hunt" || !beh.target) continue;
+
       const target = kernel.getEntity(beh.target);
       if (!target) { beh.target = null; continue; }
-      const mHp = monster.getComponent("HP") || { current: 100, max: 100 };
-      const tHp = target.getComponent("HP") || { current: 100, max: 100 };
-      // Simple deterministic combat: monster attacks NPC
-      const mRealm = monster.getComponent("Realm")?.realm_id || 1;
-      const tRealm = target.getComponent("Realm")?.realm_id || 1;
-      const mAtk = monster.getComponent("Combat")?.attack || 10;
-      const tDef = target.getComponent("Combat")?.defense || 2;
-      // Enhanced combat — use element multiplier (v2.0)
-      const mRoot = monster.getComponent("SpiritualRoot");
-      const tRoot = target.getComponent("SpiritualRoot");
-      let elemMult = 1.0;
-      if (mRoot && tRoot) {
-        const elem = mRoot.element || "none";
-        const defElem = tRoot.element || "none";
-        const strong = { metal:["wood"],wood:["earth"],water:["fire"],fire:["metal"],earth:["water"] };
-        const weak = { metal:["fire"],wood:["metal"],water:["earth"],fire:["water"],earth:["wood"] };
-        if (strong[elem]?.includes(defElem)) elemMult = 1.3;
-        if (weak[elem]?.includes(defElem)) elemMult = 0.7;
-      }
-      const baseDmg = mAtk + (mRealm - tRealm) * 3 - tDef + random.nextInt(-3, 5);
+
+      // Refresh both entities for latest HP
+      const m = kernel.getEntity(monster.id);
+      const t = kernel.getEntity(target.id);
+      const mHp = m.getComponent("HP") || { current:100, max:100 };
+      const tHp = t.getComponent("HP") || { current:100, max:100 };
+
+      // Combat formula — integrated with equipment + element
+      const mRealm = m.getComponent("Realm")?.realm_id || 1;
+      const tRealm = t.getComponent("Realm")?.realm_id || 1;
+      const mAtk = (m.getComponent("Combat")?.attack || 10);
+      const tDef = (t.getComponent("Combat")?.defense || 2);
+      const eqTarget = getEquipmentModifiers(t);
+
+      // Element multiplier — unified with combat engine
+      const mElement = m.getComponent("SpiritualRoot")?.element || "none";
+      const tElement = t.getComponent("SpiritualRoot")?.element || "none";
+      const elemMult = getElementMultiplier(mElement, tElement);
+
+      // Damage calculation
+      const baseDmg = mAtk + (mRealm - tRealm) * 3 - (tDef + (eqTarget.defBonus||0)) * 0.5 + random.nextInt(-3, 5);
       const damage = Math.max(1, Math.floor(baseDmg * elemMult));
-      // NPCs don't die from monster encounters (too disruptive)
-      const newHP = Math.max(10, tHp.current - damage); // minimum 10 HP
-      const e1 = kernel.getEntity(target.id);
-      kernel.updateComponent(e1.id, "HP", { ...tHp, current: newHP }, e1.version);
-      // If NPC died, monster returns to patrol; if survived, NPC counterattacks
-      if (newHP <= 0) {
-        target.state = "inactive";
-        const e2 = kernel.getEntity(monster.id);
-        kernel.updateComponent(e2.id, "Behavior", { ...beh, state: "patrol", target: null }, e2.version);
-        // Loot monster
-        const loot = monster.getComponent("Loot")?.table || {};
-        const mInv = monster.getComponent("Inventory") || { items: {} };
-        for (const [item, [lo, hi]] of Object.entries(loot)) {
-          mInv.items[item] = (mInv.items[item] || 0) + random.nextInt(lo, hi);
+
+      // Boss check
+      const bossComp = m.getComponent("Boss");
+      if (bossComp) {
+        const phase = getBossPhase(m, MONSTER_TYPES[bossComp.bossType] || {});
+        if (phase && phase !== bossComp.currentPhase) {
+          const atkMult = phase === "enraged" ? 1.5 : phase === "desperate" ? 2.0 : 1.0;
+          const phaseDmg = Math.floor(damage * atkMult);
+          const newHP = Math.max(0, tHp.current - phaseDmg);
+          kernel.updateComponent(t.id, "HP", { ...t.getComponent("HP"), current: newHP }, t.version);
+          kernel.updateComponent(m.id, "Boss", { ...bossComp, currentPhase: phase }, m.version);
+          continue; // Boss phase change triggers, skip counterattack this round
         }
-        const e3 = kernel.getEntity(monster.id);
-        kernel.updateComponent(e3.id, "Inventory", { items: mInv.items }, e3.version);
-      } else {
-        // NPC counterattacks
-        const tAtk = target.getComponent("Combat")?.attack || 8;
-        const mDef = monster.getComponent("Combat")?.defense || 2;
-        const counterDmg = Math.max(1, tAtk - mDef + random.nextInt(-2, 4));
-        const e2 = kernel.getEntity(monster.id);
-        kernel.updateComponent(e2.id, "HP", { ...mHp, current: Math.max(0, mHp.current - counterDmg) }, e2.version);
-        if (mHp.current - counterDmg <= 0) {
-          const e3 = kernel.getEntity(monster.id);
-          kernel.updateComponent(e3.id, "Behavior", { ...beh, state: "rest" }, e3.version);
+      }
+
+      // NPC HP floor — prevent extinction (Phase 3: proper loot uses event bus)
+      const newHP = Math.max(1, tHp.current - damage);
+      kernel.updateComponent(t.id, "HP", { ...t.getComponent("HP"), current: newHP }, t.version);
+
+      // NPC counterattack
+      const tAtk = (t.getComponent("Combat")?.attack || 8);
+      const eqAtk = getEquipmentModifiers(t);
+      const mDef = (m.getComponent("Combat")?.defense || 2);
+      const counterDmg = Math.max(1, tAtk + (eqAtk.atkBonus||0) - mDef + random.nextInt(-2, 4));
+      const mNewHP = Math.max(0, mHp.current - counterDmg);
+      kernel.updateComponent(m.id, "HP", { ...m.getComponent("HP"), current: mNewHP }, m.version);
+
+      // Monster killed → loot to NPC (Phase 3)
+      if (mNewHP <= 0) {
+        m.state = "dead";
+        kernel.updateComponent(m.id, "Behavior", { ...m.getComponent("Behavior"), state: "dead", target: null }, m.version + 1);
+        // Loot to target
+        const lootTable = m.getComponent("LootTable")?.drops || {};
+        const tInv = t.getComponent("Inventory") || { items:{} };
+        const lootItems = { ...tInv.items };
+        for (const [item, [lo, hi]] of Object.entries(lootTable)) {
+          lootItems[item] = (lootItems[item] || 0) + random.nextInt(lo, hi);
+        }
+        kernel.updateComponent(t.id, "Inventory", { items: lootItems }, t.version + 1);
+        // Also reward player if they are in same area
+        const players = kernel.queryEntities("player", {}, 1, 0);
+        if (players.length > 0 && (players[0].getComponent("Location")||{}).area === (m.getComponent("Location")||{}).area) {
+          const pInv = players[0].getComponent("Inventory") || { items:{} };
+          const pItems = { ...pInv.items };
+          for (const [item, [lo, hi]] of Object.entries(lootTable)) {
+            pItems[item] = (pItems[item] || 0) + random.nextInt(lo, hi);
+          }
+          kernel.updateComponent(players[0].id, "Inventory", { items: pItems }, players[0].version);
         }
       }
     }

@@ -118,7 +118,7 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","SimHe
 <script>
 const AREA_NAMES={area_bamboo_grove:"翠竹林",area_misty_peak:"云雾峰",area_thunder_valley:"雷音谷",area_dragon_vein:"龙脉秘境"};
 const RES_NAMES={spirit_herb:"灵草",jade_shard:"灵石碎片",thunder_ore:"雷晶石",dragon_scale:"龙鳞",ancient_jade:"古玉"};
-let _tick=0,$=id=>document.getElementById(id);
+let _tick=0,_saveTick=0,$=id=>document.getElementById(id);
 
 async function G(p){return(await fetch(p)).json()}
 async function P(p,b){return(await fetch(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})})).json()}
@@ -159,7 +159,19 @@ async function refresh(){
   $("npc-list").innerHTML=npcs.map(n=>`<div class="npc-row"><span class="npc-name">${n.name||"?"}</span><span class="npc-info">Lv${n.realm_id} · 破${n.breakthroughs||0}次</span></div>`).join("");
   // World feed
   const ev=await G("/api/events?limit=5");
-  $("world-feed").innerHTML=ev.map(e=>`<div class="feed-item"><span class="time">T${e.tick}</span><span class="event">${e.type}</span></div>`).join("")||"<span style='color:var(--dim)'>世界安宁...</span>";
+  $("world-feed").innerHTML=ev.map(e=>{
+    let desc=e.type;
+    if(e.type==="EntityUpdated"&&e.payload){
+      const c=e.payload.component||"";const nv=e.payload.newValue;const ov=e.payload.oldValue;
+      if(c==="Realm"&&nv?.realm_id>ov?.realm_id)desc=`${e.target||""} 突破至 Lv${nv.realm_id}`;
+      else if(c==="HP")desc=`${e.target||""} 生命 ${ov?.current||"?"} → ${nv?.current||"?"}`;
+      else if(c==="Stamina")desc=`${e.target||""} 体力变化`;
+      else if(c==="Identity")desc=`${e.target||""} 年岁增长`;
+      else if(c==="Inventory")desc=`${e.target||""} 获得物品`;
+      else if(c==="Location")desc=`${e.target||""} 移动至新区域`;
+    }
+    return`<div class="feed-item"><span class="time">T${e.tick}</span><span class="event">${desc}</span></div>`;
+  }).join("")||"<span style='color:var(--dim)'>世界安宁...</span>";
   // Quests
   let qs=[];
   if(d.realm_id<3)qs.push({txt:`达到 Lv3 解锁云雾峰`,done:d.realm_id>=3});
@@ -170,6 +182,8 @@ async function refresh(){
   $("quests").innerHTML=qs.map(q=>`<div class="quest-row"><span class="${q.done?'quest-done':'quest-pending'}">${q.done?'✓':'○'} ${q.txt}</span></div>`).join("");
   // Save indicator
   $("save-indicator").textContent="💾 已保存 · Tick "+_tick;
+  // Auto-save every 10 ticks
+  if(_tick - _saveTick >= 10){_saveTick=_tick;try{await P("/api/snapshot/take");$("save-indicator").textContent="💾 自动保存完成 · Tick "+_tick}catch(_){}}
 }
 
 async function cultivate(mode,useHerb){

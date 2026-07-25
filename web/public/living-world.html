@@ -117,6 +117,8 @@ async function refresh(){
       return`<div style="padding:1px 0"><span style="color:var(--dim);font-size:9px">${t}</span> <span style="font-size:10px">${txt}</span></div>`;
     }).join("");
     $("timeline").innerHTML=tlHtml||"<span style='color:var(--dim)'>尚无记录</span>";
+    // v2.0: Realm geography stats
+    const geo=await G("/api/game/areas");if(geo.realms){let rh='';for(const r of geo.realms){rh+=`<div style="font-size:10px;padding:2px 0"><span style="color:var(--gold)">${r.name}</span> <span style="color:var(--dim)">${r.climate} · Qi${r.qiType} · ${r.population.toLocaleString()}人${r.dangerLevel>=8?' ⚠':''}</span></div>`};$("timeline").innerHTML='<div style="margin-bottom:4px;color:var(--gold);font-size:9px">🌍 九州大陆</div>'+rh+'<hr style="border-color:var(--border);margin-top:4px">'+tlHtml}
   }catch(_){}
 }
 function $(id){return document.getElementById(id)}

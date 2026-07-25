@@ -295,7 +295,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const eventId = params.eventId;
       const choiceId = params.choice;
       if (!eventId || !choiceId) return send(400, { error: "Need eventId and choice" });
-      const exploration = sim.engine?.exploration;
+      const exploration = sim.exploration;
       if (!exploration) return send(500, { error: "Exploration system unavailable" });
       // Retrieve event from active events
       const event = exploration.activeEvents.get(eventId);

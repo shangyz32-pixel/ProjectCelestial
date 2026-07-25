@@ -140,7 +140,20 @@ export const MonsterEncounterSystem = {
       const tRealm = target.getComponent("Realm")?.realm_id || 1;
       const mAtk = monster.getComponent("Combat")?.attack || 10;
       const tDef = target.getComponent("Combat")?.defense || 2;
-      const damage = Math.max(1, mAtk + (mRealm - tRealm) * 3 - tDef + random.nextInt(-3, 5));
+      // Enhanced combat — use element multiplier (v2.0)
+      const mRoot = monster.getComponent("SpiritualRoot");
+      const tRoot = target.getComponent("SpiritualRoot");
+      let elemMult = 1.0;
+      if (mRoot && tRoot) {
+        const elem = mRoot.element || "none";
+        const defElem = tRoot.element || "none";
+        const strong = { metal:["wood"],wood:["earth"],water:["fire"],fire:["metal"],earth:["water"] };
+        const weak = { metal:["fire"],wood:["metal"],water:["earth"],fire:["water"],earth:["wood"] };
+        if (strong[elem]?.includes(defElem)) elemMult = 1.3;
+        if (weak[elem]?.includes(defElem)) elemMult = 0.7;
+      }
+      const baseDmg = mAtk + (mRealm - tRealm) * 3 - tDef + random.nextInt(-3, 5);
+      const damage = Math.max(1, Math.floor(baseDmg * elemMult));
       // NPCs don't die from monster encounters (too disruptive)
       const newHP = Math.max(10, tHp.current - damage); // minimum 10 HP
       const e1 = kernel.getEntity(target.id);

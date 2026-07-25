@@ -40,18 +40,21 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     Realm: { realm_id: 5, cultivation_value: 0.7, breakthroughs: 0 },
     HP: { current: 100, max: 100 },
     Stamina: { current: 100, max: 100 },
+    Skills: { learned: ["sword_rain","fire_blast","iron_body","shadow_step","qi_shield"] },
   });
   kernel.createEntity("npc", {
     Identity: { name: "赵灵儿", age: 180 },
     Realm: { realm_id: 3, cultivation_value: 0.3, breakthroughs: 0 },
     HP: { current: 80, max: 80 },
     Stamina: { current: 100, max: 100 },
+    Skills: { learned: ["fire_blast","ice_lance","heal_pulse"] },
   });
   kernel.createEntity("npc", {
     Identity: { name: "王虎", age: 220 },
     Realm: { realm_id: 4, cultivation_value: 0.5, breakthroughs: 0 },
     HP: { current: 120, max: 120 },
     Stamina: { current: 100, max: 100 },
+    Skills: { learned: ["sword_slash","iron_palm","thunder_fist","iron_body","sharp_sense"] },
   });
   log.info("Created 3 starter NPCs");
 }

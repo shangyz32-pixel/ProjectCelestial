@@ -318,6 +318,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/combat/action": {
       const battleId = params.battleId;
       const action = params.action || "attack";
+      const skillId = params.skill || null;
       if (!battleId) return send(400, { error: "Need battleId" });
       const combat = sim.engine?.combat;
       if (!combat) return send(500, { error: "Combat engine offline" });

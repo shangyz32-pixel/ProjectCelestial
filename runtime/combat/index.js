@@ -3,6 +3,7 @@
 // All state changes through Kernel API. Replay-compatible.
 
 import { WorldRandom } from "../random/index.js";
+import { SKILLS, getSkillDamage } from "../skills/index.js";
 
 // Damage formula: base = realm * 8, modified by realm_diff, critical, defense
 function calcDamage(attacker, defender, action, random) {
@@ -114,6 +115,40 @@ export class CombatEngine {
         entry.remainingHP = newHP;
         entry.message = `${attName} ${critical ? "暴击！" : ""}造成 ${damage} 点伤害 (${defName} 剩余 ${newHP}/${hp.max})`;
 
+        if (newHP <= 0) {
+          battle.status = "ended";
+          battle.victor = attEntity.id;
+          entry.result = "kill";
+          entry.message += " — 击杀！";
+        }
+        battle.log.push(entry);
+        break;
+      }
+
+      case "skill": {
+        // Use a specific skill
+        const skillId = entry.skillId || "sword_slash";
+        const skill = SKILLS[skillId];
+        if (!skill) { entry.message = "未知技能"; entry.result = "invalid"; battle.log.push(entry); break; }
+        const skills = attEntity.getComponent("Skills")?.learned || [];
+        if (!skills.includes(skillId)) { entry.message = `不会此技能: ${skill.name}`; entry.result = "invalid"; battle.log.push(entry); break; }
+        // Check dodge
+        if (checkDodge(attEntity, defEntity, this.random)) {
+          entry.result = "dodged";
+          entry.message = `${defName} 闪避了 ${skill.name}！`;
+          battle.log.push(entry);
+          break;
+        }
+        const { damage: rawDmg, critical } = calcDamage(attEntity, defEntity, "attack", this.random);
+        const damage = getSkillDamage(skillId, rawDmg);
+        const hp = defEntity.getComponent("HP") || { current: 100, max: 100 };
+        const newHP = Math.max(0, hp.current - damage);
+        kernel.updateComponent(defEntity.id, "HP", { ...hp, current: newHP }, defEntity.version);
+        entry.damage = damage;
+        entry.critical = critical;
+        entry.skillName = skill.name;
+        entry.remainingHP = newHP;
+        entry.message = `${attName} 施展 ${skill.name}！${critical ? "暴击！" : ""}造成 ${damage} 点伤害 (${defName} 剩余 ${newHP}/${hp.max})`;
         if (newHP <= 0) {
           battle.status = "ended";
           battle.victor = attEntity.id;

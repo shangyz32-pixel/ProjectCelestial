@@ -7,6 +7,8 @@ import { getPlayerSectInfo, joinSect, leaveSect, completeMission } from "../../r
 import { checkAchievements, getEarnedAchievements } from "../../runtime/achievements/index.js";
 import { calcCultivationMultiplier, resolveTribulation, calcTribulationResist } from "../../runtime/cultivation/index.js";
 import { MAJOR_REALMS, REGION_HIERARCHY, getRealmForArea } from "../../runtime/world/geography.js";
+import { createEquipment, generateLoot, equipItem, unequipItem, enhanceEquipment, getEquipmentModifiers } from "../../runtime/equipment/index.js";
+import { WorldRandom } from "../../runtime/random/index.js";
 
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
@@ -491,6 +493,55 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       };
 
       return send(200, { msg: `你离开了 ${elapsed} 天。世界已经改变。`, summary, ok: true });
+    }
+
+    // ═══ Equipment API (v2.1) ═══
+    case "/api/game/equipment/view": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const eq = players[0].getComponent("Equipment") || { slots:{},equipped:[] };
+      return send(200, { equipment: eq, slots: eq.slots, modifiers: getEquipmentModifiers(players[0]) });
+    }
+
+    case "/api/game/equipment/equip": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const item = params.item;
+      if (!item) return send(400, { error: "Need item" });
+      const result = equipItem(players[0], item, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/equipment/unequip": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const slot = params.slot;
+      if (!slot) return send(400, { error: "Need slot" });
+      const result = unequipItem(players[0], slot, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/equipment/enhance": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const rng = new WorldRandom(42);
+      const result = enhanceEquipment(players[0], params.slot, kernel, rng);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/equipment/generate": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const realm = players[0].getComponent("Realm")?.realm_id || 1;
+      const rng = new WorldRandom(42);
+      const items = generateLoot(kernel, params.source || "explore", realm, rng);
+      return send(200, { items, count: items.length });
     }
 
     default:

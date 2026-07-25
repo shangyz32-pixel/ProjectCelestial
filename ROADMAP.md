@@ -278,8 +278,22 @@ Phase 10     ████  AI Organization
 Phase 13     ████  Autonomous Development
 Phase 14     ████  Autonomous Operation
 Phase X      ████  Testing Agent / Game Director / Multiplayer
+Stage D      ████  Gameplay Prototype (D.1-D.5: breakthrough, risk, resources, exploration)
+Stage E      ████  Autonomous Software Engineering (refactor + HP fix)
+Stage F      ████  Living World (logout→world continues→rejoin summary)
+Stage F.1    ████  World Validation (100K ticks, hash verified, 0 crashes)
 
 规划中  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0%
+
+Stage G      ░░░░  (next)
+
+## Engineering Debt (planned, not implemented)
+
+| Item | Severity | Description |
+|------|----------|-------------|
+| Event Log Rotation | Medium | 901K events at 406MB; needs disk-backed storage |
+| Event Log Compression | Medium | In-memory event array grows unbounded |
+| Snapshot Garbage Collection | Low | 121+ snapshot files; needs GC policy |
 ```
 
 ---

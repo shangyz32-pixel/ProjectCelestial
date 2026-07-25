@@ -12,6 +12,7 @@ import { PlantSystem, AnimalSystem, SpiritBeastSystem } from "../ecology/index.j
 import { evolutionTick } from "../evolution/index.js";
 import { FamilySystem, MentorshipSystem, SettlementSystem, DiplomacySystem } from "../society/index.js";
 import { NarrativeSystem, RumorSystem } from "../narrative/index.js";
+import { npcSectTick } from "../sect/gameplay.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -345,6 +346,8 @@ export const NPCSectBehaviorSystem = {
         const e = kernel.getEntity(npc.id);
         kernel.updateComponent(e.id, "SectMembership", {}, e.version);
       }
+      // NPC sect rank progression
+      if (membership.sect_name) npcSectTick(npc, kernel, random);
     }
   },
 };

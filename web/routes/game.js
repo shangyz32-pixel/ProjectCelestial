@@ -3,7 +3,7 @@
 
 import { buyItem as shopBuy, sellItem as shopSell, getShopForRegion } from "../../runtime/shop/index.js";
 import { generateConversation } from "../../runtime/dialogue/index.js";
-import { getPlayerSectInfo, joinSect, leaveSect, completeMission } from "../../runtime/sect/gameplay.js";
+import { getPlayerSectInfo, joinSect, leaveSect, completeMission, buyFromSectStore, SECT_STORE, depositToTreasury } from "../../runtime/sect/gameplay.js";
 import { checkAchievements, getEarnedAchievements } from "../../runtime/achievements/index.js";
 import { calcCultivationMultiplier, resolveTribulation, calcTribulationResist } from "../../runtime/cultivation/index.js";
 import { MAJOR_REALMS, REGION_HIERARCHY, getRealmForArea } from "../../runtime/world/geography.js";
@@ -438,6 +438,28 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const missionType = params.mission || "cultivate";
       const result = completeMission(players[0], missionType, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/sect/store": {
+      return send(200, { store: Object.entries(SECT_STORE).map(([id,i])=>({id,name:i.name,cost:i.cost,type:i.type,rankReq:i.rankReq})) });
+    }
+
+    case "/api/game/sect/store/buy": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const result = buyFromSectStore(players[0], params.item, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/sect/deposit": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const result = depositToTreasury(players[0], params.resource, params.amount || 1, kernel);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, result);

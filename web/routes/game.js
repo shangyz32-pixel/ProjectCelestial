@@ -464,7 +464,6 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const missionType = params.mission || "cultivate";
       const result = completeMission(players[0], missionType, kernel);
-      if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, result);
     }

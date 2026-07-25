@@ -3,6 +3,8 @@
 // Hierarchy: outer→inner→core→elder→master
 // Missions, Contribution, Store, Promotion, Daily Tasks.
 
+import { HERBS } from "../alchemy/index.js";
+
 // ══════════════════════════════════════
 // Sect Rank Hierarchy
 // ══════════════════════════════════════
@@ -156,7 +158,7 @@ export function completeMission(player, missionType, kernel) {
   const inv = player.getComponent("Inventory") || { items:{} };
   if (mission.req.resource) {
     const count = inv.items[mission.req.resource] || 0;
-    if (count < mission.req.count) return { error:`资源不足(需${mission.req.resource}x${mission.req.count})` };
+    if (count < mission.req.count) return { ok:false, error:`需要 ${HERBS[mission.req.resource]?.name||mission.req.resource} x${mission.req.count}` };
     kernel.updateComponent(player.id, "Inventory", { items:{ ...inv.items, [mission.req.resource]:count-mission.req.count } }, player.version);
   }
   const result = addContribution(player, mission.contrib, kernel);

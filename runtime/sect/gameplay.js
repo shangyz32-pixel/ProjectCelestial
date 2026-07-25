@@ -68,6 +68,7 @@ export function getPlayerSectInfo(player, kernel) {
 
   const rankId = membership.rank || (legacy.founded_sect ? "master" : "outer");
   const rankDef = SECT_RANKS[rankId] || SECT_RANKS.outer;
+  const contrib = membership.contribution || 0;
 
   // Daily missions available
   const todayMissions = Object.entries(SECT_MISSIONS)
@@ -80,7 +81,7 @@ export function getPlayerSectInfo(player, kernel) {
     rank: rankId,
     rankName: rankDef.name,
     rankLevel: rankDef.level,
-    contribution: membership.contribution || 0,
+    contribution: contrib,
     memberCount: members.count,
     treasury,
     power,
@@ -128,7 +129,9 @@ export function leaveSect(player, kernel) {
 // ══════════════════════════════════════
 export function addContribution(player, amount, kernel) {
   const membership = player.getComponent("SectMembership") || {};
-  if (!membership.sect_name) return null;
+  const legacy = player.getComponent("Legacy") || {};
+  const sectName = membership.sect_name || legacy.founded_sect;
+  if (!sectName) return null;
   const newContrib = (membership.contribution||0) + amount;
   const currentRank = membership.rank || "outer";
   const realm = player.getComponent("Realm")?.realm_id || 1;

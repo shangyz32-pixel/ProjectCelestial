@@ -363,6 +363,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         Age: { ticks: 0, era: "新立宗门" },
       });
       kernel.updateComponent(p.id, "Legacy", { ...legacy, founded_sect: name, founded_at_tick: kernel.world.tickCount }, p.version);
+      kernel.updateComponent(p.id, "SectMembership", { sect_name: name, rank: "master", contribution: 0, joined_at: kernel.world.tickCount }, p.version + 1);
       const rep = p.getComponent("Reputation") || { score: 0, title: "无名修士" };
       kernel.updateComponent(p.id, "Reputation", { ...rep, score: (rep.score||0) + 50, title: `${name} 宗主` }, p.version + 1);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());

@@ -1,0 +1,102 @@
+// web/public/alchemy.html
+// v2.2 Sprint 5 — Alchemy UI
+// Herb Encyclopedia + Recipe Book + Refining Interface
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>炼丹阁 — Alchemy</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#0a0a0f;color:#ccc;max-width:900px;margin:0 auto;padding:10px}
+h1{color:#f90;text-align:center;margin:10px 0;font-size:16px;letter-spacing:4px}
+.panel{background:#111;border:1px solid #333;border-radius:6px;padding:10px;margin:8px 0}
+.panel h3{color:#f90;font-size:12px;margin-bottom:6px;letter-spacing:1px}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.card{background:#1a1a2e;border:1px solid #2a2a4e;border-radius:4px;padding:6px 10px;font-size:11px;min-width:120px;flex:1}
+.card .name{color:#fff;font-weight:bold}
+.card .tag{color:#888;font-size:9px}
+.card.grade-common{border-color:#666}.card.grade-uncommon{border-color:#0f0}.card.grade-rare{border-color:#06f}
+.card.grade-epic{border-color:#90f}.card.grade-legendary{border-color:#f90}.card.grade-mythic{border-color:#f00}
+.btn{background:#222;color:#fff;border:1px solid #444;padding:4px 12px;border-radius:3px;cursor:pointer;font-size:10px;margin:2px}
+.btn:hover{background:#333}.btn-gold{background:#342;border-color:#f90;color:#f90}
+select,input{background:#1a1a1a;color:#fff;border:1px solid #333;padding:4px 8px;border-radius:3px;font-size:11px}
+.msg{color:#0f0;font-size:11px;margin:4px 0}.err{color:#f44}
+</style></head><body>
+<h1>◈ 炼丹阁 ◈</h1>
+<div id="inv"></div>
+<div class="panel"><h3>🌿 采集药材</h3>
+<select id="herb-select"></select>
+<button class="btn btn-gold" onclick="doGather()">采集</button>
+<span id="gather-result" style="font-size:11px;margin-left:8px"></span></div>
+<div class="panel"><h3>📖 丹方</h3><select id="recipe-select" onchange="showRecipe()"><option value="">选择丹方...</option></select>
+<div id="recipe-detail" style="font-size:11px;margin-top:4px"></div>
+<button class="btn btn-gold" id="btn-refine" onclick="doRefine()" style="display:none">🔥 炼制</button>
+<span id="refine-result" style="font-size:11px;margin-left:8px"></span></div>
+<div class="panel"><h3>💊 丹药背包</h3><div id="pill-inv" style="font-size:11px"></div></div>
+<div class="panel"><h3>📚 药材图鉴</h3><div id="herb-list"></div></div>
+<script>
+const BASE="http://localhost:3000";
+async function G(p){return(await fetch(BASE+p)).json()}
+async function P(p,b){return(await fetch(BASE+p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})})).json()}
+async function refresh(){
+  // Inventory
+  const r=await G("/api/game/player");
+  const inv=(r.player?.inventory)||{};
+  let invHTML="<b>背包:</b> ";
+  const names={"spirit_grass":"灵草","fire_lotus":"火莲","moon_orchid":"月兰","thunder_vine":"雷藤","ice_crystal":"冰晶花","golden_ginseng":"金参","soul_mushroom":"魂菇","blood_root":"血根","heavenly_peach":"仙桃","dream_flower":"梦昙花","sun_grass":"阳炎草","moon_dew":"月华露","crystal_herb":"晶凝草","spirit_herb":"灵草","jade_shard":"灵石碎片","spirit_stone":"灵石","thunder_ore":"雷晶石","ancient_jade":"古玉"};
+  const entries=Object.entries(inv).filter(([k])=>names[k]).slice(0,8);
+  if(entries.length===0) invHTML+="空空如也";
+  else for(const[k,v] of entries) invHTML+=`${names[k]||k}x${v} `;
+  document.getElementById("inv").innerHTML=invHTML;
+
+  // Pills
+  const pillEntries=Object.entries(inv).filter(([k])=>k.startsWith("pill_"));
+  let pillHTML="";
+  if(pillEntries.length===0) pillHTML="<span style='color:#888'>暂无丹药</span>";
+  else for(const[k,v] of pillEntries){const rn=k.replace("pill_","");pillHTML+=`<div>${rn} x${v} <button class="btn" onclick="usePill('${k}')">服用</button></div>`}
+  document.getElementById("pill-inv").innerHTML=pillHTML;
+
+  // Herbs
+  const herbs=await G("/api/game/alchemy/herbs");const hl=herbs.herbs||[];
+  document.getElementById("herb-list").innerHTML=hl.map(h=>`<div class="card grade-${h.rarity}"><span class="name">${h.name}</span><span class="tag"> Lv${h.grade} · ${h.element} · ${h.rarity} · ${h.value}💰</span></div>`).join("");
+
+  // Herb select
+  document.getElementById("herb-select").innerHTML=hl.map(h=>`<option value="${h.id}">${h.name} (${h.rarity})</option>`).join("");
+
+  // Recipes
+  const recipes=await G("/api/game/alchemy/recipes");const rl=recipes.recipes||[];
+  document.getElementById("recipe-select").innerHTML='<option value="">选择丹方...</option>'+rl.map(r=>`<option value="${r.id}">${r.name} (Lv${r.difficulty})</option>`).join("");
+
+  window._recipes=rl;
+}
+async function showRecipe(){
+  const id=document.getElementById("recipe-select").value;
+  if(!id){document.getElementById("recipe-detail").innerHTML="";document.getElementById("btn-refine").style.display="none";return}
+  const r=window._recipes.find(x=>x.id===id);
+  if(!r)return;
+  document.getElementById("recipe-detail").innerHTML=`<b>${r.name}</b> — 难度Lv${r.difficulty}<br>材料: ${r.ingredients.join(", ")}<br>产出: ${r.output.type} (${r.output.quality})`;
+  document.getElementById("btn-refine").style.display="inline-block";
+  window._currentRecipe=id;
+}
+async function doRefine(){
+  const id=window._currentRecipe;
+  if(!id)return;
+  const r=await P("/api/game/alchemy/refine",{recipe:id});
+  const el=document.getElementById("refine-result");
+  if(r.error){el.innerHTML=`<span class="err">${r.error}</span>`;return}
+  el.innerHTML=`✅ ${r.pill?.name||"炼丹"} — ${r.pill?.qualityName||"成功"}${r.mutation?" 🔮变异!":""}`;
+  refresh();
+}
+async function doGather(){
+  const id=document.getElementById("herb-select").value;
+  if(!id)return;
+  const r=await P("/api/game/alchemy/gather",{herb:id});
+  const el=document.getElementById("gather-result");
+  if(r.error){el.innerHTML=`<span class="err">${r.error}</span>`;return}
+  el.innerHTML=r.empty?`未找到药材`:`✅ ${r.name} +1`;
+  refresh();
+}
+async function usePill(key){
+  const r=await P("/api/game/alchemy/consume",{pill:key});
+  if(r.error)alert(r.error);else alert(r.effect?.msg||"已服用");
+  refresh();
+}
+refresh();setInterval(refresh,5000);
+</script></body></html>

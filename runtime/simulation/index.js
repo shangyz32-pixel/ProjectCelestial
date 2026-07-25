@@ -179,12 +179,14 @@ export const NPCSystem = {
           });
         }
       }
-      // Gather (15%)
+      // Gather (15%) — resources + herbs
       if (random.chance(0.15)) {
         const rmap = { area_bamboo_grove:"spirit_herb", area_misty_peak:"jade_shard", area_thunder_valley:"thunder_ore", area_dragon_vein:"ancient_jade" };
+        const hmap = { area_bamboo_grove:"spirit_grass", area_misty_peak:"fire_lotus", area_thunder_valley:"thunder_vine", area_dragon_vein:"golden_ginseng" };
         const res = rmap[loc.area] || "spirit_herb";
+        const herb = hmap[loc.area] || "spirit_grass";
         const e7 = kernel.getEntity(npc.id);
-        kernel.updateComponent(e7.id, "Inventory", { items: { ...inv.items, [res]: (inv.items[res] || 0) + 1 } }, e7.version);
+        kernel.updateComponent(e7.id, "Inventory", { items: { ...inv.items, [res]: (inv.items[res] || 0) + 1, [herb]: (inv.items[herb]||0) + (random.chance(0.3)?1:0) } }, e7.version);
       }
       // Rest (20%)
       if (random.chance(0.20) && stam.current < stam.max) {

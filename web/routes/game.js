@@ -5,7 +5,8 @@ import { buyItem as shopBuy, sellItem as shopSell, getShopForRegion } from "../.
 import { generateConversation } from "../../runtime/dialogue/index.js";
 import { getPlayerSectInfo, joinSect, leaveSect, completeMission } from "../../runtime/sect/gameplay.js";
 import { checkAchievements, getEarnedAchievements } from "../../runtime/achievements/index.js";
-import { calcCultivationMultiplier, resolveTribulation } from "../../runtime/cultivation/index.js";
+import { calcCultivationMultiplier, resolveTribulation, calcTribulationResist } from "../../runtime/cultivation/index.js";
+import { MAJOR_REALMS, REGION_HIERARCHY, getRealmForArea } from "../../runtime/world/geography.js";
 
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
@@ -23,7 +24,12 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
               resource_names: { thunder_ore: "雷晶石", spirit_herb: "灵草" } },
             { id: "area_dragon_vein", name: "龙脉秘境", desc: "上古龙脉所在", qi: 1.5, req_realm: 9, resources: ["dragon_scale", "ancient_jade"], unlocked: false,
               resource_names: { dragon_scale: "龙鳞", ancient_jade: "古玉" } },
-          ]
+          ],
+          realms: Object.entries(MAJOR_REALMS).map(([id,r]) => ({
+            id, name:r.name, climate:r.climate, qiType:r.qiType,
+            population:r.population, dangerLevel:r.dangerLevel,
+            factions:r.factions, description:r.description,
+          }))
         });
 
       case "/api/game/player": {

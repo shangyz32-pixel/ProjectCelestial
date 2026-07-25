@@ -141,7 +141,8 @@ export const MonsterEncounterSystem = {
       const mAtk = monster.getComponent("Combat")?.attack || 10;
       const tDef = target.getComponent("Combat")?.defense || 2;
       const damage = Math.max(1, mAtk + (mRealm - tRealm) * 3 - tDef + random.nextInt(-3, 5));
-      const newHP = Math.max(0, tHp.current - damage);
+      // NPCs don't die from monster encounters (too disruptive)
+      const newHP = Math.max(10, tHp.current - damage); // minimum 10 HP
       const e1 = kernel.getEntity(target.id);
       kernel.updateComponent(e1.id, "HP", { ...tHp, current: newHP }, e1.version);
       // If NPC died, monster returns to patrol; if survived, NPC counterattacks

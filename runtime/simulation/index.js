@@ -10,6 +10,7 @@ import { MonsterSpawnSystem, MonsterAISystem, MonsterEncounterSystem } from "../
 import { HEART_DEMONS } from "../cultivation/index.js";
 import { PlantSystem, AnimalSystem, SpiritBeastSystem } from "../ecology/index.js";
 import { evolutionTick } from "../evolution/index.js";
+import { FamilySystem, MentorshipSystem, SettlementSystem, DiplomacySystem } from "../society/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -389,6 +390,10 @@ export class SimulationEngine {
       { name: "animals",    fn: AnimalSystem },
       { name: "spirit_bst", fn: SpiritBeastSystem },
       { name: "evolution", fn: EvolutionSystem },
+      { name: "family",    fn: FamilySystem },
+      { name: "mentorship",fn: MentorshipSystem },
+      { name: "settlement",fn: SettlementSystem },
+      { name: "diplomacy", fn: DiplomacySystem },
     ];
   }
   tick(kernel, time) {

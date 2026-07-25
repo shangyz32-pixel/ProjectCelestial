@@ -100,6 +100,7 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","SimHe
       <div class="section"><div class="section-title">修炼</div>
         <div class="btn-group"><button class="btn" onclick="cultivate('safe')">稳妥 +0.5%</button><button class="btn btn-primary" onclick="cultivate('normal')">普通 +2%</button><button class="btn btn-danger" onclick="cultivate('risky')">冒险 +5%</button></div>
         <button class="btn btn-jade" onclick="cultivate('normal',true)" id="bt-herb" style="display:none;margin-top:4px">服用灵草 +10%</button>
+        <button class="btn" onclick="rest()" style="margin-top:4px;color:var(--stam)">🛌 休息 +30体力</button>
       </div>
 
       <div class="section"><div class="section-title">探索区域</div><div id="areas"></div></div>
@@ -238,4 +239,5 @@ async function resolveEvent(eventId,choiceId){
   refresh()
 }
 async function gather(res){const r=await P("/api/game/gather",{resource:res});notify(`🌿 获得 ${RES_NAMES[res]||res} ×${r.count}`,"success");refresh()}
+async function rest(){const r=await P("/api/game/rest");showMsg(r.msg||"休息恢复中...","info");notify("🛌 休息恢复体力","info");refresh()}
 </script></body></html>

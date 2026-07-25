@@ -266,6 +266,17 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       return send(200, { outcome, ok: true });
     }
 
+    case "/api/game/rest": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const p = players[0];
+      const stam = p.getComponent("Stamina") || { current: 100, max: 100 };
+      const newStam = Math.min(stam.max, stam.current + 30);
+      kernel.updateComponent(p.id, "Stamina", { ...stam, current: newStam }, p.version);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, { msg: `休息恢复 +30 体力 (${newStam}/${stam.max})`, ok: true });
+    }
+
     case "/api/game/gather": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });

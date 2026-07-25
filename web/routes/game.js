@@ -334,6 +334,39 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       });
     }
 
+    case "/api/game/shop/list": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const area = players[0].getComponent("Location")?.area || "area_bamboo_grove";
+      const { getShopForRegion } = await import("../../runtime/shop/index.js");
+      const shop = getShopForRegion(area, kernel);
+      return send(200, { shop, area, ok: true });
+    }
+
+    case "/api/game/shop/buy": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const itemId = params.item;
+      if (!itemId) return send(400, { error: "Need item" });
+      const { buyItem } = await import("../../runtime/shop/index.js");
+      const result = buyItem(players[0], itemId, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/shop/sell": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const itemId = params.item;
+      if (!itemId) return send(400, { error: "Need item" });
+      const { sellItem } = await import("../../runtime/shop/index.js");
+      const result = sellItem(players[0], itemId, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
     case "/api/game/gather": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });

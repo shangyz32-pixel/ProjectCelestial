@@ -186,9 +186,37 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
       const p = players[0];
-      kernel.updateComponent(p.id, "Location", { area: params.area || "area_bamboo_grove" }, p.version);
+      const area = params.area || "area_bamboo_grove";
+      const oldArea = p.getComponent("Location")?.area;
+      kernel.updateComponent(p.id, "Location", { area }, p.version);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
-      return send(200, { area: params.area, ok: true });
+
+      // Discovery chance on entering new area
+      let discovery = "";
+      if (area !== oldArea && Math.random() < 0.40) {
+        const discoveries = [
+          { msg: "发现了一处隐秘洞穴！获得灵草×2", res: "spirit_herb", count: 2 },
+          { msg: "在溪水中捡到灵石碎片×1", res: "jade_shard", count: 1 },
+          { msg: "发现了前人留下的修炼笔记！（修行+5%）", res: null, cv_bonus: 0.05 },
+          { msg: "遭遇一头妖兽，费劲击退后捡到雷晶石×1", res: "thunder_ore", count: 1 },
+          { msg: "山间雾气中寻得古玉×1", res: "ancient_jade", count: 1 },
+          { msg: "发现废弃的炼丹炉残骸...", res: null },
+        ];
+        const d = discoveries[Math.floor(Math.random() * discoveries.length)];
+        discovery = d.msg;
+        if (d.res) {
+          const inv = p.getComponent("Inventory") || { items: {} };
+          const cur = inv.items[d.res] || 0;
+          const up = kernel.getEntity(p.id);
+          kernel.updateComponent(up.id, "Inventory", { items: { ...inv.items, [d.res]: cur + d.count } }, up.version);
+        }
+        if (d.cv_bonus) {
+          const realm = p.getComponent("Realm") || {};
+          const up = kernel.getEntity(p.id);
+          kernel.updateComponent(up.id, "Realm", { ...realm, cultivation_value: Math.min(1.0, realm.cultivation_value + d.cv_bonus) }, up.version);
+        }
+      }
+      return send(200, { area, discovery: discovery || null, ok: true });
     }
 
     case "/api/game/gather": {

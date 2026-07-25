@@ -184,6 +184,6 @@ async function attemptBreakthrough(useJade){
   notify(r.success?"🎉 突破成功！境界提升！":"💥 突破失败！");
   $("bt-panel").style.display="none";refresh();
 }
-async function explore(area){await P("/api/game/explore",{area});notify(`📍 前往 ${AREA_NAMES[area]||area}`);showMsg("踏入新区域...","info");refresh()}
+async function explore(area){const r=await P("/api/game/explore",{area});notify(`📍 前往 ${AREA_NAMES[area]||area}`);const msg=r.discovery?`🔍 ${r.discovery}`:"踏入新区域...";showMsg(msg,r.discovery?"success":"info");refresh()}
 async function gather(res){const r=await P("/api/game/gather",{resource:res});notify(`🌿 获得 ${RES_NAMES[res]||res} ×${r.count}`);refresh()}
 </script></body></html>

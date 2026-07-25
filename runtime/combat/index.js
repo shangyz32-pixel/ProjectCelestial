@@ -4,14 +4,17 @@
 
 import { WorldRandom } from "../random/index.js";
 import { SKILLS, getSkillDamage } from "../skills/index.js";
+import { getEquipmentModifiers } from "../equipment/index.js";
 
 // Damage formula: base = realm * 8, modified by realm_diff, critical, defense
 function calcDamage(attacker, defender, action, random) {
   const aRealm = attacker.getComponent("Realm")?.realm_id || 1;
   const dRealm = defender.getComponent("Realm")?.realm_id || 1;
   const realmDiff = aRealm - dRealm;
-  const base = aRealm * 8 + realmDiff * 5;
-  let damage = Math.max(1, base * (1 + realmDiff * 0.15));
+  const eqA = getEquipmentModifiers(attacker);
+  const eqD = getEquipmentModifiers(defender);
+  const base = aRealm * 8 + realmDiff * 5 + eqA.atkBonus;
+  let damage = Math.max(1, base * (1 + realmDiff * 0.15) - eqD.defBonus * 0.5);
 
   // Critical (15% base chance, +2% per realm advantage)
   const critChance = 0.15 + Math.max(0, realmDiff) * 0.02;

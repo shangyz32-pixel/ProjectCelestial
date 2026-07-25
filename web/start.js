@@ -41,6 +41,7 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     HP: { current: 100, max: 100 },
     Stamina: { current: 100, max: 100 },
     Skills: { learned: ["sword_rain","fire_blast","iron_body","shadow_step","qi_shield"] },
+    Equipment: { slots: { weapon:"thunder_edge", armor:"dragon_scale" }, equipped:["thunder_edge","dragon_scale"], totalAtk:32, totalDef:48 },
   });
   kernel.createEntity("npc", {
     Identity: { name: "赵灵儿", age: 180 },
@@ -48,6 +49,7 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     HP: { current: 80, max: 80 },
     Stamina: { current: 100, max: 100 },
     Skills: { learned: ["fire_blast","ice_lance","heal_pulse"] },
+    Equipment: { slots: { weapon:"spirit_blade", armor:"spirit_vest" }, equipped:["spirit_blade","spirit_vest"], totalAtk:15, totalDef:23 },
   });
   kernel.createEntity("npc", {
     Identity: { name: "王虎", age: 220 },
@@ -55,6 +57,7 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     HP: { current: 120, max: 120 },
     Stamina: { current: 100, max: 100 },
     Skills: { learned: ["sword_slash","iron_palm","thunder_fist","iron_body","sharp_sense"] },
+    Equipment: { slots: { weapon:"spirit_blade", armor:"spirit_vest", ring:"jade_ring" }, equipped:["spirit_blade","spirit_vest","jade_ring"], totalAtk:19, totalDef:28 },
   });
   log.info("Created 3 starter NPCs");
 }

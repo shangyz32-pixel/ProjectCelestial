@@ -56,6 +56,13 @@ export const SKILLS = {
   shadow_strike: { name:"暗影刺",   category:"dark",    type:"attack",  damage:2.0, qiCost:15, cooldown:2, realmReq:4 },
   curse:         { name:"诅咒术",   category:"dark",    type:"debuff",  curse:0.2,  qiCost:20, cooldown:3, realmReq:5 },
 
+  // Buff (new type)
+  fire_aura:     { name:"烈焰光环", category:"magic",   type:"buff",    atkBoost:10,  qiCost:15, cooldown:3, realmReq:3 },
+  spirit_bless:  { name:"灵动祝福", category:"support", type:"buff",    speedBoost:0.2, qiCost:12, cooldown:2, realmReq:2 },
+
+  // Summon (new type)
+  spirit_wolf:   { name:"召唤灵狼", category:"summon",  type:"summon",  damage:1.5, qiCost:25, cooldown:5, realmReq:4 },
+
   // Divine (realm 5+)
   sword_intent:  { name:"剑意",     category:"divine",  type:"attack",  damage:4.0, qiCost:50, cooldown:5, realmReq:6 },
   domain:        { name:"领域展开", category:"divine",  type:"aura",    allBoost:0.3, qiCost:80, cooldown:10, realmReq:8 },

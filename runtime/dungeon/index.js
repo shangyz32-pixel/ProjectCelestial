@@ -17,6 +17,8 @@ export const DUNGEON_TYPES = {
   demon_realm:   { name:"魔域",     rooms:{min:4,max:9},  difficulty:6, env:"void",        treasure:"rare_mats",  bossChance:0.6, collapseChance:0.1 },
   spirit_garden: { name:"灵药园",   rooms:{min:3,max:6},  difficulty:2, env:"forest",      treasure:"herbs",      bossChance:0.1, collapseChance:0.05 },
   ancient_vault: { name:"远古宝库", rooms:{min:4,max:8},  difficulty:7, env:"palace",      treasure:"artifact",   bossChance:0.6, collapseChance:0.2 },
+  ice_cavern:    { name:"冰魄洞",   rooms:{min:4,max:7},  difficulty:3, env:"ice",         treasure:"herbs",      bossChance:0.3, collapseChance:0.1 },
+  volcano_core:  { name:"熔岩核心", rooms:{min:5,max:9},  difficulty:5, env:"volcano",     treasure:"equipment",  bossChance:0.5, collapseChance:0.2 },
 };
 
 // ══════════════════════════════════════

@@ -15,6 +15,7 @@ import { NarrativeSystem, RumorSystem } from "../narrative/index.js";
 import { npcSectTick } from "../sect/gameplay.js";
 import { QuestSystem, getAvailableQuests, acceptQuest, completeQuest } from "../quest/index.js";
 import { DungeonSystem, generateDungeon, exploreRoom } from "../dungeon/index.js";
+import { ContentEvolutionSystem } from "../content/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -404,6 +405,7 @@ export class SimulationEngine {
       { name: "rumor",     fn: RumorSystem },
       { name: "quest",     fn: QuestSystem },
       { name: "dungeon",   fn: DungeonSystem },
+      { name: "content",   fn: ContentEvolutionSystem },
     ];
   }
   tick(kernel, time) {

@@ -61,6 +61,12 @@ export const EQUIPMENT_CATALOG = {
   spirit_amulet: { name:"灵符",   slot:"necklace",category:"accessory",baseAtk:4,  baseDef:5,  baseHp:30, quality:"rare",      value:300 },
   immortal_jade: { name:"仙玉",   slot:"necklace",category:"accessory",baseAtk:6,  baseDef:8,  baseHp:50, quality:"legendary", value:2500 },
 
+  // Belt (slot: belt)
+  cloth_belt:    { name:"布带",   slot:"belt",   category:"accessory",baseAtk:0,  baseDef:1,  baseHp:5,  quality:"common",    value:10 },
+  spirit_belt:   { name:"灵带",   slot:"belt",   category:"accessory",baseAtk:2,  baseDef:4,  baseHp:15, quality:"uncommon",  value:80 },
+  jade_belt:     { name:"玉带",   slot:"belt",   category:"accessory",baseAtk:3,  baseDef:6,  baseHp:25, quality:"rare",      value:300 },
+  dragon_belt:   { name:"龙带",   slot:"belt",   category:"accessory",baseAtk:5,  baseDef:10, baseHp:40, quality:"epic",      value:900 },
+
   // Artifacts
   magic_mirror:  { name:"灵镜",   slot:"artifact",category:"artifact",baseAtk:5,  baseDef:10, baseHp:30, quality:"rare",      value:500 },
   ancient_seal:  { name:"古印",   slot:"artifact",category:"artifact",baseAtk:3,  baseDef:15, baseHp:40, quality:"epic",      value:1000 },

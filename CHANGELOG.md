@@ -1,127 +1,119 @@
-# CHANGELOG
+# Changelog
 
-> Project Celestial — 从空目录到 v1.0 的完整变更记录。
+All notable changes to Project Celestial will be documented in this file.
 
----
+## [v1.0.1] — 2026-07-25
 
-## v1.0.0 — Celestial Genesis
+### Fixed
+- Shop/sect API endpoints use correct HTTP methods (GET vs POST)
+- NPC death from monster encounters prevented (min 10 HP floor)
+- Server process stability with PTY mode
+- Duplicate `const d` declaration causing JS SyntaxError
+- Sect panel displays even when no sect is joined
 
-*2026-07-23 | Architecture Freeze*
+### Added
+- API documentation (API.md)
+- Release notes (RELEASE_NOTES.md)
+- Performance benchmark tests (verify_perf_100k.js)
 
-### Phase 1: Celestial Bible（世界观）
+## [v1.0.0] — 2026-07-25 — Living World Foundation
 
-**新增**:
-- CelestialBible.md — 单文件最高法典（44KB）
-- Volume I: 世界哲学（宇宙/天道/大道/生命）
-- Volume II: 世界物理（灵气/时间/空间/生态）
-- Volume III: 修炼体系（16境界/灵根/天劫/功法）
-- Volume IV: 世界引擎（四层架构/11 Engine/12约束）
-- Volume V: 宇宙拓扑（六层架构/六界/飞升）
-- 辅助文档: Universe三部 + Dao + Cultivation + TimeEngine + WorldEngine
+### Core Architecture
+- Runtime: Node.js ES Module deterministic simulation engine
+- Kernel API: ACID transactions, optimistic locking, event audit trail
+- ECS: Entity-Component System (Identity, Realm, HP, Stamina, Inventory, Location, Skills, Equipment, Relationships, Reputation, Legacy, Achievements)
+- Replay: Full event replay from snapshot + event log
+- Snapshot: World state serialization and restoration
+- Time Service: Tick/day/season/era system
+- World Random: Seeded PRNG for deterministic simulation
 
-### Phase 2: Canon Registry（数据层）
+### Simulation Systems (11)
+- Weather System (clear/cloudy/rain/storm/snow/fog)
+- Qi Density System (seasonal fluctuations)
+- NPC System (cultivation, breakthrough, travel, gather, rest)
+- Economy System (dynamic pricing by region/weather/season)
+- Sect System (lifecycle, recruitment, expansion, schism)
+- Relationship System (friend/enemy formation)
+- Enhanced Sect Lifecycle (age progression, decline)
+- Monster Spawn System (region-based, habitat-matching)
+- Monster AI System (patrol, hunt, rest state machine)
+- Monster Encounter System (NPC combat with monsters)
+- NPC Sect Behavior System (autonomous join/leave)
 
-**新增**:
-- Registry/Realm.yaml — 16 境界 + 寿元 + 突破率
-- Registry/SpiritRoot.yaml — 8 品质 × 14 属性
-- Registry/lifespan.yaml — 各境界寿元
-- Registry/dao.yaml — 三层大道体系
-- Registry/tribulation.yaml — 六种天劫
-- Registry/breakthrough.yaml — 突破五条件 + 失败后果
-- Registry/weather.yaml — 12 种天气 + 修炼影响
-- Registry/factions.yaml — 6 种势力类型
+### World Event Engine
+- 31 event types across 12 categories
+- Chain events (cave→treasure, ruins→ancient_manual, meteor→crater)
+- Player choices with success rates, rewards, and fail penalties
+- Region-specific probability tables
+- World impact tracking
 
-### Phase 3: World Training
+### Player Systems
+- Cultivation (safe/normal/risky modes)
+- Area Qi influence on cultivation speed
+- Stamina consumption and rest recovery
+- Breakthrough (immediate/suppress/jade boost)
+- Character creation and persistence
+- Inventory management
+- Region exploration with realm-level gating
+- Resource gathering per area
 
-**Stage 1: Canon Ingestion**
-- INDEX.md — 检索优先级系统
-- ADR-0001 — 统一修炼体系
-- ADR-0002 — Canon 知识摄入系统
+### Web Interface
+- Game page: three-column RPG layout
+- Living World Observer: real-time world feed + NPC chronicles + world timeline
+- Developer Console: raw API access
+- WOC Operations Center: simulation controls
+- Achievement display (14 achievements)
+- Shop/dialogue/sect interactive panels
+- Notification system with color coding
 
-**Stage 2: Rule Engine**
-- rule_engine.yaml — 突破/天劫/死亡 3 条管线
-- ADR-0003 — 确定性规则引擎
+### NPC Systems
+- 3 starter NPCs with skills and equipment
+- Autonomous behavior: cultivate, travel, gather, rest, join/leave sects
+- Relationship formation between NPCs
+- Monster encounters with combat resolution
 
-**Stage 3: Knowledge Graph**
-- knowledge_graph.yaml — 6 节点 × 7 边类型
-- ADR-0004 — 图优先世界查询
+### Sect System
+- Player sect founding
+- 5 rank tiers (disciple → leader)
+- Contribution and promotion
+- 6 mission types
+- Sect lifecycle (founding → peak → schism → decline)
 
-**Stage 4: NPC Memory**
-- memory_schema.yaml — 双层记忆数据结构
-- npc_template.yaml — NPC 记忆模板
-- npc_001~003 + npc_master_li — 4 个示例 NPC
-- rule_engine.yaml → actions.memory — 记忆管线
-- knowledge_graph.yaml → on_memory_event — 记忆→KG 同步
-- ADR-0005 — NPC 双层记忆
+### Engineering
+- Git Flow branching model (main/develop)
+- GitHub Actions CI/CD pipeline
+- Performance benchmark: 609 ticks/sec
+- Test suite: 76/77 passing (98%)
+- Architecture Freeze with 21 ADRs
+- Issue/PR templates
+- Security policy
+- MIT License
 
-**Stage 5: Narrative Layer**
-- narrative_schema.yaml — Scene Template + 行为→叙事规则
-- scene_001_encounter.md — 坊市相遇叙事演示
-- factions_detail.yaml — 三大势力详述
+### Experimental / Preview Systems
+- Combat Engine (turn-based: attack/defend/dodge/flee)
+- Monster Ecology (6 types, spawn/AI/encounter)
+- Skill System (14 skills × 7 categories)
+- Equipment System (13 items × 5 quality tiers)
+- Shop System (4 region shops, dynamic pricing)
+- Dialogue System (context-aware, relationship-based)
+- Advanced Sect Gameplay (ranks, missions, treasury)
 
-**Stage 6: Simulation Loop**
-- simulation_loop.yaml — 11 步确定性循环
-- tick_walkthrough_001.md — Tick 走查验证
-- ADR-0006 — 确定性世界循环
-- 更新 volume4_world_engine.md
+### Known Issues
+- 1 pre-existing test assertion (snapshot HP restore)
+- NPCs cannot permanently die from monsters (HP floor of 10)
+- Chinese character encoding may show garbled text in some API outputs
+- Server requires PTY mode for stable background operation
 
-**Stage 7: Emergent Narrative**
-- causal_chain.yaml — 4 种因果检测 + 置信度公式
-- narrative_arc.yaml — 弧/章/场景 + 多视角编织
-- arc_001_spirit_vein_crisis.md — 灵脉危机叙事弧
-- ADR-0007 — 涌现式叙事
-- 更新 narrative_schema.yaml
+## [Pre-v1.0.0] — 2026-07-21 to 2026-07-24
 
-**Stage 8: Canon Validator**
-- canon_validator.yaml — 6 域 28 条校验规则
-- validator_demo_arc001.md — arc_001 校验演示
-- ADR-0008 — 内容校验层
-- 集成到 simulation_loop (step_09b)
-- 集成到 narrative_schema (step 6)
-
-### Phase 3.5: World OS
-
-- WORLD_OS.md — 12 章完整宪章 + 10 条不可变原则
-- world_kernel.yaml — Kernel + Transaction + EventBus
-- world_state.yaml — 10 域统一状态数据模型
-- capability.yaml — L0~L6 七级权限 + SDK API
-- plugin_system.yaml — 插件系统 + 脚本引擎
-- ADR-0009 — World OS 架构决策
-- ARCHITECTURE.md — 系统架构总纲
-
-### Phase 4 Blueprint
-
-- ROADMAP.md — 完整五阶段路线图
-- civilization_engine.yaml — AI 文明四大支柱
-- ADR-0010 — 从个体到文明的跃迁
-
-### 元文档
-
-- VERSION.md — 版本声明与冻结规则 (本版本创建)
-- CHANGELOG.md — 变更记录 (本文件)
-
----
-
-## 统计
-
-```
-文件总数:  59
-ADR 数量:  10
-NPC 数量:  4
-管线数量:  7
-校验规则:  28
-Capability 级别: 7
-架构层:    12 (World OS 宪章)
-Phase:     5 (其中 4 个完成，1 个定义中)
-```
-
----
-
-## 后续版本规划
-
-```
-v1.1.0 — Phase 4.1: Institution Engine
-v1.2.0 — Phase 4.2: Governance Engine
-v1.3.0 — Phase 4.3: Legacy Engine
-v2.0.0 — Phase 4.4 + Phase 5: Civilization + Persistent Universe
-```
+- Architecture Freeze established (v1.0.0)
+- 21 ADRs written covering all major architecture decisions
+- Stage A-F completed (Architecture through Living World)
+- Runtime module structure established
+- Sprint 0: Initial runtime implementation (M1-M9)
+- Deterministic Simulation Engine validated
+- Web Observer v0.3.0 implemented
+- Engineering infrastructure (Git Flow, CI, GitHub configuration)
+- Governance and project consciousness established
+- Axiom 001-004 defined (Simulation First, Distributed First, One Loop First, World Before Player)
+- 8 spec documents (Entity, Event, Time, World State, Kernel API, Transaction, Network Protocol, Snapshot)

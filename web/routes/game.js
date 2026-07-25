@@ -89,6 +89,31 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         return send(200, { shop, area, ok: true });
       }
 
+      // ═══ v2.1 Listing endpoints (GET) ═══
+      case "/api/game/quests": {
+        return send(200, { quests: getAvailableQuests(kernel) });
+      }
+
+      case "/api/game/sect/store": {
+        return send(200, { store: Object.entries(SECT_STORE).map(([id,i])=>({id,name:i.name,cost:i.cost,type:i.type,rankReq:i.rankReq})) });
+      }
+
+      case "/api/game/alchemy/recipes": {
+        return send(200, { recipes: Object.entries(RECIPES).map(([id,r])=>({id,name:r.name,difficulty:r.difficulty,ingredients:r.ingredients.map(h=>HERBS[h]?.name||h),output:r.output})) });
+      }
+
+      case "/api/game/alchemy/herbs": {
+        return send(200, { herbs: Object.entries(HERBS).map(([id,h])=>({id,name:h.name,grade:h.grade,element:h.element,rarity:h.rarity,value:h.value})) });
+      }
+
+      case "/api/game/crafting/recipes": {
+        return send(200, { recipes: Object.entries(CRAFTING_RECIPES).map(([id,r])=>({id,name:r.name,skillReq:r.skillReq,output:r.output,materials:r.materials.map(m=>MATERIALS[m]?.name||m)})) });
+      }
+
+      case "/api/game/crafting/materials": {
+        return send(200, { materials: Object.entries(MATERIALS).map(([id,m])=>({id,name:m.name,grade:m.grade,rarity:m.rarity,value:m.value})) });
+      }
+
       default:
         return null;
     }

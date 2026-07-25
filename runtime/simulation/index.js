@@ -251,6 +251,33 @@ export const EnhancedSectSystem = {
   },
 };
 
+// NPC Sect Behavior System (Sprint 7) — NPCs join/leave/challenge sects
+export const NPCSectBehaviorSystem = {
+  tick(kernel, time, random) {
+    const npcs = kernel.queryEntities("npc", {}, 100, 0);
+    const sects = kernel.queryEntities("sect", {}, 10, 0);
+    for (const npc of npcs) {
+      if (npc.state !== "active") continue;
+      const membership = npc.getComponent("SectMembership") || {};
+      // Join a sect (5% chance, if not already in one)
+      if (!membership.sect_name && sects.length > 0 && random.chance(0.05)) {
+        const sect = sects[random.nextInt(0, sects.length - 1)];
+        const name = (sect.getComponent("Identity")||{}).name || "?";
+        const e = kernel.getEntity(npc.id);
+        kernel.updateComponent(e.id, "SectMembership", { sect_name: name, rank: "disciple", contribution: 0 }, e.version);
+        const members = sect.getComponent("Members") || { count:1 };
+        const se = kernel.getEntity(sect.id);
+        kernel.updateComponent(se.id, "Members", { ...members, count: (members.count||1) + 1 }, se.version);
+      }
+      // Leave sect (2% chance)
+      if (membership.sect_name && random.chance(0.02)) {
+        const e = kernel.getEntity(npc.id);
+        kernel.updateComponent(e.id, "SectMembership", {}, e.version);
+      }
+    }
+  },
+};
+
 // Simulation Engine
 export class SimulationEngine {
   constructor(seed) {
@@ -269,6 +296,7 @@ export class SimulationEngine {
       { name: "m_spawn",  fn: MonsterSpawnSystem },
       { name: "m_ai",     fn: MonsterAISystem },
       { name: "m_encounter",fn: MonsterEncounterSystem },
+      { name: "npc_sect",   fn: NPCSectBehaviorSystem },
     ];
   }
   tick(kernel, time) {

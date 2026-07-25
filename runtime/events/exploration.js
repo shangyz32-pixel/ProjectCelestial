@@ -35,14 +35,18 @@ export const ALL_EVENT_TYPES = {
   earthquake:{category:"disaster",title:"地动山摇",desc:"大地剧烈震动，山石崩塌！",choices:[{id:"shelter",label:"寻找庇护",success:0.7,reward:{spirit_stone:20}},{id:"rescue",label:"救助他人",success:0.6,reward:{reputation:15},risk:"余震",failPenalty:{hp:-25}},{id:"flee",label:"快速逃离",success:0.9,reward:{}}]},
   siren_encounter:{category:"mystery",title:"妖魅现身",desc:"一位妖魅正在吸取路人的精气！",choices:[{id:"fight",label:"攻击妖魅",success:0.4,reward:{spirit_stone:150,ancient_jade:1},risk:"被魅惑",failPenalty:{hp:-35}},{id:"save",label:"救下路人",success:0.7,reward:{reputation:20,jade_shard:2}},{id:"flee",label:"悄然离开",success:1.0,reward:{}}]},
   meteor_crater:{category:"mystery",title:"陨石坑洞",desc:"陨石砸出一个巨大坑洞，坑底有奇异矿石发光。",choices:[{id:"mine",label:"开采矿石",success:0.6,reward:{thunder_ore:5,spirit_stone:100},risk:"辐射中毒",failPenalty:{hp:-20}},{id:"study",label:"研究陨石",success:0.5,reward:{cultivation_bonus:0.15},risk:"精神冲击",failPenalty:{hp:-15}},{id:"leave",label:"远处观察",success:1.0,reward:{spirit_stone:20}}]},
+  wandering_immortal:{category:"legendary",title:"游方仙人",desc:"一位白发仙人正坐在路边下棋。",choices:[{id:"learn",label:"请教棋道",success:0.3,reward:{cultivation_bonus:0.25,ancient_jade:1},risk:"心神耗尽",failPenalty:{hp:-30}},{id:"challenge",label:"对弈一局",success:0.5,reward:{reputation:30,cultivation_bonus:0.10}},{id:"observe",label:"恭敬旁观",success:0.8,reward:{cultivation_bonus:0.05}},{id:"leave",label:"不敢打扰",success:1.0,reward:{}}]},
+  ghost_ruins:{category:"mystery",title:"幽灵遗迹",desc:"月光下，废弃古城中出现若隐若现的幽灵。",choices:[{id:"cleanse",label:"驱散幽灵",success:0.4,reward:{spirit_stone:150,reputation:20},risk:"被怨灵攻击",failPenalty:{hp:-35}},{id:"communicate",label:"尝试沟通",success:0.6,reward:{ancient_jade:1},risk:"心神受损",failPenalty:{hp:-15}},{id:"flee",label:"赶紧离开",success:1.0,reward:{}}]},
+  herb_garden:{category:"resource",title:"灵药园",desc:"一片隐蔽的山谷中，各种灵药正在茂盛生长。",choices:[{id:"harvest",label:"尽情采摘",success:0.7,reward:{spirit_herb:8,random_item:true},risk:"守护阵法",failPenalty:{hp:-15}},{id:"selective",label:"精选采集",success:0.9,reward:{spirit_herb:3}},{id:"leave",label:"原路返回",success:1.0,reward:{}}]},
+  trade_caravan:{category:"merchant",title:"商队路过",desc:"一支大型商队正在此地休整，货物琳琅满目。",choices:[{id:"trade",label:"大肆采购",success:1.0,reward:{spirit_stone:50,trade:true}},{id:"invest",label:"投资商队",success:0.5,reward:{spirit_stone:200},risk:"商队遭劫"},{id:"ignore",label:"径自离去",success:1.0,reward:{}}]},
 };
 
 // Region event probabilities
 const REGION_EVENT_TABLES = {
-  area_bamboo_grove:{treasure:0.15,resource:0.15,traveler:0.10,merchant:0.10,sect_recruitment:0.08,mystery_sound:0.05},
-  area_misty_peak:{treasure:0.10,monster:0.10,cave:0.15,resource:0.10,spirit_beast:0.05,traveler:0.08,sect_recruitment:0.05,festival:0.05},
-  area_thunder_valley:{monster:0.15,ruins:0.10,phenomenon:0.15,resource:0.10,spirit_beast:0.08,spirit_storm:0.10,beast_tide:0.05,earthquake:0.05,floating_sword:0.02},
-  area_dragon_vein:{ruins:0.20,spirit_beast:0.15,phenomenon:0.15,treasure:0.10,monster:0.10,resource:0.05,ancient_manual:0.05,spirit_storm:0.05,cave_treasure:0.05,secret_realm:0.03,falling_meteor:0.03},
+  area_bamboo_grove:{treasure:0.15,resource:0.15,traveler:0.10,merchant:0.10,sect_recruitment:0.08,mystery_sound:0.05,herb_garden:0.05,trade_caravan:0.05},
+  area_misty_peak:{treasure:0.10,monster:0.10,cave:0.15,resource:0.10,spirit_beast:0.05,traveler:0.08,sect_recruitment:0.05,festival:0.05,ghost_ruins:0.03},
+  area_thunder_valley:{monster:0.15,ruins:0.10,phenomenon:0.15,resource:0.10,spirit_beast:0.08,spirit_storm:0.10,beast_tide:0.05,earthquake:0.05,floating_sword:0.02,wandering_immortal:0.03},
+  area_dragon_vein:{ruins:0.20,spirit_beast:0.15,phenomenon:0.15,treasure:0.10,monster:0.10,resource:0.05,ancient_manual:0.05,spirit_storm:0.05,cave_treasure:0.05,secret_realm:0.03,falling_meteor:0.03,wandering_immortal:0.05,ghost_ruins:0.05},
 };
 
 const RANDOM_ITEMS = ["spirit_herb","jade_shard","thunder_ore","dragon_scale","ancient_jade","spirit_stone"];

@@ -148,7 +148,6 @@ function notify(t,lvl){
 
 async function refresh(){
   const p=await G("/api/game/player");if(!p.player)return;const d=p.player;
-  const d=p.player;
   const newAch=p.newAchievements||[];
   // Notify new achievements
   for(const a of newAch){notify(`${a.icon} 成就解锁: ${a.name}`,"rare")}

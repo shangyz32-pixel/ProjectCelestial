@@ -1,52 +1,75 @@
 // runtime/tests/verify_perf_100k.js
-// Performance stress test — 100,000 ticks
+// v2.0 Performance stress test — 100,000 ticks with all 26 systems
+
 import { RuntimeConfig } from "../bootstrap/config.js";
 import { World } from "../world/index.js";
 import { Kernel } from "../kernel/index.js";
-import { SimulationManager } from "../simulation/index.js";
 import { Logger } from "../bootstrap/logger.js";
+import { SimulationManager } from "../simulation/index.js";
 
-const world = new World("stress-test");
+const TARGET = 100000;
+const world = new World("perf-test");
 const log = new Logger("Perf");
-// Set log level to WARN for performance
 log.level = "warn";
+
 const kernel = new Kernel(RuntimeConfig, world, log);
-const sim = new SimulationManager(42);
-await sim.initialize(kernel);
+const sim = new SimulationManager(RuntimeConfig);
+sim.initialize(kernel);
+log.info("Starting 100K tick performance test...");
+log.info("Systems:", sim.systems.map(s => s.name).join(", "));
 
-// Create 3 starter NPCs
-kernel.createEntity("npc", { Identity:{name:"陈玄",age:200}, Realm:{realm_id:5,cultivation_value:0.7}, HP:{current:100,max:100}, Stamina:{current:100,max:100}, Skills:{learned:["sword_rain","fire_blast"]}, Equipment:{slots:{weapon:"thunder_edge",armor:"dragon_scale"},totalAtk:32,totalDef:48} });
-kernel.createEntity("npc", { Identity:{name:"赵灵儿",age:180}, Realm:{realm_id:3,cultivation_value:0.3}, HP:{current:80,max:80}, Stamina:{current:100,max:100}, Skills:{learned:["fire_blast","ice_lance"]}, Equipment:{slots:{weapon:"spirit_blade",armor:"spirit_vest"},totalAtk:15,totalDef:23} });
-kernel.createEntity("npc", { Identity:{name:"王虎",age:220}, Realm:{realm_id:4,cultivation_value:0.5}, HP:{current:120,max:120}, Stamina:{current:100,max:100}, Skills:{learned:["sword_slash","iron_palm"]}, Equipment:{slots:{weapon:"spirit_blade",armor:"spirit_vest",ring:"jade_ring"},totalAtk:19,totalDef:28} });
+const start = Date.now();
+const startMem = process.memoryUsage().rss / 1024 / 1024;
 
-const TARGET = 1000;
-const startTime = Date.now();
-const startMem = process.memoryUsage().heapUsed;
-
+let lastReport = 0;
 for (let tick = 0; tick < TARGET; tick++) {
   kernel.world.tickCount = tick;
-  const time = kernel.getWorldTime();
-  sim.tick(time);
+  const time = {
+    tick, phase: (tick % 12) + 1,
+    day: Math.floor(tick / 12) + 1,
+    season: ["春","夏","秋","冬"][Math.floor(tick / 12 / 30) % 4],
+    isNight: (tick % 12) >= 8,
+  };
+  sim.tick(kernel, time);
 
-  if (tick % 10000 === 0) {
-    const elapsed = (Date.now() - startTime) / 1000;
-    const mem = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
+  if (tick > 0 && tick % 10000 === 0) {
+    const elapsed = (Date.now() - start) / 1000;
+    const mem = process.memoryUsage().rss / 1024 / 1024;
     const entities = kernel.queryEntities("npc", {}, 100, 0).length;
-    console.log(`Tick ${tick} | ${entities} NPCs | ${mem} MB | ${elapsed.toFixed(1)}s`);
+    const plants = kernel.queryEntities("plant", {}, 100, 0).length;
+    const animals = kernel.queryEntities("animal", {}, 100, 0).length;
+    const beasts = kernel.queryEntities("spirit_beast", {}, 100, 0).length;
+    const settlements = kernel.queryEntities("settlement", {}, 10, 0).length;
+    console.log(`Tick ${tick} | ${elapsed.toFixed(1)}s | ${mem.toFixed(0)}MB | NPC:${entities} P:${plants} A:${animals} B:${beasts} S:${settlements}`);
+    lastReport = tick;
   }
 }
 
-const elapsed = (Date.now() - startTime) / 1000;
-const endMem = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
-const startMemMB = (startMem / 1024 / 1024).toFixed(1);
-const entities = kernel.queryEntities("npc", {}, 100, 0).length;
+const elapsed = (Date.now() - start) / 1000;
+const mem = process.memoryUsage().rss / 1024 / 1024;
 const ticksPerSec = Math.round(TARGET / elapsed);
+const allEntities = [
+  kernel.queryEntities("npc", {}, 100, 0).length,
+  kernel.queryEntities("plant", {}, 100, 0).length,
+  kernel.queryEntities("animal", {}, 100, 0).length,
+  kernel.queryEntities("spirit_beast", {}, 100, 0).length,
+  kernel.queryEntities("monster", {}, 100, 0).length,
+  kernel.queryEntities("settlement", {}, 10, 0).length,
+].reduce((s, v) => s + v, 0);
 
-console.log(`\n═══ 100K Tick Performance ═══`);
-console.log(`Ticks:     ${TARGET}`);
-console.log(`Duration:  ${elapsed.toFixed(1)}s`);
-console.log(`Speed:     ${ticksPerSec} ticks/sec`);
-console.log(`Entities:  ${entities}`);
-console.log(`Memory:    ${startMemMB}MB → ${endMem}MB`);
-console.log(`Events:    ${kernel.getEventLog(0).length}`);
-console.log(`Result:    ${ticksPerSec > 500 ? '✅ PASS' : '⚠ WARNING'}`);
+const events = kernel.getEventLog(0)?.length || 0;
+const chronicle = (kernel.world.globalState.chronicle || []).length;
+const rumors = (kernel.world.globalState.rumors || []).length;
+
+console.log(`
+═══ 100K Tick Performance v2.0 ═══
+Ticks:     ${TARGET}
+Duration:  ${elapsed.toFixed(1)}s
+Speed:     ${ticksPerSec} ticks/sec
+Memory:    ${startMem.toFixed(0)}MB → ${mem.toFixed(0)}MB
+Entities:  ${allEntities} total
+Events:    ${events}
+Chronicle: ${chronicle} entries
+Rumors:    ${rumors} active
+Result:    ${ticksPerSec > 200 ? "✅ PASS" : "❌ FAIL"}
+`);

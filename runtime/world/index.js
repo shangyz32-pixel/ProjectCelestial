@@ -40,7 +40,9 @@ export class World {
       year: 847,
       month: 7,
       day: 23,
-      hour: 6,   // 卯时 — dawn
+      hour: 6,
+      day_phase: "dawn",     // 卯时
+      day_of_year: 204,
       season: "夏",
       era: "天历纪元",
     };

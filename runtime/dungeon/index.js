@@ -15,6 +15,8 @@ export const DUNGEON_TYPES = {
   inheritance:   { name:"传承之地", rooms:{min:3,max:5},  difficulty:4, env:"palace",      treasure:"inheritance",bossChance:0.4, collapseChance:0.0 },
   immortal_tomb: { name:"仙墓",     rooms:{min:6,max:12}, difficulty:8, env:"underground", treasure:"legendary",  bossChance:0.7, collapseChance:0.2 },
   demon_realm:   { name:"魔域",     rooms:{min:4,max:9},  difficulty:6, env:"void",        treasure:"rare_mats",  bossChance:0.6, collapseChance:0.1 },
+  spirit_garden: { name:"灵药园",   rooms:{min:3,max:6},  difficulty:2, env:"forest",      treasure:"herbs",      bossChance:0.1, collapseChance:0.05 },
+  ancient_vault: { name:"远古宝库", rooms:{min:4,max:8},  difficulty:7, env:"palace",      treasure:"artifact",   bossChance:0.6, collapseChance:0.2 },
 };
 
 // ══════════════════════════════════════

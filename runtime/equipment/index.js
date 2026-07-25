@@ -35,6 +35,24 @@ export const EQUIPMENT_CATALOG = {
   dragon_scale:  { name:"龙鳞甲", slot:"body",   category:"armor",   baseAtk:3,  baseDef:25, baseHp:50, quality:"epic",      value:1200 },
   celestial_robe:{ name:"天衣",   slot:"body",   category:"armor",   baseAtk:5,  baseDef:35, baseHp:80, quality:"legendary", value:4000 },
 
+  // Armor — Legs (slot: legs)
+  cloth_pants:   { name:"布裤",   slot:"legs",   category:"armor",   baseAtk:0,  baseDef:2,  baseHp:8,  quality:"common",    value:25 },
+  iron_greaves:  { name:"铁护腿", slot:"legs",   category:"armor",   baseAtk:0,  baseDef:6,  baseHp:12, quality:"uncommon",  value:70 },
+  spirit_greaves:{ name:"灵护腿", slot:"legs",   category:"armor",   baseAtk:1,  baseDef:10, baseHp:20, quality:"rare",      value:250 },
+  dragon_greaves:{ name:"龙护腿", slot:"legs",   category:"armor",   baseAtk:2,  baseDef:18, baseHp:35, quality:"epic",      value:800 },
+
+  // Armor — Boots (slot: boots)
+  cloth_boots:   { name:"布鞋",   slot:"boots",  category:"armor",   baseAtk:0,  baseDef:1,  baseHp:5,  quality:"common",    value:20 },
+  iron_boots:    { name:"铁靴",   slot:"boots",  category:"armor",   baseAtk:0,  baseDef:5,  baseHp:10, quality:"uncommon",  value:60 },
+  wind_boots:    { name:"疾风靴", slot:"boots",  category:"armor",   baseAtk:2,  baseDef:3,  baseHp:10, quality:"rare",      value:300 },
+  cloud_boots:   { name:"云履",   slot:"boots",  category:"armor",   baseAtk:3,  baseDef:8,  baseHp:20, quality:"epic",      value:700 },
+
+  // Armor — Gloves (slot: gloves)
+  cloth_gloves:  { name:"布手套", slot:"gloves", category:"armor",   baseAtk:1,  baseDef:2,  baseHp:5,  quality:"common",    value:20 },
+  iron_gauntlets:{ name:"铁护手", slot:"gloves", category:"armor",   baseAtk:3,  baseDef:5,  baseHp:8,  quality:"uncommon",  value:60 },
+  spirit_gauntlets:{ name:"灵手甲",slot:"gloves", category:"armor",   baseAtk:5,  baseDef:8,  baseHp:15, quality:"rare",      value:250 },
+  dragon_gauntlets:{name:"龙手甲",slot:"gloves", category:"armor",   baseAtk:8,  baseDef:12, baseHp:25, quality:"epic",      value:800 },
+
   // Accessories (slots: ring, necklace, belt)
   jade_ring:     { name:"玉戒",   slot:"ring",   category:"accessory",baseAtk:3,  baseDef:5,  baseHp:15, quality:"uncommon",  value:100 },
   spirit_ring:   { name:"灵戒",   slot:"ring",   category:"accessory",baseAtk:5,  baseDef:8,  baseHp:25, quality:"rare",      value:350 },

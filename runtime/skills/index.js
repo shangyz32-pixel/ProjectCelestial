@@ -42,6 +42,19 @@ export const SKILLS = {
   // Passive
   iron_body:     { name:"铁骨功",   category:"passive", type:"passive", defBonus:5,  qiCost:0, cooldown:0, realmReq:1 },
   sharp_sense:   { name:"锐感",     category:"passive", type:"passive", critBonus:0.05, qiCost:0, cooldown:0, realmReq:2 },
+  meditation:    { name:"静心诀",   category:"passive", type:"passive", qiRegen:3,   qiCost:0, cooldown:0, realmReq:1 },
+
+  // Wind (new branch)
+  wind_blade:    { name:"风刃",     category:"wind",    type:"attack",  damage:1.7, qiCost:8,  cooldown:1, realmReq:2 },
+  gale_storm:    { name:"狂风",     category:"wind",    type:"aoe",     damage:1.5, qiCost:18, cooldown:3, realmReq:4 },
+
+  // Ice (new branch)
+  frost_nova:    { name:"霜冻新星", category:"ice",     type:"aoe",     damage:1.4, qiCost:12, cooldown:2, realmReq:3 },
+  absolute_zero: { name:"绝对零度", category:"ice",     type:"debuff",  freeze:2,   qiCost:25, cooldown:4, realmReq:6 },
+
+  // Dark (new branch)
+  shadow_strike: { name:"暗影刺",   category:"dark",    type:"attack",  damage:2.0, qiCost:15, cooldown:2, realmReq:4 },
+  curse:         { name:"诅咒术",   category:"dark",    type:"debuff",  curse:0.2,  qiCost:20, cooldown:3, realmReq:5 },
 
   // Divine (realm 5+)
   sword_intent:  { name:"剑意",     category:"divine",  type:"attack",  damage:4.0, qiCost:50, cooldown:5, realmReq:6 },

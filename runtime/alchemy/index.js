@@ -18,6 +18,8 @@ export const HERBS = {
   soul_mushroom:   { name:"魂菇",    grade:4, element:"dark",   rarity:"epic",      region:["cavern","underworld"],growthTime:120, value:350 },
   blood_root:      { name:"血根",    grade:5, element:"fire",   rarity:"legendary", region:["volcanic","ancient"],growthTime:200, value:1000 },
   heavenly_peach:  { name:"仙桃",    grade:6, element:"light",  rarity:"legendary", region:["floating_island"],growthTime:500, value:5000 },
+  dream_flower:    { name:"梦昙花",  grade:3, element:"dark",   rarity:"rare",      region:["cave","forest"],    growthTime:80, value:200 },
+  sun_grass:       { name:"阳炎草",  grade:4, element:"fire",   rarity:"epic",      region:["desert","volcanic"],growthTime:150, value:500 },
 };
 
 // ══════════════════════════════════════
@@ -65,6 +67,18 @@ export const RECIPES = {
     ingredients:["golden_ginseng","blood_root"], quantities:[2,1],
     successRate:0.5, refineTime:8,
     output:{ type:"hp_max_boost", value:20, quality:"excellent" },
+  },
+  poison_antidote: {
+    name:"解毒丹", difficulty:1, furnaceReq:"iron",
+    ingredients:["moon_orchid","dream_flower"], quantities:[2,1],
+    successRate:0.8, refineTime:2,
+    output:{ type:"hp_recovery", value:15, quality:"good" },
+  },
+  enlightenment_pill: {
+    name:"顿悟丹", difficulty:5, furnaceReq:"ancient",
+    ingredients:["sun_grass","soul_mushroom","dream_flower"], quantities:[1,1,1],
+    successRate:0.3, refineTime:15,
+    output:{ type:"cultivation_boost", value:0.25, duration:100, quality:"epic" },
   },
 };
 

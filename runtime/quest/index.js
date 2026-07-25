@@ -104,6 +104,38 @@ const QUEST_DETECTORS = [
       return null;
     },
   },
+  {
+    id:"trade_caravan",
+    check:(kernel) => {
+      const settlements = kernel.queryEntities("settlement", {}, 10, 0);
+      if (settlements.length >= 1) {
+        return {
+          type:"escort", title:"护送商队",
+          desc:`${(settlements[0].getComponent("Identity")?.name||"聚落")}需要护送商队。`,
+          difficulty:3, area:"area_bamboo_grove",
+          objective:{ type:"escort" }, rewardType:"settlement", expiresIn:120,
+          source:"settlement",
+        };
+      }
+      return null;
+    },
+  },
+  {
+    id:"investigation",
+    check:(kernel) => {
+      const npcs = kernel.queryEntities("npc", {}, 20, 0);
+      if (npcs.length > 2) {
+        return {
+          type:"investigation", title:"遗迹调查",
+          desc:"有人在附近发现了古老的符文遗迹，需要调查。",
+          difficulty:2, area:"area_misty_peak",
+          objective:{ type:"investigate" }, rewardType:"rare_loot", expiresIn:150,
+          source:"exploration",
+        };
+      }
+      return null;
+    },
+  },
 ];
 
 // ══════════════════════════════════════

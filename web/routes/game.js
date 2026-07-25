@@ -9,6 +9,7 @@ import { calcCultivationMultiplier, resolveTribulation, calcTribulationResist } 
 import { MAJOR_REALMS, REGION_HIERARCHY, getRealmForArea } from "../../runtime/world/geography.js";
 import { createEquipment, generateLoot, equipItem, unequipItem, enhanceEquipment, getEquipmentModifiers } from "../../runtime/equipment/index.js";
 import { WorldRandom } from "../../runtime/random/index.js";
+import { RECIPES, HERBS, FURNACES, FIRES, refinePill, consumePill, gatherHerb } from "../../runtime/alchemy/index.js";
 
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
@@ -542,6 +543,46 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const rng = new WorldRandom(42);
       const items = generateLoot(kernel, params.source || "explore", realm, rng);
       return send(200, { items, count: items.length });
+    }
+
+    // ═══ Alchemy API (v2.1 Sprint 5) ═══
+    case "/api/game/alchemy/recipes": {
+      return send(200, { recipes: Object.entries(RECIPES).map(([id,r])=>({id,name:r.name,difficulty:r.difficulty,ingredients:r.ingredients.map(h=>HERBS[h]?.name||h),output:r.output})) });
+    }
+
+    case "/api/game/alchemy/herbs": {
+      return send(200, { herbs: Object.entries(HERBS).map(([id,h])=>({id,name:h.name,grade:h.grade,element:h.element,rarity:h.rarity,value:h.value})) });
+    }
+
+    case "/api/game/alchemy/refine": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const rng = new WorldRandom(42);
+      const result = refinePill(params.recipe, players[0], kernel, rng);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/alchemy/consume": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const result = consumePill(players[0], params.pill, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/alchemy/gather": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const rng = new WorldRandom(42);
+      const area = players[0].getComponent("Location")?.area || "area_bamboo_grove";
+      const region = { area_bamboo_grove:"forest", area_misty_peak:"mountain", area_thunder_valley:"storm", area_dragon_vein:"ancient" }[area] || "forest";
+      const herb = gatherHerb(players[0], params.herb, region, kernel, rng);
+      if (!herb) return send(200, { empty: true, msg: "没有找到药材" });
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, herb);
     }
 
     default:

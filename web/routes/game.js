@@ -301,6 +301,38 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       return send(200, { msg: `宗门 "${name}" 创立成功！`, sect_id: sect.id, ok: true });
     }
 
+    case "/api/game/combat/start": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const p = players[0];
+      const targets = kernel.queryEntities("npc", {}, 10, 0);
+      if (targets.length === 0) return send(400, { error: "No NPCs nearby" });
+      const target = targets[0];
+      const combat = sim.engine?.combat;
+      if (!combat) return send(500, { error: "Combat engine offline" });
+      const battle = combat.startBattle(p, target, kernel);
+      const targetName = (target.getComponent("Identity")||{}).name || "NPC";
+      return send(200, { battle, target_name: targetName, msg: `与 ${targetName} 的战斗开始！`, ok: true });
+    }
+
+    case "/api/game/combat/action": {
+      const battleId = params.battleId;
+      const action = params.action || "attack";
+      if (!battleId) return send(400, { error: "Need battleId" });
+      const combat = sim.engine?.combat;
+      if (!combat) return send(500, { error: "Combat engine offline" });
+      const result = combat.processAction(battleId, action, kernel);
+      if (!result) return send(404, { error: "Battle not found" });
+      const lastLog = result.log[result.log.length - 1] || {};
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, {
+        battle: result,
+        lastAction: lastLog,
+        msg: lastLog.message || "",
+        ok: true,
+      });
+    }
+
     case "/api/game/gather": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });

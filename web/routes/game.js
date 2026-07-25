@@ -1,6 +1,10 @@
 // web/routes/game.js
 // Gameplay APIs — player lifecycle, cultivation, exploration, gathering
 
+import { buyItem as shopBuy, sellItem as shopSell, getShopForRegion } from "../../runtime/shop/index.js";
+import { generateConversation } from "../../runtime/dialogue/index.js";
+import { getPlayerSectInfo, joinSect, leaveSect, completeMission } from "../../runtime/sect/gameplay.js";
+
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
   // ── GET ──
@@ -49,6 +53,14 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         const players = kernel.queryEntities("player", {}, 1, 0);
         if (players.length === 0) return send(200, { resources: {} });
         return send(200, { resources: players[0].getComponent("Inventory")?.items || {} });
+      }
+
+      case "/api/game/shop/list": {
+        const players = kernel.queryEntities("player", {}, 1, 0);
+        if (players.length === 0) return send(400, { error: "No player" });
+        const area = players[0].getComponent("Location")?.area || "area_bamboo_grove";
+        const shop = getShopForRegion(area, kernel);
+        return send(200, { shop, area, ok: true });
       }
 
       default:
@@ -334,22 +346,12 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       });
     }
 
-    case "/api/game/shop/list": {
-      const players = kernel.queryEntities("player", {}, 1, 0);
-      if (players.length === 0) return send(400, { error: "No player" });
-      const area = players[0].getComponent("Location")?.area || "area_bamboo_grove";
-      const { getShopForRegion } = await import("../../runtime/shop/index.js");
-      const shop = getShopForRegion(area, kernel);
-      return send(200, { shop, area, ok: true });
-    }
-
     case "/api/game/shop/buy": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
       const itemId = params.item;
       if (!itemId) return send(400, { error: "Need item" });
-      const { buyItem } = await import("../../runtime/shop/index.js");
-      const result = buyItem(players[0], itemId, kernel);
+      const result = shopBuy(players[0], itemId, kernel);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, result);
@@ -360,8 +362,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const itemId = params.item;
       if (!itemId) return send(400, { error: "Need item" });
-      const { sellItem } = await import("../../runtime/shop/index.js");
-      const result = sellItem(players[0], itemId, kernel);
+      const result = shopSell(players[0], itemId, kernel);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, result);
@@ -375,7 +376,6 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (npcs.length === 0) return send(400, { error: "No NPCs" });
       const npc = npcs[0];
       const topic = params.topic || "greeting";
-      const { generateConversation } = await import("../../runtime/dialogue/index.js");
       const text = generateConversation(npc, p, topic, kernel);
       const npcName = (npc.getComponent("Identity")||{}).name || "NPC";
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -385,7 +385,6 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/sect/info": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const { getPlayerSectInfo } = await import("../../runtime/sect/gameplay.js");
       const info = getPlayerSectInfo(players[0], kernel);
       if (!info) return send(200, { sect: null, msg: "未加入宗门" });
       return send(200, { sect: info, ok: true });
@@ -397,7 +396,6 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const sects = kernel.queryEntities("sect", {}, 10, 0);
       if (sects.length === 0) return send(400, { error: "世界尚无宗门" });
       const sectName = params.name || (sects[0].getComponent("Identity")||{}).name;
-      const { joinSect } = await import("../../runtime/sect/gameplay.js");
       const result = joinSect(players[0], sectName, kernel);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -407,7 +405,6 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/sect/leave": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const { leaveSect } = await import("../../runtime/sect/gameplay.js");
       const result = leaveSect(players[0], kernel);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -418,7 +415,6 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
       const missionType = params.mission || "cultivate";
-      const { completeMission } = await import("../../runtime/sect/gameplay.js");
       const result = completeMission(players[0], missionType, kernel);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());

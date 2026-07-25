@@ -71,6 +71,9 @@ input{background:var(--bg);color:var(--t);border:1px solid var(--b);padding:8px 
   <div id="areas"></div>
 
   <div id="log"></div>
+
+  <h2>世界动态</h2>
+  <div id="world-feed" style="max-height:120px;overflow-y:auto;font-size:11px;color:var(--dim)"></div>
 </div>
 </main>
 
@@ -119,6 +122,27 @@ async function refresh(){
     const resNames=(a.resources||[]).map(r=>a.resource_names?.[r]||r).join("、");
     return`<div class="area${unlocked?'':' locked'}" onclick="${unlocked?`explore('${a.id}')`:'void(0)'}"><h3>${a.name} ${unlocked?'':'🔒 Lv'+a.req_realm}</h3><p>${a.desc} | Qi:${a.qi} | ${resNames}</p>${unlocked&&a.id===d.current_area?`<button onclick="event.stopPropagation();gather('${(a.resources||[])[0]}')">采集 ${a.resource_names?.[(a.resources||[])[0]]||(a.resources||[])[0]}</button>`:""}</div>`;
   }).join("");
+
+  // Update world feed
+  updateWorldFeed();
+}
+
+async function updateWorldFeed(){
+  try {
+    const npcs=await G("/api/npcs");
+    const events=await G("/api/events?limit=3");
+    const tick=events[0]?.tick||0;
+    let html=`📅 第${tick}天 | `;
+    for(let i=0;i<Math.min(npcs.length,3);i++){
+      const n=npcs[i];
+      html+=`${n.name||"?"} Lv${n.realm_id||0} `;
+    }
+    html+=`<br>`;
+    for(const e of events.slice(0,3)){
+      html+=`▸ ${e.type} @ T${e.tick}<br>`;
+    }
+    $("world-feed").innerHTML=html;
+  }catch(_){}
 }
 
 async function cultivate(mode, useHerb){

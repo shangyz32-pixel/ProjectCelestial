@@ -3,7 +3,7 @@
 // Element affinity, buff/debuff, AI personality. Deterministic.
 
 import { WorldRandom } from "../random/index.js";
-import { SKILLS, getSkillDamage } from "../skills/index.js";
+import { SKILLS, getSkillDamage, practiceSkill, applyCooldown } from "../skills/index.js";
 import { getEquipmentModifiers } from "../equipment/index.js";
 
 // ══════════════════════════════════════
@@ -61,6 +61,63 @@ function applyBuffs(entity, kernel, random) {
   }
   kernel.updateComponent(entity.id, "Buffs", { active: updated }, entity.version);
   return updated;
+}
+
+// ══════════════════════════════════════
+// Combo System (v2.1) — data-driven chains
+// ══════════════════════════════════════
+export const COMBOS = {
+  "fire_blast:thunder_strike": { name:"烈焰雷霆", bonus:0.3, fx:"电光与火焰交织" },
+  "sword_slash:sword_rain":     { name:"剑雨连斩", bonus:0.25, fx:"剑影漫天" },
+  "ice_lance:fire_blast":       { name:"冰火两重天", bonus:0.4, fx:"冰火交加" },
+  "iron_palm:thunder_fist":     { name:"铁雷双击", bonus:0.2, fx:"拳拳到肉" },
+  "heal_pulse:qi_shield":       { name:"金蝉护体", bonus:0.1, fx:"治愈中架起护盾" },
+};
+let _lastSkill = null;
+function checkCombo(skillId) {
+  if (!_lastSkill) { _lastSkill = skillId; return null; }
+  const key = `${_lastSkill}:${skillId}`;
+  const combo = COMBOS[key];
+  _lastSkill = skillId;
+  return combo;
+}
+
+// ══════════════════════════════════════
+// Boss Phases (v2.1)
+// ══════════════════════════════════════
+export const BOSS_PHASES = {
+  normal:    { name:"正常",      hpThreshold:1.0, atkMult:1.0, defMult:1.0, newSkills:[], aiPersonality:"balanced" },
+  enraged:   { name:"狂怒",      hpThreshold:0.5, atkMult:1.5, defMult:0.8, newSkills:["thunder_strike"], aiPersonality:"aggressive" },
+  desperate: { name:"濒死",      hpThreshold:0.2, atkMult:2.0, defMult:0.5, newSkills:["sword_intent"], aiPersonality:"fanatic" },
+  revived:   { name:"复苏",      hpThreshold:0.0, atkMult:1.3, defMult:1.3, newSkills:["heal_pulse"], aiPersonality:"strategist" },
+};
+
+function getBossPhase(entity, boss) {
+  if (!boss) return null;
+  const hp = entity.getComponent("HP") || { current:100, max:100 };
+  const ratio = hp.current / hp.max;
+  if (boss.phases.includes("revived") && ratio <= 0) return BOSS_PHASES.revived;
+  if (ratio <= 0.2 && boss.phases.includes("desperate")) return BOSS_PHASES.desperate;
+  if (ratio <= 0.5 && boss.phases.includes("enraged")) return BOSS_PHASES.enraged;
+  return BOSS_PHASES.normal;
+}
+
+function applyBossPhase(entity, boss, phase, random) {
+  if (!boss || !phase || boss.currentPhase === phase.name) return;
+  boss.currentPhase = phase.name;
+  // Add boss-specific skills
+  if (phase.newSkills) {
+    const skills = entity.getComponent("Skills")?.learned || [];
+    for (const sid of phase.newSkills) {
+      if (!skills.includes(sid)) skills.push(sid);
+    }
+  }
+  // Update AI personality
+  if (phase.aiPersonality) {
+    boss.aiPersonality = phase.aiPersonality;
+  }
+  boss.atkMultiplier = phase.atkMult;
+  boss.defMultiplier = phase.defMult;
 }
 
 function getBuffMultiplier(entity, statType) {
@@ -230,6 +287,13 @@ export class CombatEngine {
         entry.damage = damage; entry.critical = critical; entry.skillName = skill.name; entry.elementMultiplier = elementMultiplier;
         entry.remainingHP = newHP;
         entry.message = `${attName} 施展 ${skill.name}！${critical?"暴击！":""}造成 ${damage} 点伤害 ${elementMultiplier!==1?(elementMultiplier>1?"⚔克制":"🛡抵抗"):""} (${defName} 剩余 ${newHP}/${hp.max})`;
+        // Combo check
+        const combo = checkCombo(skillId);
+        if (combo) { entry.message += ` 💥${combo.name}连击!`; entry.damage = Math.floor(entry.damage * (1+combo.bonus)); }
+        // Practice (improve mastery)
+        practiceSkill(attEntity, skillId, kernel);
+        // Apply cooldown
+        applyCooldown(skillId, attEntity, kernel);
         if (newHP <= 0) { battle.status = "ended"; battle.victor = attEntity.id; entry.result = "kill"; entry.message += " — 击杀！"; }
         battle.log.push(entry); break;
       }
@@ -244,6 +308,17 @@ export class CombatEngine {
         battle.log.push(entry); break;
 
       default: entry.message = "无效操作"; battle.log.push(entry);
+    }
+
+    // Boss phase check (v2.1)
+    const bossDef = battle.bossDef;
+    if (bossDef) {
+      const phase = getBossPhase(defEntity, bossDef);
+      if (phase && phase.name !== bossDef.currentPhase) {
+        applyBossPhase(defEntity, bossDef, phase, this.random);
+        entry.phaseChange = phase.name;
+        entry.message = (entry.message || "") + ` ⚡Boss进入${phase.name}阶段!`;
+      }
     }
 
     // Apply regen/dot buffs

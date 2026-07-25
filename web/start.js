@@ -13,7 +13,7 @@ import { SimulationManager } from "../runtime/simulation/index.js";
 import { createObserverServer } from "./server.js";
 import { execSync } from "node:child_process";
 import { WorldRandom } from "../runtime/random/index.js";
-import { assignRandomRoot, assignRandomConstitution, CULTIVATION_METHODS } from "../runtime/cultivation/index.js";
+import { assignRandomRoot, assignRandomConstitution, CULTIVATION_METHODS, assignRandomTechnique } from "../runtime/cultivation/index.js";
 
 const log = new Logger("Observer");
 const PORT = 3000;
@@ -48,6 +48,7 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     SpiritualRoot: assignRandomRoot(rng, 5),
     Constitution: assignRandomConstitution(rng, 5),
     CultivationMethod: { id:"sword_dao", ...CULTIVATION_METHODS.sword_dao },
+    Technique: assignRandomTechnique(rng, 5),
   });
   kernel.createEntity("npc", {
     Identity: { name: "赵灵儿", age: 180 },
@@ -59,6 +60,7 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     SpiritualRoot: assignRandomRoot(rng, 3),
     Constitution: assignRandomConstitution(rng, 3),
     CultivationMethod: { id:"five_elements", ...CULTIVATION_METHODS.five_elements },
+    Technique: assignRandomTechnique(rng, 3),
   });
   kernel.createEntity("npc", {
     Identity: { name: "王虎", age: 220 },
@@ -70,6 +72,7 @@ if (kernel.queryEntities("npc", {}, 100, 0).length === 0) {
     SpiritualRoot: assignRandomRoot(rng, 4),
     Constitution: assignRandomConstitution(rng, 4),
     CultivationMethod: { id:"body_refining", ...CULTIVATION_METHODS.body_refining },
+    Technique: assignRandomTechnique(rng, 4),
   });
   log.info("Created 3 starter NPCs");
 }

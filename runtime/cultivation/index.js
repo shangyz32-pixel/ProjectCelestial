@@ -192,3 +192,48 @@ export function resolveTribulation(entity, realmId, random) {
     passChance,
   };
 }
+
+// ══════════════════════════════════════
+// Techniques (v2.0 Sprint 4) — non-combat cultivation arts
+// ══════════════════════════════════════
+export const TECHNIQUES = {
+  meditation:     { name:"静心诀",     quality:"common",    effect:"speed",   value:0.05, desc:"稳固心神" },
+  qi_gathering:   { name:"聚灵术",     quality:"common",    effect:"qi_boost",value:0.10,desc:"提升灵气汇集" },
+  body_tempering: { name:"淬体术",     quality:"uncommon",  effect:"hp_max",  value:20,  desc:"强化肉身" },
+  soul_cultivation:{ name:"养魂术",    quality:"rare",      effect:"tribulation",value:10,desc:"滋养神魂" },
+  meridian_expand:{ name:"通脉诀",     quality:"rare",      effect:"speed",   value:0.15, desc:"拓宽经脉" },
+  heart_cleansing:{ name:"清心咒",     quality:"epic",      effect:"heart_demon_recovery",value:0.1,desc:"净化心魔" },
+  heaven_breath:  { name:"天息术",     quality:"legendary", effect:"speed",   value:0.25, desc:"汲取天地精华" },
+};
+
+export function assignRandomTechnique(random, realmId) {
+  if (realmId < 2) return null;
+  const entries = Object.entries(TECHNIQUES);
+  const epicChance = Math.min(0.05, realmId * 0.01);
+  const rareChance = Math.min(0.15, realmId * 0.03);
+  let pool = entries.filter(([_,t]) => t.quality === "common");
+  if (random.chance(epicChance)) pool = entries.filter(([_,t]) => t.quality === "legendary" || t.quality === "epic");
+  else if (random.chance(rareChance)) pool = entries.filter(([_,t]) => t.quality === "rare" || t.quality === "uncommon");
+  const [id, template] = pool[random.nextInt(0, pool.length - 1)] || entries[0];
+  return { id, ...template };
+}
+
+export const DIVINE_POWERS = {
+  sword_intent:   { name:"剑意",     realmReq:5,  effect:"critical", value:0.15, desc:"剑气通神" },
+  domain:         { name:"领域",     realmReq:7,  effect:"all_stats",value:0.10,desc:"掌控天地" },
+  teleportation:  { name:"瞬移",     realmReq:6,  effect:"dodge",    value:0.15,desc:"瞬息千里" },
+  clone:          { name:"分身术",   realmReq:7,  effect:"double_atk",value:0.5,desc:"化出分身" },
+  heaven_eye:     { name:"天眼",     realmReq:5,  effect:"dodge",    value:0.10,desc:"洞察万物" },
+  soul_suppress:  { name:"神魂镇压", realmReq:6,  effect:"damage",   value:0.12,desc:"灵魂威压" },
+};
+
+export function checkAwakenDivinePower(entity, random) {
+  const realm = entity.getComponent("Realm")?.realm_id || 1;
+  const existing = entity.getComponent("DivinePower");
+  if (existing) return null;
+  const candidates = Object.entries(DIVINE_POWERS).filter(([_,p]) => realm >= p.realmReq);
+  if (candidates.length === 0) return null;
+  if (!random.chance(realm * 0.02)) return null;
+  const [id, template] = candidates[random.nextInt(0, candidates.length - 1)];
+  return { id, ...template };
+}

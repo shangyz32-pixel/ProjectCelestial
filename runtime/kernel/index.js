@@ -152,9 +152,18 @@ export class Kernel {
   // ═══════════════════════════════════════════
   // Event Log (KERNEL_API_SPEC §Event)
   // ═══════════════════════════════════════════
-
+  // Event Log with automatic rotation (max 100K events in memory)
   getEventLog(fromTick = 0) {
     return this.txManager.getEventLog(fromTick);
+  }
+
+  // Rotate old events to keep memory bounded
+  rotateEventLog(maxEvents = 100000) {
+    const events = this.txManager.eventLog;
+    if (events.length > maxEvents) {
+      const remove = events.length - maxEvents;
+      events.splice(0, remove);
+    }
   }
 
   // ═══════════════════════════════════════════

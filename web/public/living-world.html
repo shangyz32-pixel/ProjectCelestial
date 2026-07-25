@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>天道观察 — Living World Observer</title>
+<style>
+:root{--bg:#05080f;--panel:#0a0f1a;--border:#151d2e;--text:#9db0c8;--dim:#4a6080;--gold:#c9a44b;--jade:#3dbf8f;--hp:#d94a4a;--stam:#7b6fde;--realm:#4da6e8;--warn:#e0903d;--rare:#b85cd4;--accent:#2a6fd4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","SimHei",sans-serif;font-size:13px;overflow-x:hidden}
+#top{background:#020308;border-bottom:1px solid var(--border);padding:8px 20px;display:flex;justify-content:space-between;align-items:center}
+#top h1{font-size:16px;color:var(--gold);letter-spacing:4px}
+#top .status{color:var(--jade);font-size:11px}
+#main{display:flex;height:calc(100vh - 44px)}
+#left{width:55%;padding:12px;overflow-y:auto;border-right:1px solid var(--border)}
+#right{width:45%;display:flex;flex-direction:column}
+#stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;border-bottom:1px solid var(--border)}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
+.stat-val{font-size:20px;font-weight:bold;color:var(--gold)}
+.stat-label{font-size:10px;color:var(--dim);margin-top:4px;text-transform:uppercase}
+#npc-panel{padding:12px;border-bottom:1px solid var(--border);flex:1;overflow-y:auto}
+#npc-panel h3{color:var(--gold);margin-bottom:8px;font-size:12px;letter-spacing:2px}
+.npc-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px}
+.npc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.npc-name{color:var(--gold);font-weight:bold}
+.npc-realm{color:var(--realm);font-size:12px}
+.npc-chronicle{font-size:11px;color:var(--dim);max-height:80px;overflow-y:auto}
+.npc-chronicle div{padding:1px 0}
+/* News Feed */
+.news-item{background:var(--panel);border-left:2px solid var(--border);padding:8px 12px;margin-bottom:4px;border-radius:0 4px 4px 0;animation:fadeIn 0.5s}
+.news-item.breakthrough{border-left-color:var(--jade)}
+.news-item.discovery{border-left-color:var(--rare)}
+.news-item.danger{border-left-color:var(--hp)}
+.news-item.warning{border-left-color:var(--warn)}
+.news-item.info{border-left-color:var(--realm)}
+.news-time{font-size:10px;color:var(--dim)}
+.news-text{font-size:12px;margin-top:2px}
+.news-loc{font-size:10px;color:var(--realm);margin-top:1px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+/* Observer Mode */
+#observer-toggle{position:fixed;top:10px;right:10px;z-index:100;background:var(--panel);border:1px solid var(--border);color:var(--dim);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px}
+#observer-toggle:hover{color:var(--gold);border-color:var(--gold)}
+.observer-mode #top{display:none}
+.observer-mode #right{display:none}
+.observer-mode #left{width:100%;border-right:none;padding:40px;font-size:15px}
+/* Scroll */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style></head><body>
+<button id="observer-toggle" onclick="toggleObserver()">🌌 观察模式</button>
+<div id="top"><h1>◈ 天道观察 ◈</h1><div class="status" id="top-status">● 世界运行中</div></div>
+<div id="main">
+  <div id="left"><h3 style="color:var(--gold);margin-bottom:10px;font-size:12px;letter-spacing:2px">📰 世界消息</h3><div id="news"></div></div>
+  <div id="right">
+    <div id="stats"><div class="stat-card"><div class="stat-val" id="st-tick">0</div><div class="stat-label">当前天</div></div><div class="stat-card"><div class="stat-val" id="st-npc">0</div><div class="stat-label">在世修士</div></div><div class="stat-card"><div class="stat-val" id="st-entity">0</div><div class="stat-label">世界实体</div></div><div class="stat-card"><div class="stat-val" id="st-events">0</div><div class="stat-label">今日事件</div></div><div class="stat-card"><div class="stat-val" id="st-qi">0</div><div class="stat-label">天地灵气</div></div><div class="stat-card"><div class="stat-val" id="st-weather">—</div><div class="stat-label">天象</div></div><div class="stat-card"><div class="stat-val" id="st-season">—</div><div class="stat-label">季节</div></div><div class="stat-card"><div class="stat-val" id="st-era">—</div><div class="stat-label">纪元</div></div></div>
+    <div id="npc-panel"><h3>👤 修士传纪</h3><div id="npc-chronicles"></div></div>
+  </div>
+</div>
+<script>
+const RES_NAMES={spirit_herb:"灵草",jade_shard:"灵石碎片",thunder_ore:"雷晶石",dragon_scale:"龙鳞",ancient_jade:"古玉"};
+const AREA_NAMES={area_bamboo_grove:"翠竹林",area_misty_peak:"云雾峰",area_thunder_valley:"雷音谷",area_dragon_vein:"龙脉秘境"};
+let _news=[],_tick=0;
+
+async function G(p){return(await fetch(p)).json()}
+
+async function refresh(){
+  try{
+    const w=await G("/api/world");const npcs=await G("/api/npcs");const ev=await G("/api/events?limit=20");
+    _tick=w.tick;
+    // Stats
+    $("st-tick").textContent=w.tick;$("st-npc").textContent=npcs.length;$("st-entity").textContent=w.entities;
+    $("st-events").textContent=ev.length;$("st-qi").textContent=(w.qi||0).toFixed(2);
+    $("st-weather").textContent=w.weather||"—";$("st-season").textContent=w.season||"—";$("st-era").textContent=w.era||"—";
+    // Top status with animation
+    const s=$("top-status");s.textContent="● 世界运行中";s.style.color="var(--jade)";
+    if(Math.random()<0.05){s.textContent="◉ 事件发生中";s.style.color="var(--warn)";setTimeout(()=>{s.textContent="● 世界运行中";s.style.color="var(--jade)"},1000);}
+    // News feed
+    const nameMap={};for(const n of npcs)nameMap[n.id]=n.name;
+    const news=[];
+    for(const e of ev){
+      if(e.type!=="EntityUpdated"||!e.payload)continue;
+      const nm=nameMap[e.target]||e.target||"未知修士";
+      const c=e.payload.component;const nv=e.payload.newValue;const ov=e.payload.oldValue;
+      if(c==="Realm"&&nv?.realm_id>(ov?.realm_id||0)){
+        news.push({time:`T${e.tick}`,text:`${nm} 突破至 Lv${nv.realm_id}`,cls:"breakthrough",loc:""});
+        break;
+      }
+    }
+    // NPC chronicles
+    let chronHTML="";
+    for(const n of npcs.slice(0,3)){
+      const realm=n.realm_id||1;const bt=n.breakthroughs||0;
+      const activities=["修炼中","云游四方","闭关突破","采集灵药","探索秘境"];
+      const act=activities[Math.floor(Math.random()*activities.length)];
+      chronHTML+=`<div class="npc-card"><div class="npc-header"><span class="npc-name">${n.name}</span><span class="npc-realm">Lv${realm}</span></div><div class="npc-chronicle"><div>📍 ${act}</div><div>⚔ 突破 ${bt} 次</div><div>🏛 青云宗</div><div>📅 修炼 ${(realm*100).toLocaleString()} 年</div></div></div>`;
+    }
+    $("npc-chronicles").innerHTML=chronHTML;
+    // Merge news (keep max 50)
+    _news=[...news,..._news].slice(0,50);
+    $("news").innerHTML=_news.map(n=>`<div class="news-item ${n.cls}"><div class="news-time">${n.time}</div><div class="news-text">${n.text}</div>${n.loc?`<div class="news-loc">${n.loc}</div>`:""}</div>`).join("")||"<div style='color:var(--dim);text-align:center;padding:40px'>世界安宁... 修士们在修炼中</div>";
+  }catch(_){}
+}
+function $(id){return document.getElementById(id)}
+function toggleObserver(){document.body.classList.toggle("observer-mode");$("observer-toggle").textContent=document.body.classList.contains("observer-mode")?"◉ 退出观察":"🌌 观察模式"}
+refresh();setInterval(refresh,2000);
+</script></body></html>

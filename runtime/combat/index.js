@@ -222,7 +222,8 @@ export class CombatEngine {
           entry.result = "dodged"; entry.message = `${defName} 闪避了 ${skill.name}！`; battle.log.push(entry); break;
         }
         const { damage: rawDmg, critical, elementMultiplier } = calcDamage(attEntity, defEntity, "attack", this.random);
-        const damage = getSkillDamage(skillId, rawDmg);
+        const mastery = attEntity.getComponent("Skills")?.masteries?.[skillId] || 1;
+        const damage = getSkillDamage(skillId, rawDmg, mastery);
         const hp = defEntity.getComponent("HP") || { current: 100, max: 100 };
         const newHP = Math.max(0, hp.current - damage);
         kernel.updateComponent(defEntity.id, "HP", { ...hp, current: newHP }, defEntity.version);

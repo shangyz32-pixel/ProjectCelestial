@@ -6,6 +6,7 @@ import { WorldRandom } from "../random/index.js";
 import { Logger } from "../bootstrap/logger.js";
 import { WorldEventEngine } from "../events/exploration.js";
 import { CombatEngine } from "../combat/index.js";
+import { MonsterSpawnSystem, MonsterAISystem, MonsterEncounterSystem } from "../monsters/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -265,6 +266,9 @@ export class SimulationEngine {
       { name: "sect",     fn: SectSystem },
       { name: "relations",fn: RelationshipSystem },
       { name: "sect_life",fn: EnhancedSectSystem },
+      { name: "m_spawn",  fn: MonsterSpawnSystem },
+      { name: "m_ai",     fn: MonsterAISystem },
+      { name: "m_encounter",fn: MonsterEncounterSystem },
     ];
   }
   tick(kernel, time) {

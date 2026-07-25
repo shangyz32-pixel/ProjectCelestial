@@ -52,6 +52,14 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         });
       }
 
+      case "/api/game/sect/info": {
+        const players = kernel.queryEntities("player", {}, 1, 0);
+        if (players.length === 0) return send(200, { sect: null, msg: "未加入宗门" });
+        const info = getPlayerSectInfo(players[0], kernel);
+        if (!info) return send(200, { sect: null, msg: "未加入宗门" });
+        return send(200, { sect: info, ok: true });
+      }
+
       case "/api/game/player/resources": {
         const players = kernel.queryEntities("player", {}, 1, 0);
         if (players.length === 0) return send(200, { resources: {} });
@@ -383,14 +391,6 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const npcName = (npc.getComponent("Identity")||{}).name || "NPC";
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, { npc: npcName, topic, text, ok: true });
-    }
-
-    case "/api/game/sect/info": {
-      const players = kernel.queryEntities("player", {}, 1, 0);
-      if (players.length === 0) return send(400, { error: "No player" });
-      const info = getPlayerSectInfo(players[0], kernel);
-      if (!info) return send(200, { sect: null, msg: "未加入宗门" });
-      return send(200, { sect: info, ok: true });
     }
 
     case "/api/game/sect/join": {

@@ -8,8 +8,10 @@ import { Kernel } from "../runtime/kernel/index.js";
 import { Snapshotter } from "../runtime/snapshot/index.js";
 import { SimulationManager } from "../runtime/simulation/index.js";
 import { HistorySystem } from "../runtime/history/index.js";
+import { TimeService } from "../runtime/time/index.js";
 import { Logger } from "../runtime/bootstrap/logger.js";
 import { createObserverServer } from "./server.js";
+import { execSync } from "node:child_process";
 
 const log = new Logger("Observer");
 const PORT = 3000;
@@ -76,6 +78,14 @@ function startAuto() {
 }
 
 startAuto();
+try {
+  // List PIDs on PORT, kill them
+  const out = execSync(`netstat -ano | findstr ":${PORT}" | findstr "LISTENING"`, {encoding:"utf8"});
+  const pids = [...new Set(out.split(/\\r?\\n/).filter(l=>l).map(l=>l.trim().split(/\\s+/).pop()))];
+  for (const pid of pids) {
+    try { execSync(`taskkill /F /PID ${pid}`, {stdio:"ignore"}); log.info(`Cleaned stale process PID ${pid} on port ${PORT}`); } catch(_) {}
+  }
+} catch(_) { /* no stale process — good */ }
 
 // Start web server
 const server = createObserverServer(kernel, sim, snap, history, RuntimeConfig);

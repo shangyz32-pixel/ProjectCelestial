@@ -104,8 +104,14 @@ async function refresh(){
   $("pn").textContent=d.name;$("pr").textContent="Lv"+d.realm_id;
   const cv=(d.cultivation*100).toFixed(1);$("pb").style.width=cv+"%";$("pv").textContent=cv+"%";
   $("pbr").textContent=d.breakthroughs;
-  const chp=d.hp_current||100,cmhp=d.hp_max||100;$("hb").style.width=Math.round(chp/cmhp*100)+"%";$("hv").textContent=chp+"/"+cmhp;
-  $("sb").style.width=Math.round((d.stamina_current||100)/(d.stamina_max||100)*100)+"%";$("sv").textContent=(d.stamina_current||100)+"/"+(d.stamina_max||100);
+  // HP: support both old [100,100] and new {hp_current,hp_max} formats
+  let hpCur=100,hpMax=100,staCur=100,staMax=100;
+  if(d.hp_current!==undefined){hpCur=d.hp_current;hpMax=d.hp_max}
+  else if(Array.isArray(d.hp)){[hpCur,hpMax]=d.hp}
+  if(d.stamina_current!==undefined){staCur=d.stamina_current;staMax=d.stamina_max}
+  else if(Array.isArray(d.stamina)){[staCur,staMax]=d.stamina}
+  $("hb").style.width=Math.round(hpCur/hpMax*100)+"%";$("hv").textContent=hpCur+"/"+hpMax;
+  $("sb").style.width=Math.round(staCur/staMax*100)+"%";$("sv").textContent=staCur+"/"+staMax;
   $("pa").textContent=AREA_NAMES[d.current_area]||d.current_area;
 
   const res=await G("/api/game/player/resources");

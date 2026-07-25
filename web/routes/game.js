@@ -39,6 +39,8 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
             current_area: p.getComponent("Location")?.area || "area_bamboo_grove",
             inventory: p.getComponent("Inventory")?.items || {},
             age: p.getComponent("Identity")?.age || 0,
+            reputation: p.getComponent("Reputation") || { score: 0, title: "无名修士" },
+            legacy: p.getComponent("Legacy") || {},
           }
         });
       }
@@ -275,6 +277,28 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       kernel.updateComponent(p.id, "Stamina", { ...stam, current: newStam }, p.version);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, { msg: `休息恢复 +30 体力 (${newStam}/${stam.max})`, ok: true });
+    }
+
+    case "/api/game/sect/found": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const p = players[0];
+      const identity = p.getComponent("Identity") || {};
+      const name = params.name || `${identity.name || "修士"}宗`;
+      const legacy = p.getComponent("Legacy") || {};
+      if (legacy.founded_sect) return send(400, { error: "已创立宗门" });
+      const sect = kernel.createEntity("sect", {
+        Identity: { name, founder: identity.name },
+        Members: { count: 1, leader: identity.name },
+        Territory: { regions: [p.getComponent("Location")?.area || "area_bamboo_grove"], influence: 30 },
+        Power: { strength: 50, reputation: 40 },
+        Age: { ticks: 0, era: "新立宗门" },
+      });
+      kernel.updateComponent(p.id, "Legacy", { ...legacy, founded_sect: name, founded_at_tick: kernel.world.tickCount }, p.version);
+      const rep = p.getComponent("Reputation") || { score: 0, title: "无名修士" };
+      kernel.updateComponent(p.id, "Reputation", { ...rep, score: (rep.score||0) + 50, title: `${name} 宗主` }, p.version + 1);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, { msg: `宗门 "${name}" 创立成功！`, sect_id: sect.id, ok: true });
     }
 
     case "/api/game/gather": {

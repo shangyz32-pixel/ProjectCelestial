@@ -88,7 +88,9 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","SimHe
       <div class="section"><div class="section-title">修为</div><div class="progress-bar"><div class="progress-fill cultivation-fill" id="pb" style="width:0%"></div></div><div class="stat-row"><span class="stat-label">进度</span><span class="stat-val" id="pv">0%</span></div><div class="stat-row"><span class="stat-label">突破</span><span class="stat-val" id="pbr">0次</span></div></div>
       <div class="section"><div class="section-title">状态</div><div class="stat-row"><span class="stat-label">生命</span><span class="stat-val" id="hv">—</span></div><div class="progress-bar"><div class="progress-fill hp-fill" id="hb" style="width:100%"></div></div><div class="stat-row"><span class="stat-label">体力</span><span class="stat-val" id="sv">—</span></div><div class="progress-bar"><div class="progress-fill stamina-fill" id="sb" style="width:100%"></div></div></div>
       <div class="section"><div class="section-title">所在</div><div class="stat-row"><span class="stat-label">区域</span><span class="stat-val" id="pa">—</span></div></div>
+      <div class="section"><div class="section-title">声望</div><div class="stat-row"><span class="stat-label">称号</span><span class="stat-val" id="p-rep-title">—</span></div><div class="stat-row"><span class="stat-label">分数</span><span class="stat-val" id="p-rep-score">0</span></div></div>
       <div class="section"><div class="section-title">背包</div><div id="pinv" style="font-size:11px;color:var(--dim)">空</div></div>
+      <div class="section"><button class="btn btn-gold" onclick="foundSect()" id="bt-sect">🏛 创立宗门</button></div>
       <div id="save-indicator">💾 已自动保存</div>
     </div>
 
@@ -147,6 +149,10 @@ async function refresh(){
   $("hb").style.width=Math.round(hpC/hpM*100)+"%";$("hv").textContent=hpC+"/"+hpM;
   $("sb").style.width=Math.round(stC/stM*100)+"%";$("sv").textContent=stC+"/"+stM;
   $("pa").textContent=AREA_NAMES[d.current_area]||d.current_area;
+  // Reputation
+  const rep=d.reputation||{};$("p-rep-title").textContent=rep.title||"无名修士";$("p-rep-score").textContent=rep.score||0;
+  // Legacy — hide sect button if already founded
+  if(d.legacy?.founded_sect){$("bt-sect").style.display="none"}
   // Inventory
   const res=await G("/api/game/player/resources");const rd=res.resources||{};
   $("pinv").innerHTML=Object.entries(rd).map(([k,v])=>`<div class="stat-row"><span class="stat-label">${RES_NAMES[k]||k}</span><span class="stat-val">${v}</span></div>`).join("")||"<span style='color:var(--dim);font-size:11px'>空空如也</span>";
@@ -240,4 +246,5 @@ async function resolveEvent(eventId,choiceId){
 }
 async function gather(res){const r=await P("/api/game/gather",{resource:res});notify(`🌿 获得 ${RES_NAMES[res]||res} ×${r.count}`,"success");refresh()}
 async function rest(){const r=await P("/api/game/rest");showMsg(r.msg||"休息恢复中...","info");notify("🛌 休息恢复体力","info");refresh()}
+async function foundSect(){const name=prompt("宗门名称",(pn?.textContent||"修士")+"宗");if(!name)return;const r=await P("/api/game/sect/found",{name});showMsg(r.msg||"",r.ok?"success":"fail");if(r.ok){$("bt-sect").style.display="none";notify("🏛 "+name+" 创立！","success")};refresh()}
 </script></body></html>

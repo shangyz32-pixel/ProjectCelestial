@@ -175,6 +175,47 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       return send(200, { resource, count: current + 1, ok: true });
     }
 
+    case "/api/game/rejoin": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const p = players[0];
+      const loc = p.getComponent("Location") || {};
+      const lastTick = loc.last_active_tick || 0;
+      const currentTick = kernel.getTickCount();
+      const elapsed = currentTick - lastTick;
+
+      // Mark player as active now
+      kernel.updateComponent(p.id, "Location", { ...loc, last_active_tick: currentTick }, p.version);
+
+      // Generate world change summary
+      const events = kernel.getEventLog(lastTick);
+      const npcEvents = events.filter(e => e.type === "EntityUpdated");
+      const breakthroughs = events.filter(e => e.payload?.component === "Realm" && e.payload?.newValue?.realm_id > (e.payload?.oldValue?.realm_id || 0)).length;
+
+      // Count NPC state changes
+      const npcs = kernel.queryEntities("npc", {}, 100, 0);
+      const npcSummary = npcs.map(n => {
+        const id = n.getComponent("Identity");
+        const realm = n.getComponent("Realm");
+        return { name: id?.name || "?", realm: realm?.realm_id || 0, breakthroughs: realm?.breakthroughs || 0 };
+      });
+
+      const summary = {
+        elapsed_ticks: elapsed,
+        time_passed: `${elapsed} 天`,
+        total_new_events: events.length,
+        npc_breakthroughs: breakthroughs,
+        current_npcs: npcSummary,
+        world_state: {
+          tick: currentTick,
+          weather: kernel.world.globalState.weather.get("world"),
+          qi: kernel.world.globalState.qi.get("world"),
+        },
+      };
+
+      return send(200, { msg: `你离开了 ${elapsed} 天。世界已经改变。`, summary, ok: true });
+    }
+
     default:
       return null;
   }

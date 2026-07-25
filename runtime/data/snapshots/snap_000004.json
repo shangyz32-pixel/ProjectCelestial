@@ -1,6 +1,6 @@
 {
   "snapshot_id": "snap_000004",
-  "tick": 4000,
+  "tick": 400,
   "timestamp": {
     "tick": 0,
     "year": 847,
@@ -13,7 +13,7 @@
   "canon_version": "1.0.0",
   "engine_version": "1.0.0",
   "seed": 42,
-  "label": "Tick_4000",
+  "label": "Tick_400",
   "parent_snapshot": "snap_000003",
   "world_state": {
     "global": {
@@ -32,7 +32,7 @@
         "priceTable": {
           "spirit_stone": 50,
           "pill": 25,
-          "herb": 20
+          "herb": 17
         },
         "resourcePool": {}
       },
@@ -42,17 +42,17 @@
       {
         "id": "npc_0001",
         "type": "npc",
-        "version": 12028,
+        "version": 1203,
         "state": "active",
         "components": {
           "Identity": {
             "name": "陈玄",
-            "age": 4200
+            "age": 600
           },
           "Realm": {
-            "realm_id": 16,
-            "cultivation_value": 0.5894583819563249,
-            "breakthroughs": 11,
+            "realm_id": 7,
+            "cultivation_value": 0.236974360211037,
+            "breakthroughs": 2,
             "breakthrough_pending": false
           },
           "HP": {
@@ -64,22 +64,22 @@
             "max": 100
           }
         },
-        "createdAt": "2026-07-25T00:50:50.538Z"
+        "createdAt": "2026-07-25T00:58:50.953Z"
       },
       {
         "id": "npc_0002",
         "type": "npc",
-        "version": 12034,
+        "version": 1204,
         "state": "active",
         "components": {
           "Identity": {
             "name": "赵灵儿",
-            "age": 4180
+            "age": 580
           },
           "Realm": {
-            "realm_id": 11,
-            "cultivation_value": 0.6925787490595241,
-            "breakthroughs": 8,
+            "realm_id": 3,
+            "cultivation_value": 0.9884660721594805,
+            "breakthroughs": 0,
             "breakthrough_pending": false
           },
           "HP": {
@@ -91,22 +91,22 @@
             "max": 100
           }
         },
-        "createdAt": "2026-07-25T00:50:50.539Z"
+        "createdAt": "2026-07-25T00:58:50.953Z"
       },
       {
         "id": "npc_0003",
         "type": "npc",
-        "version": 12031,
+        "version": 1203,
         "state": "active",
         "components": {
           "Identity": {
             "name": "王虎",
-            "age": 4220
+            "age": 620
           },
           "Realm": {
-            "realm_id": 13,
-            "cultivation_value": 0.9600344215953983,
-            "breakthroughs": 9,
+            "realm_id": 5,
+            "cultivation_value": 0.8074994520564693,
+            "breakthroughs": 1,
             "breakthrough_pending": false
           },
           "HP": {
@@ -118,13 +118,46 @@
             "max": 100
           }
         },
-        "createdAt": "2026-07-25T00:50:50.539Z"
+        "createdAt": "2026-07-25T00:58:50.953Z"
+      },
+      {
+        "id": "player_0004",
+        "type": "player",
+        "version": 1,
+        "state": "active",
+        "components": {
+          "Identity": {
+            "name": "凌风",
+            "age": 20
+          },
+          "Realm": {
+            "realm_id": 1,
+            "cultivation_value": 0.1,
+            "breakthroughs": 0
+          },
+          "HP": {
+            "current": 100,
+            "max": 100
+          },
+          "Stamina": {
+            "current": 100,
+            "max": 100
+          },
+          "Location": {
+            "area": "area_bamboo_grove",
+            "last_active_tick": 0
+          },
+          "Inventory": {
+            "items": {}
+          }
+        },
+        "createdAt": "2026-07-25T00:58:50.953Z"
       }
     ],
     "meta": {
-      "created_at": "2026-07-25T00:50:50.537Z",
+      "created_at": "2026-07-25T00:58:50.952Z",
       "snapshot_id": 4
     }
   },
-  "event_log_length": 36093
+  "event_log_length": 3611
 }

@@ -66,6 +66,19 @@ export const EQUIPMENT_CATALOG = {
   spirit_belt:   { name:"灵带",   slot:"belt",   category:"accessory",baseAtk:2,  baseDef:4,  baseHp:15, quality:"uncommon",  value:80 },
   jade_belt:     { name:"玉带",   slot:"belt",   category:"accessory",baseAtk:3,  baseDef:6,  baseHp:25, quality:"rare",      value:300 },
   dragon_belt:   { name:"龙带",   slot:"belt",   category:"accessory",baseAtk:5,  baseDef:10, baseHp:40, quality:"epic",      value:900 },
+  immortal_belt: { name:"仙带",   slot:"belt",   category:"accessory",baseAtk:8,  baseDef:15, baseHp:60, quality:"legendary", value:3000 },
+
+  // Bracelet (slot: bracelet) — v2.2
+  copper_bangle: { name:"铜镯",   slot:"bracelet",category:"accessory",baseAtk:1,  baseDef:2,  baseHp:8,  quality:"common",    value:15 },
+  silver_bangle: { name:"银镯",   slot:"bracelet",category:"accessory",baseAtk:2,  baseDef:4,  baseHp:15, quality:"uncommon",  value:60 },
+  spirit_bangle: { name:"灵镯",   slot:"bracelet",category:"accessory",baseAtk:4,  baseDef:6,  baseHp:22, quality:"rare",      value:250 },
+  dragon_bangle: { name:"龙镯",   slot:"bracelet",category:"accessory",baseAtk:7,  baseDef:10, baseHp:35, quality:"epic",      value:700 },
+  phoenix_bangle:{ name:"凤镯",   slot:"bracelet",category:"accessory",baseAtk:9,  baseDef:12, baseHp:50, quality:"legendary", value:2000 },
+
+  // Ring expansion
+  gold_ring:     { name:"金戒",   slot:"ring",   category:"accessory",baseAtk:2,  baseDef:3,  baseHp:10, quality:"common",    value:50 },
+  diamond_ring:  { name:"钻戒",   slot:"ring",   category:"accessory",baseAtk:4,  baseDef:6,  baseHp:20, quality:"uncommon",  value:150 },
+  phoenix_ring:  { name:"凤戒",   slot:"ring",   category:"accessory",baseAtk:10, baseDef:12, baseHp:50, quality:"legendary", value:3500 },
 
   // Artifacts
   magic_mirror:  { name:"灵镜",   slot:"artifact",category:"artifact",baseAtk:5,  baseDef:10, baseHp:30, quality:"rare",      value:500 },

@@ -227,3 +227,14 @@ export const DungeonSystem = {
     }
   },
 };
+
+// ══════════════════════════════════════
+// Boss Templates (v2.2)
+// ══════════════════════════════════════
+export const BOSS_TEMPLATES = {
+  shadow_dragon:    { name:"暗影魔龙",  realm:7, phases:["normal","enraged","desperate"], skills:["fire_blast","thunder_strike","curse"], loot:["dragon_scale","dragon_ore"], desc:"远古地底的黑暗之龙" },
+  jade_guardian:    { name:"玉魄守卫",  realm:5, phases:["normal","enraged"], skills:["sword_rain","qi_shield","iron_body"], loot:["ancient_jade","jade_essence"], desc:"守护远古遗迹的石像守卫" },
+  corrupted_sage:   { name:"堕落仙尊",  realm:8, phases:["normal","enraged","desperate","revived"], skills:["sword_intent","domain","soul_suppress"], loot:["immortal_jade","heavenly_peach"], desc:"被魔气腐化的上古仙人" },
+  phoenix_spirit:   { name:"不死凤魂",  realm:6, phases:["normal","enraged","revived"], skills:["fire_blast","heal_pulse","fire_aura"], loot:["phoenix_feather","blood_root"], desc:"涅槃重生的不死凤凰" },
+  ice_ancient:      { name:"玄冰古兽",  realm:6, phases:["normal","enraged"], skills:["ice_lance","frost_nova","absolute_zero"], loot:["ice_crystal","ancient_wood"], desc:"冰封万年的上古异兽" },
+};

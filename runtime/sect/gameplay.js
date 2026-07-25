@@ -257,3 +257,16 @@ export function depositToTreasury(player, resource, amount, kernel) {
   addContribution(player, Math.floor(amount/10), kernel);
   return { ok:true, msg:`向宗门缴纳 ${resource} x${amount}` };
 }
+
+// ══════════════════════════════════════
+// Sect Events (v2.2) — dynamic happenings
+// ══════════════════════════════════════
+export const SECT_EVENTS = {
+  tournament:       { name:"宗门大比",   effect:"cultivation_boost", value:0.1, desc:"弟子切磋武艺，修行气氛高涨" },
+  spirit_vein_found:{ name:"发现灵脉",   effect:"qi_boost",          value:0.2, desc:"宗门地下发现一处灵脉" },
+  enemy_invasion:   { name:"外敌入侵",   effect:"threat",            value:-10, desc:"敌对势力来袭，宗门实力受损" },
+  elder_ascension:  { name:"长老突破",   effect:"reputation",        value:20,  desc:"一位长老成功突破，宗门声望提升" },
+  celebration:      { name:"宗门庆典",   effect:"member_boost",      value:5,   desc:"百年庆典，吸引新弟子加入" },
+  treasury_crisis:  { name:"库房亏空",   effect:"treasury_penalty",  value:-200,desc:"宗门库房告急，急需灵石补充" },
+  ancient_tome:     { name:"发现古籍",   effect:"skill_unlock",      value:1,   desc:"藏经阁发现上古功法残卷" },
+};

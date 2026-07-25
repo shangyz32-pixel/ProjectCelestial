@@ -13,6 +13,7 @@ import { evolutionTick } from "../evolution/index.js";
 import { FamilySystem, MentorshipSystem, SettlementSystem, DiplomacySystem } from "../society/index.js";
 import { NarrativeSystem, RumorSystem } from "../narrative/index.js";
 import { npcSectTick } from "../sect/gameplay.js";
+import { QuestSystem, getAvailableQuests, acceptQuest, completeQuest } from "../quest/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -400,6 +401,7 @@ export class SimulationEngine {
       { name: "diplomacy", fn: DiplomacySystem },
       { name: "narrative", fn: NarrativeSystem },
       { name: "rumor",     fn: RumorSystem },
+      { name: "quest",     fn: QuestSystem },
     ];
   }
   tick(kernel, time) {

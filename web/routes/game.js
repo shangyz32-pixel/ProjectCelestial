@@ -11,6 +11,7 @@ import { createEquipment, generateLoot, equipItem, unequipItem, enhanceEquipment
 import { WorldRandom } from "../../runtime/random/index.js";
 import { RECIPES, HERBS, FURNACES, FIRES, refinePill, consumePill, gatherHerb } from "../../runtime/alchemy/index.js";
 import { MATERIALS, CRAFTING_RECIPES, gatherMaterial, forgeEquipment, enchantEquipment, ascendEquipment } from "../../runtime/crafting/index.js";
+import { getAvailableQuests, acceptQuest, completeQuest } from "../../runtime/quest/index.js";
 
 export function registerGameRoutes(kernel, sim, send, url, params) {
 
@@ -642,6 +643,30 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const rng = new WorldRandom(42);
       const result = ascendEquipment(players[0], params.slot, kernel, rng);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    // ═══ Quest API (v2.1 Sprint 8) ═══
+    case "/api/game/quests": {
+      return send(200, { quests: getAvailableQuests(kernel) });
+    }
+
+    case "/api/game/quest/accept": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const result = acceptQuest(players[0], params.questId, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/quest/complete": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const rng = new WorldRandom(42);
+      const result = completeQuest(players[0], params.questId, kernel, rng);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, result);

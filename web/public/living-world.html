@@ -92,13 +92,15 @@ async function refresh(){
         news.push({time:`T${e.tick}`,text:`${nm} 采集了资源`,cls:"info",loc:""});
       }
     }
-    // NPC chronicles
+    // NPC chronicles with relationships
     let chronHTML="";
     for(const n of npcs.slice(0,3)){
       const realm=n.realm_id||1;const bt=n.breakthroughs||0;
+      const rel=n.getComponent?.("Relationships")||{};
+      const friends=(rel.friends||[]).length;const enemies=(rel.enemies||[]).length;
       const activities=["修炼中","云游四方","闭关突破","采集灵药","探索秘境"];
       const act=activities[Math.floor(Math.random()*activities.length)];
-      chronHTML+=`<div class="npc-card"><div class="npc-header"><span class="npc-name">${n.name}</span><span class="npc-realm">Lv${realm}</span></div><div class="npc-chronicle"><div>📍 ${act}</div><div>⚔ 突破 ${bt} 次</div><div>🏛 青云宗</div><div>📅 修炼 ${(realm*100).toLocaleString()} 年</div></div></div>`;
+      chronHTML+=`<div class="npc-card"><div class="npc-header"><span class="npc-name">${n.name}</span><span class="npc-realm">Lv${realm}</span></div><div class="npc-chronicle"><div>📍 ${act}</div><div>⚔ 突破 ${bt} 次</div><div>👥 NPC 之间正在形成关系网</div><div>📅 修炼 ${(realm*100).toLocaleString()} 年</div></div></div>`;
     }
     $("npc-chronicles").innerHTML=chronHTML;
     // Merge news (keep max 50)

@@ -181,6 +181,74 @@ export const SectSystem = {
   },
 };
 
+// NPC Relationship System (Phase 4) — relationship network
+export const RelationshipSystem = {
+  tick(kernel, time, random) {
+    const npcs = kernel.queryEntities("npc", {}, 100, 0);
+    for (const npc of npcs) {
+      if (npc.state !== "active") continue;
+      if (!random.chance(0.05)) continue;
+      const others = kernel.queryEntities("npc", {}, 100, 0).filter(x => x.id !== npc.id);
+      if (others.length === 0) continue;
+      const target = others[random.nextInt(0, others.length - 1)];
+      const rel = npc.getComponent("Relationships") || { friends:[], enemies:[], master:null };
+      const targetName = (target.getComponent("Identity")||{}).name || target.id;
+      const npcName = (npc.getComponent("Identity")||{}).name || npc.id;
+      // Random relationship change
+      if (random.chance(0.6)) {
+        if (!rel.friends.includes(target.id)) rel.friends.push(target.id);
+        const e = kernel.getEntity(npc.id);
+        kernel.updateComponent(e.id, "Relationships", rel, e.version);
+      } else if (random.chance(0.3)) {
+        if (!rel.enemies.includes(target.id)) rel.enemies.push(target.id);
+        const e = kernel.getEntity(npc.id);
+        kernel.updateComponent(e.id, "Relationships", rel, e.version);
+      }
+    }
+  },
+};
+
+// Enhanced Sect System (Phase 5) — sect lifecycle
+export const EnhancedSectSystem = {
+  tick(kernel, time, random) {
+    const sects = kernel.queryEntities("sect", {}, 10, 0);
+    for (const sect of sects) {
+      const members = sect.getComponent("Members") || { count: 10 };
+      const power = sect.getComponent("Power") || { strength: 100 };
+      const territory = sect.getComponent("Territory") || { regions: [], influence: 50 };
+      const age = (sect.getComponent("Age") || { ticks: 0, era: "创立之初" });
+      age.ticks = (age.ticks || 0) + 1;
+      // Era progression based on age
+      if (age.ticks > 1000) age.era = "鼎盛时期";
+      else if (age.ticks > 500) age.era = "发展壮大";
+      else if (age.ticks > 100) age.era = "初具规模";
+      const e1 = kernel.getEntity(sect.id);
+      kernel.updateComponent(e1.id, "Age", age, e1.version);
+      // Schism: if too large, chance to split
+      if (members.count > 30 && random.chance(0.02)) {
+        kernel.createEntity("sect", {
+          Identity: { name: `${(sect.getComponent("Identity")||{}).name||"?"}分宗` },
+          Members: { count: Math.floor(members.count * 0.3), leader: "?" },
+          Territory: { regions: territory.regions.slice(0, 1), influence: 20 },
+          Power: { strength: Math.floor(power.strength * 0.3), reputation: 30 },
+          Age: { ticks: 0, era: "新立宗门" },
+        });
+        const e2 = kernel.getEntity(sect.id);
+        kernel.updateComponent(e2.id, "Members", { ...members, count: Math.floor(members.count * 0.7) }, e2.version);
+      }
+      // Decline: if too weak
+      if (power.strength < 20 && random.chance(0.10)) {
+        sect.state = "inactive";
+      }
+      // Rise: if strong
+      if (random.chance(0.05)) {
+        const e3 = kernel.getEntity(sect.id);
+        kernel.updateComponent(e3.id, "Members", { ...members, count: members.count + 1 }, e3.version);
+      }
+    }
+  },
+};
+
 // Simulation Engine
 export class SimulationEngine {
   constructor(seed) {
@@ -193,6 +261,8 @@ export class SimulationEngine {
       { name: "npc",      fn: NPCSystem },
       { name: "economy",  fn: EconomySystem },
       { name: "sect",     fn: SectSystem },
+      { name: "relations",fn: RelationshipSystem },
+      { name: "sect_life",fn: EnhancedSectSystem },
     ];
   }
   tick(kernel, time) {

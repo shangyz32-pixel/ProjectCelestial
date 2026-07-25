@@ -9,10 +9,14 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       case "/api/game/areas":
         return send(200, {
           areas: [
-            { id: "area_bamboo_grove", name: "翠竹林", desc: "灵气稀薄的新手区", qi: 0.8, req_realm: 0, resources: ["spirit_herb"], unlocked: true },
-            { id: "area_misty_peak", name: "云雾峰", desc: "山间灵气渐浓", qi: 1.0, req_realm: 3, resources: ["spirit_herb", "jade_shard"], unlocked: false },
-            { id: "area_thunder_valley", name: "雷音谷", desc: "雷属性灵气充沛", qi: 1.2, req_realm: 6, resources: ["thunder_ore", "spirit_herb"], unlocked: false },
-            { id: "area_dragon_vein", name: "龙脉秘境", desc: "上古龙脉所在", qi: 1.5, req_realm: 9, resources: ["dragon_scale", "ancient_jade"], unlocked: false },
+            { id: "area_bamboo_grove", name: "翠竹林", desc: "灵气稀薄的新手区", qi: 0.8, req_realm: 0, resources: ["spirit_herb"], unlocked: true,
+              resource_names: { spirit_herb: "灵草" } },
+            { id: "area_misty_peak", name: "云雾峰", desc: "山间灵气渐浓", qi: 1.0, req_realm: 3, resources: ["spirit_herb", "jade_shard"], unlocked: false,
+              resource_names: { spirit_herb: "灵草", jade_shard: "灵石碎片" } },
+            { id: "area_thunder_valley", name: "雷音谷", desc: "雷属性灵气充沛", qi: 1.2, req_realm: 6, resources: ["thunder_ore", "spirit_herb"], unlocked: false,
+              resource_names: { thunder_ore: "雷晶石", spirit_herb: "灵草" } },
+            { id: "area_dragon_vein", name: "龙脉秘境", desc: "上古龙脉所在", qi: 1.5, req_realm: 9, resources: ["dragon_scale", "ancient_jade"], unlocked: false,
+              resource_names: { dragon_scale: "龙鳞", ancient_jade: "古玉" } },
           ]
         });
 
@@ -100,12 +104,33 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const m = modes[mode] || modes.normal;
       const increment = m.increment * qi * m.qi_mult + herbBonus;
       const newCV = Math.min(1.0, (realm.cultivation_value || 0) + increment);
-
+      // Risk event: qi deviation
       let riskMsg = "";
       if (m.risk > 0 && Math.random() < m.risk) {
-        const hp = p.getComponent("HP") || { current: 100, max: 100 };
-        kernel.updateComponent(p.id, "HP", { ...hp, current: Math.max(1, hp.current - 15) }, p.version + 1);
-        riskMsg = "走火入魔！真气逆行，受伤！";
+        // Possible risk events
+        const roll = Math.random();
+        if (roll < 0.4) {
+          riskMsg = "走火入魔！真气逆行，经脉受损！（生命-15）";
+          const hp = p.getComponent("HP") || { current: 100, max: 100 };
+          kernel.updateComponent(p.id, "HP", { ...hp, current: Math.max(1, hp.current - 15) }, p.version + 1);
+        } else if (roll < 0.7) {
+          riskMsg = "修炼过度，体力透支。（体力-20）";
+          const stam = p.getComponent("Stamina") || { current: 100, max: 100 };
+          kernel.updateComponent(p.id, "Stamina", { ...stam, current: Math.max(0, stam.current - 20) }, p.version + 1);
+        } else {
+          riskMsg = "心魔入侵！修行进度倒退...";
+          // No cultivation progress this tick
+          const newCV2 = Math.max(0, (realm.cultivation_value || 0) - 0.02);
+          kernel.updateComponent(p.id, "Realm", { ...realm, cultivation_value: newCV2 }, p.version);
+          kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+          return send(200, { msg: riskMsg, ok: true });
+        }
+      } else if (Math.random() < 0.10) {
+        // Positive random event
+        const roll = Math.random();
+        if (roll < 0.5) riskMsg = "✨ 灵光一闪！修行速度翻倍！";
+        else if (roll < 0.8) riskMsg = "✨ 天人感应！悟性提升！";
+        else riskMsg = "✨ 气运加身！额外获得真气！";
       }
 
       if (newCV >= 1.0) {

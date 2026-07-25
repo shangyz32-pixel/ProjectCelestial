@@ -83,6 +83,9 @@ function log(msg,cls){const d=document.createElement("div");if(cls)d.className=c
 async function G(p){return(await fetch(p)).json()}
 async function P(p,b){return(await fetch(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})})).json()}
 
+const AREA_NAMES={area_bamboo_grove:"翠竹林",area_misty_peak:"云雾峰",area_thunder_valley:"雷音谷",area_dragon_vein:"龙脉秘境"};
+const RES_NAMES={spirit_herb:"灵草",jade_shard:"灵石碎片",thunder_ore:"雷晶石",dragon_scale:"龙鳞",ancient_jade:"古玉"};
+
 async function createChar(){
   const name=$("char-name").value||"修士";
   await P("/api/game/player/create",{name});
@@ -98,13 +101,13 @@ async function refresh(){
   $("pn").textContent=d.name;$("pr").textContent="Lv"+d.realm_id;
   const cv=(d.cultivation*100).toFixed(1);$("pb").style.width=cv+"%";$("pv").textContent=cv+"%";
   $("pbr").textContent=d.breakthroughs;
-  $("hb").style.width=Math.round(d.hp_current/d.hp_max*100)+"%";$("hv").textContent=d.hp_current+"/"+d.hp_max;
-  $("sb").style.width=Math.round(d.stamina_current/d.stamina_max*100)+"%";$("sv").textContent=d.stamina_current+"/"+d.stamina_max;
-  $("pa").textContent=d.current_area;
+  const chp=d.hp_current||100,cmhp=d.hp_max||100;$("hb").style.width=Math.round(chp/cmhp*100)+"%";$("hv").textContent=chp+"/"+cmhp;
+  $("sb").style.width=Math.round((d.stamina_current||100)/(d.stamina_max||100)*100)+"%";$("sv").textContent=(d.stamina_current||100)+"/"+(d.stamina_max||100);
+  $("pa").textContent=AREA_NAMES[d.current_area]||d.current_area;
 
   const res=await G("/api/game/player/resources");
   const rdata = res.resources||{};
-  $("pinv").innerHTML=Object.entries(rdata).map(([k,v])=>`<span>${k}: ${v}</span>`).join("")||"空";
+  $("pinv").innerHTML=Object.entries(rdata).map(([k,v])=>`<span>${RES_NAMES[k]||k}: ${v}</span>`).join("")||"空";
 
   // Show herb/jade buttons if resources available
   $("bt-herb").style.display = (rdata.spirit_herb > 0) ? "inline" : "none";
@@ -113,7 +116,8 @@ async function refresh(){
   const areas=await G("/api/game/areas");
   $("areas").innerHTML=areas.areas.map(a=>{
     const unlocked=a.unlocked||a.req_realm<=d.realm_id;
-    return`<div class="area${unlocked?'':' locked'}" onclick="${unlocked?`explore('${a.id}')`:'void(0)'}"><h3>${a.name} ${unlocked?'':'🔒 Lv'+a.req_realm}</h3><p>${a.desc} | Qi:${a.qi} | ${a.resources.join(", ")}</p>${unlocked&&a.id===d.current_area?`<button onclick="event.stopPropagation();gather('${a.resources[0]}')">采集 ${a.resources[0]}</button>`:""}</div>`;
+    const resNames=(a.resources||[]).map(r=>a.resource_names?.[r]||r).join("、");
+    return`<div class="area${unlocked?'':' locked'}" onclick="${unlocked?`explore('${a.id}')`:'void(0)'}"><h3>${a.name} ${unlocked?'':'🔒 Lv'+a.req_realm}</h3><p>${a.desc} | Qi:${a.qi} | ${resNames}</p>${unlocked&&a.id===d.current_area?`<button onclick="event.stopPropagation();gather('${(a.resources||[])[0]}')">采集 ${a.resource_names?.[(a.resources||[])[0]]||(a.resources||[])[0]}</button>`:""}</div>`;
   }).join("");
 }
 

@@ -88,12 +88,28 @@ export const NPCSystem = {
       const stam = npc.getComponent("Stamina") || { current: 100, max: 100 };
       const inv = npc.getComponent("Inventory") || { items: {} };
       // Travel (10%)
+      // Travel (10%) — generate exploration event for NPCs
       const areas = ["area_bamboo_grove","area_misty_peak","area_thunder_valley","area_dragon_vein"];
       if (random.chance(0.10)) {
         const ci = areas.indexOf(loc.area || areas[0]);
         const next = areas[(ci + random.nextInt(1, 3)) % areas.length];
         const e6 = kernel.getEntity(npc.id);
         kernel.updateComponent(e6.id, "Location", { ...loc, area: next }, e6.version);
+        // Generate a simple exploration event for the NPC
+        if (next !== (loc.area || areas[0])) {
+          const eventTypes = ["发现了一处秘境","遭遇了灵兽","找到了稀有资源","发现远古遗迹"];
+          const evt = eventTypes[random.nextInt(0, eventTypes.length - 1)];
+          const identity = npc.getComponent("Identity") || {};
+          // Record via transaction manager event log
+          kernel.world.events = kernel.world.events || [];
+          kernel.world.events.push({
+            eventId: `evt_${Date.now()}_${Math.floor(Math.random()*10000)}`,
+            tick: kernel.world.tickCount,
+            type: "NPCExplored",
+            target: npc.id,
+            payload: { npc: identity.name, to: next, discovery: evt },
+          });
+        }
       }
       // Gather (15%)
       if (random.chance(0.15)) {

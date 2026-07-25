@@ -125,7 +125,12 @@ async function P(p,b){return(await fetch(p,{method:"POST",headers:{"Content-Type
 
 async function createChar(){const n=$("char-name").value||"修士";await P("/api/game/player/create",{name:n});$("create-screen").style.display="none";$("app").style.display="flex";refresh();setInterval(refresh,3000)}
 function showMsg(t,c){$("msg").textContent=t;$("msg").className=c||"info";setTimeout(()=>{$("msg").textContent="";$("msg").className=""},3000)}
-function notify(t){const d=document.createElement("div");d.className="feed-item";d.innerHTML=`<span style="color:var(--realm)">✦</span> ${t}`;$("notifications").prepend(d);if($("notifications").children.length>5)$("notifications").lastChild.remove()}
+function notify(t,lvl){
+  const colors={info:"#4da6e8",success:"#3dbf8f",warn:"#e0903d",danger:"#d94a4a",rare:"#b85cd4"};
+  const d=document.createElement("div");d.className="feed-item";
+  d.innerHTML=`<span style="color:${colors[lvl]||colors.info}">✦</span> ${t}`;
+  $("notifications").prepend(d);if($("notifications").children.length>8)$("notifications").lastChild.remove()
+}
 
 async function refresh(){
   const p=await G("/api/game/player");if(!p.player)return;const d=p.player;
@@ -158,17 +163,21 @@ async function refresh(){
   const npcs=await G("/api/npcs");
   $("npc-list").innerHTML=npcs.map(n=>`<div class="npc-row"><span class="npc-name">${n.name||"?"}</span><span class="npc-info">Lv${n.realm_id} · 破${n.breakthroughs||0}次</span></div>`).join("");
   // World feed
-  const ev=await G("/api/events?limit=5");
+  const ev=await G("/api/events?limit=6");
+  // Build NPC name map from npcs
+  const nameMap={};for(const n of npcs)nameMap[n.id]=n.name;
+  function rn(id){return nameMap[id]||id||"世界"}
   $("world-feed").innerHTML=ev.map(e=>{
     let desc=e.type;
-    if(e.type==="EntityUpdated"&&e.payload){
-      const c=e.payload.component||"";const nv=e.payload.newValue;const ov=e.payload.oldValue;
-      if(c==="Realm"&&nv?.realm_id>ov?.realm_id)desc=`${e.target||""} 突破至 Lv${nv.realm_id}`;
-      else if(c==="HP")desc=`${e.target||""} 生命 ${ov?.current||"?"} → ${nv?.current||"?"}`;
-      else if(c==="Stamina")desc=`${e.target||""} 体力变化`;
-      else if(c==="Identity")desc=`${e.target||""} 年岁增长`;
-      else if(c==="Inventory")desc=`${e.target||""} 获得物品`;
-      else if(c==="Location")desc=`${e.target||""} 移动至新区域`;
+    if(e.type==="EntityUpdated"&&e.target){
+      const nm=rn(e.target);
+      if(e.payload?.component==="Realm"&&e.payload?.newValue?.realm_id>(e.payload?.oldValue?.realm_id||0))
+        desc=`${nm} 突破至 Lv${e.payload.newValue.realm_id}`;
+      else if(e.payload?.component==="HP")desc=`${nm} 生命变化`;
+      else if(e.payload?.component==="Identity")desc=`${nm} 寿元增长`;
+      else if(e.payload?.component==="Inventory")desc=`${nm} 获得物品`;
+      else if(e.payload?.component==="Location")desc=`${nm} 移动至新区域`;
+      else desc=`${nm} 状态更新`;
     }
     return`<div class="feed-item"><span class="time">T${e.tick}</span><span class="event">${desc}</span></div>`;
   }).join("")||"<span style='color:var(--dim)'>世界安宁...</span>";
@@ -195,9 +204,9 @@ async function cultivate(mode,useHerb){
 async function attemptBreakthrough(useJade){
   const r=await P("/api/game/breakthrough/attempt",{use_jade:useJade});
   showMsg(r.msg||"",r.success?"success":"fail");
-  notify(r.success?"🎉 突破成功！境界提升！":"💥 突破失败！");
+  notify(r.success?"🎉 突破成功！境界提升！":"💥 突破失败！",r.success?"success":"danger");
   $("bt-panel").style.display="none";refresh();
 }
-async function explore(area){const r=await P("/api/game/explore",{area});notify(`📍 前往 ${AREA_NAMES[area]||area}`);const msg=r.discovery?`🔍 ${r.discovery}`:"踏入新区域...";showMsg(msg,r.discovery?"success":"info");refresh()}
-async function gather(res){const r=await P("/api/game/gather",{resource:res});notify(`🌿 获得 ${RES_NAMES[res]||res} ×${r.count}`);refresh()}
+async function explore(area){const r=await P("/api/game/explore",{area});notify(`📍 前往 ${AREA_NAMES[area]||area}`,"info");const msg=r.discovery?`🔍 ${r.discovery}`:"踏入新区域...";if(r.discovery)notify(`🔍 ${r.discovery}`,"rare");showMsg(msg,r.discovery?"success":"info");refresh()}
+async function gather(res){const r=await P("/api/game/gather",{resource:res});notify(`🌿 获得 ${RES_NAMES[res]||res} ×${r.count}`,"success");refresh()}
 </script></body></html>

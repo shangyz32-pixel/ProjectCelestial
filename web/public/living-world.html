@@ -69,16 +69,27 @@ async function refresh(){
     // Top status with animation
     const s=$("top-status");s.textContent="● 世界运行中";s.style.color="var(--jade)";
     if(Math.random()<0.05){s.textContent="◉ 事件发生中";s.style.color="var(--warn)";setTimeout(()=>{s.textContent="● 世界运行中";s.style.color="var(--jade)"},1000);}
-    // News feed
+    // News feed — parse multiple event types
     const nameMap={};for(const n of npcs)nameMap[n.id]=n.name;
     const news=[];
     for(const e of ev){
-      if(e.type!=="EntityUpdated"||!e.payload)continue;
-      const nm=nameMap[e.target]||e.target||"未知修士";
-      const c=e.payload.component;const nv=e.payload.newValue;const ov=e.payload.oldValue;
-      if(c==="Realm"&&nv?.realm_id>(ov?.realm_id||0)){
-        news.push({time:`T${e.tick}`,text:`${nm} 突破至 Lv${nv.realm_id}`,cls:"breakthrough",loc:""});
-        break;
+      const nm=nameMap[e.target]||e.target||"世界";
+      // Breakthrough events
+      if(e.type==="EntityUpdated"&&e.payload?.component==="Realm"&&e.payload?.newValue?.realm_id>(e.payload?.oldValue?.realm_id||0)){
+        news.push({time:`T${e.tick}`,text:`${nm} 突破至 Lv${e.payload.newValue.realm_id}`,cls:"breakthrough",loc:""});
+      }
+      // NPC exploration events
+      if(e.type==="NPCExplored"){
+        news.push({time:`T${e.tick}`,text:`${nm} ${e.payload?.discovery||"探索了新区域"}`,cls:"discovery",loc:AREA_NAMES[e.payload?.to]||e.payload?.to||""});
+      }
+      // NPC travel events
+      if(e.type==="EntityUpdated"&&e.payload?.component==="Location"&&e.target?.startsWith("npc_")){
+        const to=AREA_NAMES[e.payload?.newValue?.area]||e.payload?.newValue?.area||"";
+        if(to)news.push({time:`T${e.tick}`,text:`${nm} 前往 ${to}`,cls:"info",loc:to});
+      }
+      // NPC gather events
+      if(e.type==="EntityUpdated"&&e.payload?.component==="Inventory"&&e.target?.startsWith("npc_")){
+        news.push({time:`T${e.tick}`,text:`${nm} 采集了资源`,cls:"info",loc:""});
       }
     }
     // NPC chronicles

@@ -382,6 +382,49 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       return send(200, { npc: npcName, topic, text, ok: true });
     }
 
+    case "/api/game/sect/info": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const { getPlayerSectInfo } = await import("../../runtime/sect/gameplay.js");
+      const info = getPlayerSectInfo(players[0], kernel);
+      if (!info) return send(200, { sect: null, msg: "未加入宗门" });
+      return send(200, { sect: info, ok: true });
+    }
+
+    case "/api/game/sect/join": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const sects = kernel.queryEntities("sect", {}, 10, 0);
+      if (sects.length === 0) return send(400, { error: "世界尚无宗门" });
+      const sectName = params.name || (sects[0].getComponent("Identity")||{}).name;
+      const { joinSect } = await import("../../runtime/sect/gameplay.js");
+      const result = joinSect(players[0], sectName, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/sect/leave": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const { leaveSect } = await import("../../runtime/sect/gameplay.js");
+      const result = leaveSect(players[0], kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
+    case "/api/game/sect/mission": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(400, { error: "No player" });
+      const missionType = params.mission || "cultivate";
+      const { completeMission } = await import("../../runtime/sect/gameplay.js");
+      const result = completeMission(players[0], missionType, kernel);
+      if (result.error) return send(400, result);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
+    }
+
     case "/api/game/gather": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });

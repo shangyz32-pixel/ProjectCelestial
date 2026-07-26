@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { createChineseTown } from './chinese_town.js';
+import { clearObstacles, addObstacle } from './collision.js';
 
 const regionDefs = {
   town: {
@@ -61,6 +62,7 @@ export function createRegionManager(scene) {
     for (const m of meshes.decorations) { scene.remove(m); }
     meshes.terrain = [];
     meshes.decorations = [];
+    clearObstacles();
 
     // Ground plane
     const gnd = new THREE.Mesh(
@@ -89,6 +91,7 @@ export function createRegionManager(scene) {
       g.castShadow = true;
       scene.add(g);
       meshes.decorations.push(g);
+      addObstacle(tx, tz, 0.6); // tree collision
     }
 
     // Rocks
@@ -100,6 +103,7 @@ export function createRegionManager(scene) {
       rock.position.set((Math.random() - 0.5) * 50, 0.1, (Math.random() - 0.5) * 50);
       scene.add(rock);
       meshes.decorations.push(rock);
+      addObstacle(rock.position.x, rock.position.z, 0.5);
     }
     } // end else (non-town regions)
 

@@ -40,6 +40,7 @@ import { syncMonsters, monsterMeshes } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
 import { createMinimap } from './modules/minimap.js';
 import { createCombatFX } from './modules/combat_fx.js';
+import { moveWithCollision } from './modules/collision.js';
 
 const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
@@ -138,8 +139,12 @@ function loop(now) {
   lastTime = now;
 
   const moved = handleInput(keys, player.position);
-  player.mesh.position.x = player.position.x;
-  player.mesh.position.z = player.position.z;
+  // Apply collision — slide along obstacles
+  const resolved = moveWithCollision(prevX, prevZ, player.position.x, player.position.z, 0.4);
+  player.position.x = resolved.x;
+  player.position.z = resolved.z;
+  player.mesh.position.x = resolved.x;
+  player.mesh.position.z = resolved.z;
 
   // Orientation: WALKING if moving, IDLE with camera if still
   const dx = player.position.x - prevX;

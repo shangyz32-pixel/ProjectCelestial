@@ -3,6 +3,7 @@
 // Stylized low-poly art direction. No generic Western buildings.
 
 import * as THREE from 'three';
+import { addObstacle } from './collision.js';
 
 export function createChineseTown(scene) {
   const meshes = [];
@@ -50,6 +51,14 @@ export function createChineseTown(scene) {
     scene.add(step);
     meshes.push(step);
   }
+
+  // Register building collisions
+  addObstacle(0, 0, 3);         // pavilion center
+  addObstacle(-5, 0, 1.8); addObstacle(5, 0, 1.8);
+  addObstacle(0, -5, 1.8); addObstacle(0, 5, 1.8);
+  addObstacle(-1.8, -7.5, 0.5); addObstacle(1.8, -7.5, 0.5); // gate pillars
+  addObstacle(-3.5, 3.5, 0.3); addObstacle(3.5, 3.5, 0.3);
+  addObstacle(-3.5, -3.5, 0.3); addObstacle(3.5, -3.5, 0.3);
 
   return meshes;
 }

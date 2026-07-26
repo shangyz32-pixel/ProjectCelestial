@@ -33,6 +33,7 @@ canvas{display:block}
 <script type="module">
 import { createScene } from './modules/scene.js';
 import { createTerrain } from './modules/terrain.js';
+import { createTown } from './modules/town.js';
 import { createPlayer, handleInput, followCamera } from './modules/player.js';
 import { syncMonsters } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
@@ -40,6 +41,7 @@ import { createSync } from './modules/sync.js';
 const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
 createTerrain(scene);
+createTown(scene);
 const player = createPlayer(scene);
 
 // WASD

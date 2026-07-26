@@ -2,6 +2,7 @@
 // Monster rendering — synced from WebSocket state.
 
 import * as THREE from 'three';
+import { createMonsterModel } from './monster_models.js';
 
 const monsterMeshes = new Map();
 const MONSTER_COLORS = {
@@ -44,14 +45,10 @@ export function syncMonsters(scene, monsters) {
 }
 
 function createMonsterMesh(m) {
-  const color = MONSTER_COLORS[m.type] || 0xff4444;
-  const group = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
-  body.position.y = 0.8;
-  group.add(body);
+  const group = createMonsterModel(m.type);
   // HP bar
   const hbar = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.1), new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide }));
-  hbar.position.y = 2;
+  hbar.position.y = 2.5;
   group.add(hbar);
   group.userData = { id: m.id, type: m.type, hpBar: hbar, hp: m.hp || 50, hpMax: m.hpMax || 50 };
   return group;

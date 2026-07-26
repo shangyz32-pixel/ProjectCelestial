@@ -42,6 +42,7 @@ import { createMinimap } from './modules/minimap.js';
 import { createCombatFX } from './modules/combat_fx.js';
 import { moveWithCollision } from './modules/collision.js';
 import { createVisuals, addFlowers } from './modules/visuals.js';
+import { syncNPCs } from './modules/npcs.js';
 
 const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
@@ -101,8 +102,18 @@ window.addEventListener('keydown', e => {
         nearest.userData.hp -= finalDmg;
         if (nearest.userData.hp <= 0) {
           combatFX.showDeathBurst(nearest.position.clone(), '#ff8800');
+          // Drop loot item on ground
+          const loot = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(0.15, 0),
+            new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 0.5 })
+          );
+          loot.position.copy(nearest.position);
+          loot.position.y = 0.2;
+          loot.userData = { item: '灵石碎片', life: 30 };
+          scene.add(loot);
           scene.remove(nearest);
           monsterMeshes.delete(nearest.userData.id);
+          document.getElementById('log').textContent = '💀 击杀! 掉落 灵石碎片';
         }
       }
       document.getElementById('log').textContent = '⚔ ' + finalDmg + (crit ? ' 暴击!' : '');
@@ -130,6 +141,7 @@ createSync(`ws://localhost:3000/ws`, (state) => {
   const minimapRegions = { area_bamboo_grove: 'bamboo', area_misty_peak: 'misty', area_thunder_valley: 'thunder', area_dragon_vein: 'dragon' };
   minimap.draw(minimapRegions[playerArea] || 'town');
   syncMonsters(scene, state.monsters || []);
+  syncNPCs(scene, state.npcs || []);
 });
 
 // Game loop

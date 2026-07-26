@@ -307,7 +307,7 @@ window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;
   }
   if(e.key.toLowerCase()==='c'){
     e.preventDefault();
-    doCultivate();
+    doCultivateAction('risky');
   }
 });
 window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});

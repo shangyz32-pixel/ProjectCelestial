@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="zh"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Project Celestial — Real-time</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden}
+canvas{display:block}
+#hud{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;font-family:monospace}
+#hp{position:absolute;top:10px;left:10px;color:#f44;font-size:14px;font-weight:bold;text-shadow:0 0 6px #000}
+#qi{position:absolute;top:28px;left:10px;color:#66f;font-size:12px;text-shadow:0 0 6px #000}
+#info{position:absolute;top:10px;right:10px;color:#fff;font-size:11px;text-shadow:0 0 6px #000;text-align:right}
+#bar{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.btn{pointer-events:all;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
+.btn:hover{background:rgba(255,255,255,0.15)}
+.btn-gold{border-color:#f90;color:#f90}
+.btn-danger{border-color:#f44;color:#f88}
+#log{position:absolute;bottom:50px;left:10px;color:#ff0;font-size:11px;text-shadow:0 0 6px #000;max-width:500px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="hp">❤ 100/100</div><div id="qi">💠 50/50</div>
+  <div id="info"><div id="tick">T0</div><div id="zone">翠竹林</div><div id="ents">Ent: 0</div></div>
+  <div id="log">🔗 连接中...</div>
+  <div id="bar">
+    <button class="btn btn-danger" onclick="doAction('cultivate',{mode:'risky'})">⚡修炼</button>
+    <button class="btn" onclick="doAction('rest')">🛌休息</button>
+    <button class="btn btn-gold" onclick="doExplore()">🔍探索</button>
+  </div>
+</div>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}
+</script>
+<script type="module">
+import { createScene } from './modules/scene.js';
+import { createTerrain } from './modules/terrain.js';
+import { createPlayer, handleInput, followCamera } from './modules/player.js';
+import { syncMonsters } from './modules/monsters.js';
+import { createSync } from './modules/sync.js';
+
+const B = 'http://localhost:3000';
+const { scene, camera, renderer } = createScene(document.getElementById('c'));
+createTerrain(scene);
+const player = createPlayer(scene);
+
+// WASD
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+// WebSocket sync
+createSync(`ws://localhost:3000/ws`, (state) => {
+  // HUD
+  document.getElementById('tick').textContent = 'T' + state.tick;
+  document.getElementById('ents').textContent = 'Ent: ' + state.entities;
+  const names = { area_bamboo_grove: '翠竹林', area_misty_peak: '云雾峰', area_thunder_valley: '雷音谷', area_dragon_vein: '龙脉秘境' };
+  document.getElementById('zone').textContent = names[state.player?.area] || '翠竹林';
+  if (state.player) {
+    document.getElementById('hp').textContent = '❤ ' + (state.player.hp || 100) + '/' + (state.player.hpMax || 100);
+  }
+  document.getElementById('log').textContent = '🔄 T' + state.tick + ' | 🌿' + state.plants + ' 🦌' + state.animals + ' 🐉' + state.beasts;
+  // Monsters
+  syncMonsters(scene, state.monsters || []);
+});
+
+// Game loop
+function loop() {
+  requestAnimationFrame(loop);
+  handleInput(keys, player.position);
+  player.mesh.position.x = player.position.x;
+  player.mesh.position.z = player.position.z;
+  followCamera(camera, player.position);
+  renderer.render(scene, camera);
+}
+loop();
+
+// Actions
+const P = (p, d) => fetch(B + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d || {}) }).then(r => r.json());
+window.doAction = async function (path, data) {
+  const r = await P('/api/game/' + path, data);
+  document.getElementById('log').textContent = r.msg || (r.ok ? '✅' : '❌');
+};
+window.doExplore = async function () {
+  const r = await P('/api/game/explore', { area: 'area_bamboo_grove' });
+  document.getElementById('log').textContent = (r.type === 'fight' ? '⚔ ' + r.monster?.name : r.type === 'victory' ? '💀 击杀!' : '🌲 探索中...');
+};
+</script></body></html>

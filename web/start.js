@@ -11,6 +11,7 @@ import { TimeService } from "../runtime/time/index.js";
 import { Logger } from "../runtime/bootstrap/logger.js";
 import { SimulationManager } from "../runtime/simulation/index.js";
 import { createObserverServer } from "./server.js";
+import { createWSServer } from "./ws.js";
 import { execSync } from "node:child_process";
 import { WorldRandom } from "../runtime/random/index.js";
 import { assignRandomRoot, assignRandomConstitution, CULTIVATION_METHODS, assignRandomTechnique } from "../runtime/cultivation/index.js";
@@ -117,6 +118,7 @@ try {
 
 // Start web server
 const server = createObserverServer(kernel, sim, snap, history, RuntimeConfig);
+const wss = createWSServer(server, kernel, sim);
 server.listen(PORT, () => {
   log.info(`Observer ready at http://localhost:${PORT}`);
   log.info(`Dev Console at http://localhost:${PORT}/console.html`);

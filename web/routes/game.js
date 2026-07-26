@@ -276,11 +276,14 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const p = players[0];
       const area = params.area || "area_bamboo_grove";
+      // Map Chinese names to API IDs
+      const CN_TO_ID={翠竹林:"area_bamboo_grove",云雾峰:"area_misty_peak",雷音谷:"area_thunder_valley",龙脉秘境:"area_dragon_vein",龙脉:"area_dragon_vein",新手村:"area_bamboo_grove"};
+      const resolvedArea = CN_TO_ID[area] || area;
       const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       // Move action — just change location
       if (params.action === "move") {
         const id2 = p.getComponent("Identity") || { name:"无名修士" };
-        const result = enterRegion(id2, p, area, kernel);
+        const result = enterRegion(id2, p, resolvedArea, kernel);
         kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
         return send(200, result);
       }
@@ -302,14 +305,14 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (explored === 5) milestone = "初涉江湖 — 探索5次！";
       else if (explored === 20) milestone = "老江湖 — 探索20次！";
       else if (explored === 50) milestone = "游历四方 — 探索50次！";
-      else if (REGION_DANGER[area] >= 5 && explored === 1) milestone = `首次踏入危险区域 — ${REGION_NAMES[area]}！`;
+      else if (REGION_DANGER[resolvedArea] >= 5 && explored === 1) milestone = `首次踏入危险区域 — ${REGION_NAMES[resolvedArea]}！`;
 
       kernel.updateComponent(p.id, "Metadata", { ...meta, explored }, p.version);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
 
       return send(200, {
         ...result,
-        region: { id:area, name:REGION_NAMES[area]||area, danger:REGION_DANGER[area]||1 },
+        region: { id:resolvedArea, name:REGION_NAMES[resolvedArea]||resolvedArea, danger:REGION_DANGER[resolvedArea]||1 },
         step: explored,
         milestone,
         ok: true

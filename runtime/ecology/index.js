@@ -46,7 +46,9 @@ export const PlantSystem = {
   tick(kernel, time, random) {
     const regions = ["area_bamboo_grove","area_misty_peak","area_thunder_valley","area_dragon_vein"];
     for (const region of regions) {
-      const plants = kernel.queryEntities("plant", { region }, 100, 0);
+      const plants = kernel.queryEntities("plant", { region }, 500, 0);
+      // Total cap per region to prevent infinite growth
+      if (plants.filter(p => p.state !== "dead").length >= 200) continue;
       const qi = kernel.world.globalState.qi.get("world") || 1.0;
       const seasonMod = { "春":1.3, "夏":1.0, "秋":0.7, "冬":0.4 }[time.season] || 1.0;
 
@@ -85,8 +87,10 @@ export const AnimalSystem = {
   tick(kernel, time, random) {
     const regions = ["area_bamboo_grove","area_misty_peak","area_thunder_valley","area_dragon_vein"];
     for (const region of regions) {
-      const animals = kernel.queryEntities("animal", { region }, 100, 0);
-      const plants = kernel.queryEntities("plant", { region }, 100, 0);
+      const animals = kernel.queryEntities("animal", { region }, 500, 0);
+      // Total cap to prevent infinite growth
+      if (animals.filter(a => a.state !== "dead").length >= 200) continue;
+      const plants = kernel.queryEntities("plant", { region }, 500, 0);
       const herbCount = animals.filter(a => {
         const t = ANIMAL_TYPES[(a.getComponent("Identity")||{}).type]; return t?.type === "herbivore";
       }).length;

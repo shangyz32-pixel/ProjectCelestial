@@ -35,7 +35,7 @@ canvas{display:block}
 <script type="module">
 import { createScene } from './modules/scene.js';
 import { createRegionManager } from './modules/regions.js';
-import { createPlayer, handleInput, followCamera, syncFacingToCamera, createOrbit } from './modules/player.js';
+import { createPlayer, handleInput, followCamera, createOrbit, updateOrientation, stepOrientation } from './modules/player.js';
 import { syncMonsters } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
 import { createMinimap } from './modules/minimap.js';
@@ -90,16 +90,28 @@ createSync(`ws://localhost:3000/ws`, (state) => {
 });
 
 // Game loop
-function loop() {
+let lastTime = performance.now();
+let prevX = player.position.x, prevZ = player.position.z;
+function loop(now) {
   requestAnimationFrame(loop);
-  handleInput(keys, player.position);
+  const delta = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  const moved = handleInput(keys, player.position);
   player.mesh.position.x = player.position.x;
   player.mesh.position.z = player.position.z;
-  syncFacingToCamera(player, orbit);
+
+  // Orientation: WALKING if moving, IDLE with camera if still
+  const dx = player.position.x - prevX;
+  const dz = player.position.z - prevZ;
+  prevX = player.position.x; prevZ = player.position.z;
+  updateOrientation(player.entityId, dx !== 0 || dz !== 0, orbit, dx, dz);
+
+  stepOrientation(delta);
   followCamera(camera, player.position, orbit);
   renderer.render(scene, camera);
 }
-loop();
+requestAnimationFrame(loop);
 
 const P = (p, d) => fetch(B + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d || {}) }).then(r => r.json());
 window.doAction = async function (path, data) {

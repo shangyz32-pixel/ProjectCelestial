@@ -1,7 +1,10 @@
 // public/modules/player.js
-// Player mesh, WASD movement, mouse-facing direction, camera follow.
+// Player mesh, WASD movement, camera orbit, orientation.
 
 import * as THREE from 'three';
+import { createOrientationController, MODE } from './orientation.js';
+
+const ORIENT = createOrientationController();
 
 export function createPlayer(scene) {
   const player = new THREE.Group();
@@ -20,16 +23,21 @@ export function createPlayer(scene) {
   scene.add(player);
 
   const position = { x: 0, z: 0 };
-  return { mesh: player, position, sword };
+  const entityId = 'player';
+  ORIENT.register(entityId, player);
+
+  return { mesh: player, position, sword, entityId };
 }
 
 export function handleInput(keys, pos) {
-  if (keys['w'] || keys['ArrowUp']) pos.z -= 0.15;
-  if (keys['s'] || keys['ArrowDown']) pos.z += 0.15;
-  if (keys['a'] || keys['ArrowLeft']) pos.x -= 0.15;
-  if (keys['d'] || keys['ArrowRight']) pos.x += 0.15;
+  let moved = false;
+  if (keys['w'] || keys['ArrowUp']) { pos.z -= 0.15; moved = true; }
+  if (keys['s'] || keys['ArrowDown']) { pos.z += 0.15; moved = true; }
+  if (keys['a'] || keys['ArrowLeft']) { pos.x -= 0.15; moved = true; }
+  if (keys['d'] || keys['ArrowRight']) { pos.x += 0.15; moved = true; }
   pos.x = Math.max(-45, Math.min(45, pos.x));
   pos.z = Math.max(-45, Math.min(45, pos.z));
+  return moved;
 }
 
 export function followCamera(camera, pos, orbit) {
@@ -42,11 +50,9 @@ export function followCamera(camera, pos, orbit) {
   camera.lookAt(pos.x, 1, pos.z);
 }
 
-// Mouse drag orbit state
 export function createOrbit() {
   const orbit = { angle: -0.8, distance: 22, height: 18 };
   let dragging = false, lastX = 0;
-
   window.addEventListener('mousedown', e => {
     if (e.button === 2) { dragging = true; lastX = e.clientX; e.preventDefault(); }
   });
@@ -59,11 +65,21 @@ export function createOrbit() {
     orbit.height = Math.max(8, Math.min(40, orbit.height + e.deltaY * 0.02));
   });
   window.addEventListener('contextmenu', e => e.preventDefault());
-
   return orbit;
 }
 
-// Keep player facing same direction as camera orbit
-export function syncFacingToCamera(playerObj, orbit) {
-  playerObj.mesh.rotation.y = orbit.angle + Math.PI;
+// Update orientation based on movement + camera
+export function updateOrientation(entityId, moved, orbit, dx, dz) {
+  if (moved) {
+    ORIENT.request(entityId, MODE.WALKING, { direction: { x: dx || 0, z: dz || 0 } });
+  } else {
+    ORIENT.request(entityId, MODE.IDLE, { cameraAngle: orbit.angle });
+  }
 }
+
+// Run orientation update each frame
+export function stepOrientation(delta) {
+  ORIENT.update(delta);
+}
+
+export { ORIENT, MODE };

@@ -5,26 +5,97 @@ canvas{display:block}
 #hud{position:absolute;top:10px;left:10px;color:#fff;font-size:11px;pointer-events:none;z-index:10;display:flex;gap:16px}
 #hud div{background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:3px;border:1px solid rgba(255,255,255,0.1)}
 #log{position:absolute;bottom:10px;left:10px;color:#ff0;font-size:10px;pointer-events:none;z-index:10;max-height:80px;overflow:hidden}
+#region-label{position:absolute;top:50px;left:50%;transform:translateX(-50%);color:#ff0;font-size:18px;pointer-events:none;z-index:10;text-shadow:0 0 10px #000;transition:opacity 1s}
 </style></head><body>
 <div id="hud"><div id="tick">Tick: 0</div><div id="ent">Entities: 0</div><div id="zone">Zone: --</div></div>
-<div id="log"></div>
+<div id="region-label"></div><div id="log"></div>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
 
 const BASE='http://localhost:3000';
-const COLORS={player:0x4488ff, npc:0x44ff44, monster:0xff4444, plant:0x228844, beast:0xff8800};
+const COLORS={player:0x4488ff, npc:0x44ff44, monster:0xff4444};
 const AREA_OFFSETS={area_bamboo_grove:[0,0],area_misty_peak:[30,20],area_thunder_valley:[60,0],area_dragon_vein:[90,-10]};
+
+// ══════════════════════════════════════
+// Region Visual Profiles (Renderer-owned, Runtime never imports)
+// ══════════════════════════════════════
+const REGION_VISUALS={
+  area_bamboo_grove:{zone:"翠竹林",ground:0x225522,sky:0x6688aa,fog:0x6688aa,fogNear:30,fogFar:150,ambient:0x446644,ambientI:1.0,sun:0xffeedd,sunI:2.0,trees:60,treeColor:0x228833,rockColor:0x556633,grassColor:0x33aa44},
+  area_misty_peak:  {zone:"云雾峰",ground:0x555544,sky:0x8899bb,fog:0xaabbcc,fogNear:20,fogFar:120,ambient:0x667788,ambientI:1.5,sun:0xffffff,sunI:1.5,trees:40,treeColor:0x337744,rockColor:0x777766,grassColor:0x779955},
+  area_thunder_valley:{zone:"雷音谷",ground:0x443344,sky:0x332244,fog:0x554466,fogNear:15,fogFar:100,ambient:0x554466,ambientI:1.0,sun:0xccaaff,sunI:1.8,trees:30,treeColor:0x335533,rockColor:0x554466,grassColor:0x446644},
+  area_dragon_vein:  {zone:"龙脉秘境",ground:0x332211,sky:0x443322,fog:0x996633,fogNear:25,fogFar:180,ambient:0x664422,ambientI:1.3,sun:0xffcc88,sunI:2.2,trees:50,treeColor:0x447722,rockColor:0x665544,grassColor:0x558844},
+};
 
 // ── Scene ──
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x0a0a1a);
-scene.fog=new THREE.Fog(0x0a0a1a,50,200);
+let currentRegion=null;
+const envMeshes=[];
+
+function applyRegionVisuals(regionId){
+  const v=REGION_VISUALS[regionId]||REGION_VISUALS.area_bamboo_grove;
+  if(currentRegion===regionId)return;
+  currentRegion=regionId;
+
+  // Sky + Fog
+  scene.background=new THREE.Color(v.sky);
+  scene.fog=new THREE.Fog(v.fog,v.fogNear,v.fogFar);
+
+  // Lighting
+  scene.children.filter(c=>c.isLight).forEach(c=>scene.remove(c));
+  scene.add(new THREE.AmbientLight(v.ambient,v.ambientI));
+  const sun=new THREE.DirectionalLight(v.sun,v.sunI);
+  sun.position.set(30,50,20);sun.castShadow=true;scene.add(sun);
+
+  // Clear old terrain
+  envMeshes.forEach(m=>{scene.remove(m);if(m.geometry)m.geometry.dispose();if(m.material)m.material.dispose()});
+  envMeshes.length=0;
+
+  // Ground
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:v.ground,roughness:0.9}));
+  ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);envMeshes.push(ground);
+
+  // Rocks
+  for(let i=0;i<15;i++){
+    const rx=(Math.random()-0.5)*160,rz=(Math.random()-0.5)*160;
+    const rock=new THREE.Mesh(new THREE.IcosahedronGeometry(0.8+Math.random()*1.5,0),new THREE.MeshStandardMaterial({color:v.rockColor,roughness:0.8}));
+    rock.position.set(rx,0.3,rz);rock.castShadow=true;rock.receiveShadow=true;
+    scene.add(rock);envMeshes.push(rock);
+  }
+
+  // Trees
+  for(let i=0;i<v.trees;i++){
+    const x=(Math.random()-0.5)*160,z=(Math.random()-0.5)*160;
+    const tree=new THREE.Group();
+    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,3),new THREE.MeshStandardMaterial({color:0x553311}));
+    trunk.position.y=1.5;
+    const leaf=new THREE.Mesh(new THREE.ConeGeometry(1.5,4,6),new THREE.MeshStandardMaterial({color:v.treeColor}));
+    leaf.position.y=4;
+    tree.add(trunk);tree.add(leaf);
+    tree.position.set(x,0,z);tree.castShadow=true;tree.userData.tree=true;
+    scene.add(tree);envMeshes.push(tree);
+  }
+
+  // Grass patches
+  for(let i=0;i<200;i++){
+    const x=(Math.random()-0.5)*160,z=(Math.random()-0.5)*160;
+    const grass=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.5+Math.random()*0.5,3),new THREE.MeshStandardMaterial({color:v.grassColor}));
+    grass.position.set(x,0.2,z);
+    scene.add(grass);envMeshes.push(grass);
+  }
+
+  // Region name label
+  document.getElementById('region-label').textContent=v.zone;
+  document.getElementById('region-label').style.opacity='1';
+  setTimeout(()=>{document.getElementById('region-label').style.opacity='0';},2000);
+
+  // Log
+  document.getElementById('log').innerHTML='🌲 进入 '+v.zone;
+}
 
 // ── Camera ──
 const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,1,500);
 camera.position.set(20,30,40);
-camera.lookAt(0,0,0);
 
 // ── Renderer ──
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -33,62 +104,22 @@ renderer.shadowMap.enabled=true;
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 document.body.appendChild(renderer.domElement);
 
-// ── Lighting ──
-scene.add(new THREE.AmbientLight(0x334466,1.2));
-const sun=new THREE.DirectionalLight(0xffeedd,2.5);
-sun.position.set(30,50,20);
-sun.castShadow=true;
-scene.add(sun);
-
-// ── Ground ──
-const ground=new THREE.Mesh(
-  new THREE.PlaneGeometry(200,200),
-  new THREE.MeshStandardMaterial({color:0x224422,roughness:0.9})
-);
-ground.rotation.x=-Math.PI/2;
-ground.receiveShadow=true;
-scene.add(ground);
-
-// ── Trees ──
-const trees=[];
-for(let i=0;i<60;i++){
-  const x=(Math.random()-0.5)*160,z=(Math.random()-0.5)*160;
-  const tree=new THREE.Group();
-  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,3),new THREE.MeshStandardMaterial({color:0x553311}));
-  trunk.position.y=1.5;
-  const leaf=new THREE.Mesh(new THREE.ConeGeometry(1.5,4,6),new THREE.MeshStandardMaterial({color:0x228833}));
-  leaf.position.y=4;
-  tree.add(trunk);tree.add(leaf);
-  tree.position.set(x,0,z);
-  tree.castShadow=true;
-  scene.add(tree);
-  trees.push(tree);
-}
-
 // ── Entity meshes ──
 const meshes=new Map();
-
 function createMesh(type,id){
   const color=COLORS[type]||0x888888;
   const geo=new THREE.BoxGeometry(1.2,type==='player'?2:1.5,1.2);
   const mat=new THREE.MeshStandardMaterial({color,roughness:0.5});
   const mesh=new THREE.Mesh(geo,mat);
-  mesh.castShadow=true;
-  mesh.receiveShadow=true;
+  mesh.castShadow=true;mesh.receiveShadow=true;
   mesh.userData={id,type};
   scene.add(mesh);
   meshes.set(id,mesh);
   return mesh;
 }
 
-function posForEntity(e){
-  const area=e.area||e.location;
-  const offset=AREA_OFFSETS[area]||[0,0];
-  return {x:offset[0]+(Math.random()-0.5)*10,z:offset[1]+(Math.random()-0.5)*10};
-}
-
 // ── Runtime Bridge ──
-let lastTick=0;
+let lastTick=0,lastArea=null;
 async function syncWorld(){
   try{
     const w=await (await fetch(BASE+'/api/world')).json();
@@ -97,74 +128,56 @@ async function syncWorld(){
     document.getElementById('zone').textContent='Qi: '+(w.qi||0).toFixed(2);
 
     const player=await (await fetch(BASE+'/api/game/player')).json();
-    const npcs=await (await fetch(BASE+'/api/npcs')).json();
-
-    // Player
     const pData=player.player||player;
-    if(pData&&pData.name){
-      let pm=meshes.get('player');
-      if(!pm) pm=createMesh('player','player');
-      const pp=posForEntity(pData);
-      pm.position.set(pp.x,1,pp.z);
-      pm.userData.hp='HP:'+(pData.hp_current||'?')+'/'+(pData.hp_max||'?');
-      pm.userData.name=pData.name;
+
+    // Region change detection
+    if(pData){
+      const area=pData.current_area||pData.area;
+      if(area&&area!==lastArea){
+        lastArea=area;
+        applyRegionVisuals(area);
+      }
     }
 
-    // NPCs
+    // Player mesh
+    if(pData&&pData.name){
+      let pm=meshes.get('player');
+      if(!pm)pm=createMesh('player','player');
+      const offset=AREA_OFFSETS[lastArea]||[0,0];
+      pm.position.set(offset[0],1,offset[1]);
+    }
+
+    const npcs=await (await fetch(BASE+'/api/npcs')).json();
     const aliveIds=new Set(['player']);
     for(const n of (Array.isArray(npcs)?npcs:[])){
       aliveIds.add(n.id||n.entityId);
       let m=meshes.get(n.id||n.entityId);
-      if(!m) m=createMesh('npc',n.id||n.entityId);
-      const np=posForEntity(n);
-      m.position.set(np.x,1,np.z);
+      if(!m)m=createMesh('npc',n.id||n.entityId);
+      const offset=AREA_OFFSETS[n.area||lastArea||'area_bamboo_grove']||[0,0];
+      m.position.set(offset[0]+(Math.random()-0.5)*8,1,offset[1]+(Math.random()-0.5)*8);
     }
 
-    // Clean up dead meshes
-    for(const [id,mesh] of meshes){
-      if(!aliveIds.has(id)&&id!=='player'){
-        if(mesh.userData.type!=='player'){
-          scene.remove(mesh);
-          meshes.delete(id);
-        }
-      }
-    }
+    for(const[id,m]of meshes){if(!aliveIds.has(id)&&id!=='player'){scene.remove(m);meshes.delete(id);}}
 
-    if(w.tick!==lastTick){
-      document.getElementById('log').innerHTML='🔄 Tick '+w.tick+' | '+w.weather+' | '+w.entities+' entities';
-      lastTick=w.tick;
-    }
+    if(w.tick!==lastTick){lastTick=w.tick;}
   }catch(e){console.error('sync:',e.message)}
 }
 
-// ── Animation Loop ──
+// ── Animation ──
 let time=0;
 function animate(){
   requestAnimationFrame(animate);
   time+=0.01;
-
-  // Gentle camera sway
   camera.position.x=20+Math.sin(time*0.3)*5;
   camera.position.z=40+Math.cos(time*0.3)*5;
   camera.lookAt(20,0,0);
-
-  // Bounce players
   const pm=meshes.get('player');
-  if(pm) pm.position.y=1+Math.abs(Math.sin(time*2))*0.5;
-
-  // Rotate trees
-  trees.forEach((t,i)=>{t.rotation.y+=0.002+i*0.0001});
-
+  if(pm)pm.position.y=1+Math.abs(Math.sin(time*2))*0.5;
+  // Animate trees
+  envMeshes.forEach(m=>{if(m.userData?.tree)m.rotation.y+=0.002;});
   renderer.render(scene,camera);
 }
 
-// ── Init ──
-syncWorld();
-setInterval(syncWorld,3000);
-animate();
-
-window.addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
+syncWorld();setInterval(syncWorld,3000);applyRegionVisuals('area_bamboo_grove');animate();
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 </script></body></html>

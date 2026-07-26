@@ -41,8 +41,8 @@ export function explore(player, playerEntity, kernel, random) {
   // 1. Progress tick
   kernel.world.tickCount++;
 
-  // 2. Encounter roll — weighted by danger
-  const encounterRate = Math.min(0.6, 0.15 + region.danger * 0.05);
+  // 2. Encounter roll — weighted by danger (higher base rate)
+  const encounterRate = Math.min(0.75, 0.25 + region.danger * 0.06);
   const roll = random ? random.nextFloat(0, 1) : Math.random();
 
   if (roll > encounterRate) {

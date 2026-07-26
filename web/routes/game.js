@@ -276,8 +276,8 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const p = players[0];
       const area = params.area || "area_bamboo_grove";
-      const rng = new WorldRandom(42);
-
+      const rng = new WorldRandom(42 + kernel.world.tickCount + Math.floor(Date.now()/1000));
+      const identity = p.getComponent("Identity") || { name:"无名修士" };
       // Move action — just change location
       if (params.action === "move") {
         const identity = p.getComponent("Identity") || { name:"无名修士" };
@@ -286,11 +286,35 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
         return send(200, result);
       }
 
-      // Explore action — encounter generation
+      // Explore action — encounter generation with variety
       const identity = p.getComponent("Identity") || { name:"无名修士" };
       const result = explore(identity, p, kernel, rng);
+
+      // Enrich result with region context
+      const REGION_NAMES = { area_bamboo_grove:"翠竹林",area_misty_peak:"云雾峰",area_thunder_valley:"雷音谷",area_dragon_vein:"龙脉秘境" };
+      const REGION_DANGER = { area_bamboo_grove:1,area_misty_peak:3,area_thunder_valley:5,area_dragon_vein:8 };
+
+      // Track exploration count on player
+      const meta = p.getComponent("Metadata") || {};
+      const explored = (meta.explored||0) + 1;
+
+      // Milestone discovery
+      let milestone = null;
+      if (explored === 5) milestone = "初涉江湖 — 探索5次！";
+      else if (explored === 20) milestone = "老江湖 — 探索20次！";
+      else if (explored === 50) milestone = "游历四方 — 探索50次！";
+      else if (REGION_DANGER[area] >= 5 && explored === 1) milestone = `首次踏入危险区域 — ${REGION_NAMES[area]}！`;
+
+      kernel.updateComponent(p.id, "Metadata", { ...meta, explored }, p.version);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
-      return send(200, result);
+
+      return send(200, {
+        ...result,
+        region: { id:area, name:REGION_NAMES[area]||area, danger:REGION_DANGER[area]||1 },
+        step: explored,
+        milestone,
+        ok: true
+      });
     }
 
     case "/api/game/move": {

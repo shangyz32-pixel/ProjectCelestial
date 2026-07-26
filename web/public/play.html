@@ -93,9 +93,33 @@ async function rest(){
   setTimeout(refresh,300);
 }
 async function doExplore(){
+  // Visual effect: screen flash
+  const flash=document.createElement('div');
+  flash.style.cssText='position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0;pointer-events:none;z-index:100;transition:opacity 0.15s';
+  document.getElementById('game').appendChild(flash);
+  requestAnimationFrame(()=>{flash.style.opacity='0.3';setTimeout(()=>flash.style.opacity='0',150);setTimeout(()=>flash.remove(),400)});
+
   const r=await P('/api/game/explore',{area:state.area||'area_bamboo_grove'});
-  document.getElementById('log').innerHTML=r.msg||(r.type==='fight'?'⚔ 战斗!':r.type==='victory'?'⚔ 击杀!':'🌲 探索中...');
+
+  let msg='';
+  if(r.type==='victory'){msg='⚔ 击杀 '+r.monster.name+'！伤害'+r.damage+(r.critical?' 💥暴击':'')+' | '+r.loot.join(' ');showBurst(px,py,'#ff0')}
+  else if(r.type==='fight'){msg='⚔ '+r.monster.name+'！造成'+r.playerDmg+'伤，受'+r.monsterDmg+'伤 (HP:'+r.playerHP+')';showBurst(px,py,'#f44')}
+  else if(r.type==='treasure'){msg='📦 发现宝箱！获得 '+r.item+' x'+r.qty;showBurst(px,py,'#ff0')}
+  else{msg='🌲 '+r.region.name+' 探索中... 第'+r.step+'步'}
+  if(r.milestone)msg+=' | 🏆 '+r.milestone;
+
+  document.getElementById('log').innerHTML=msg;
+  document.getElementById('area').textContent=r.region?.name||state.area;
   setTimeout(refresh,500);
+}
+
+const bursts=[];
+function showBurst(x,y,c){
+  for(let i=0;i<6;i++)bursts.push({x,y,c,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4-2,l:1});
+}
+// Draw bursts in gameLoop
+function drawBursts(){
+  for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.x+=b.vx;b.y+=b.vy;b.l-=0.03;if(b.l<=0){bursts.splice(i,1);continue}ctx.fillStyle=b.c+Math.floor(b.l*255).toString(16).padStart(2,'0');ctx.beginPath();ctx.arc(b.x,b.y,3,0,Math.PI*2);ctx.fill()}
 }
 async function gather(){
   const r=await P('/api/game/alchemy/gather',{herb:'spirit_grass'});
@@ -140,6 +164,8 @@ function gameLoop(){
   // Area label
   ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='bold 24px system-ui';
   ctx.fillText(state.area||'翠竹林',30,cv.height-40);
+  // Bursts
+  drawBursts();
   // Player
   ctx.fillStyle='#4488ff';ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();

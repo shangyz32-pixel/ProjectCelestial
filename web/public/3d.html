@@ -470,15 +470,17 @@ window.addEventListener('click',e=>{
 // ── P5 Vertical Slice: Action Functions ──
 async function doExploreAt(pos){
   const area=lastArea||'area_bamboo_grove';
+  const pm=meshes.get('player');
+  const pos2=pos||(pm?pm.position:new THREE.Vector3(0,1,0));
   const r=await (await fetch(BASE+'/api/game/explore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area})})).json();
   if(r.type==='fight'||r.type==='victory'){
     document.getElementById('log').innerHTML=r.msg||'⚔ 战斗! '+(r.monster?.name||'');
-    if(r.damage)showDamage(pos,r.damage,r.critical);
+    if(r.damage)showDamage(pos2,r.damage,r.critical);
     if(r.monsterDmg&&lastArea){
       const offset=AREA_OFFSETS[lastArea]||[0,0];
       showDamage(new THREE.Vector3(offset[0],1.5,offset[1]),r.monsterDmg,false);
     }
-    if(r.type==='victory')spawnLootObject(pos,r.loot||[]);
+    if(r.type==='victory')spawnLootObject(pos2,r.loot||[]);
   }else{document.getElementById('log').innerHTML=r.msg||'🌲 探索中... (按E继续)'}
   setTimeout(syncWorld,800);
 }

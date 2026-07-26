@@ -343,4 +343,68 @@ function animate(){
 
 syncWorld();setInterval(syncWorld,3000);applyRegionVisuals('area_bamboo_grove');animate();
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-</script></body></html>
+
+// P7 — Interaction System (Interaction Component pattern)
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+const INTERACTIONS={
+  npc:{label:'💬 对话', action:'dialogue', color:0x44ff44},
+  monster:{label:'⚔ 攻击', action:'combat', color:0xff4444},
+  treasure:{label:'📦 打开', action:'loot', color:0xffaa00},
+  portal:{label:'🌀 传送', action:'travel', color:0x00ffff},
+};
+// Add portal markers to scene
+const portals=[
+  {pos:[10,1.5,15], area:'area_misty_peak', label:'云雾峰', color:0x00ffff},
+  {pos:[50,1.5,5], area:'area_thunder_valley', label:'雷音谷', color:0xcc44ff},
+  {pos:[80,1.5,-5], area:'area_dragon_vein', label:'龙脉秘境', color:0xffaa00},
+];
+portals.forEach(p=>{
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.2,0.15,8,24),new THREE.MeshStandardMaterial({color:p.color,emissive:p.color,emissiveIntensity:1}));
+  ring.position.set(...p.pos);ring.rotation.x=Math.PI/2;ring.userData={interaction:'portal',area:p.area,label:p.label};
+  scene.add(ring);envMeshes.push(ring);
+});
+// Treasure chests
+for(let i=0;i<4;i++){
+  const chest=new THREE.Mesh(new THREE.BoxGeometry(1,0.7,0.7),new THREE.MeshStandardMaterial({color:0x886644}));
+  chest.position.set((Math.random()-0.5)*100,0.35,(Math.random()-0.5)*100);
+  chest.userData={interaction:'treasure',label:'宝箱'};
+  scene.add(chest);envMeshes.push(chest);
+}
+
+// Interaction menu
+let interactionMenu=null;
+function showInteractionMenu(event,entityData){
+  if(interactionMenu){document.body.removeChild(interactionMenu);interactionMenu=null;}
+  const menu=document.createElement('div');
+  menu.style.cssText='position:absolute;background:rgba(0,0,0,0.85);border:1px solid #f90;border-radius:6px;padding:8px;z-index:100;color:#fff;font-size:12px;min-width:120px';
+  menu.style.left=event.clientX+'px';menu.style.top=event.clientY+'px';
+  const profile=INTERACTIONS[entityData.interaction]||INTERACTIONS.npc;
+  menu.innerHTML=`<div style="color:${'#'+profile.color.toString(16)};margin-bottom:4px">${entityData.label||entityData.name}</div>
+    <button style="background:#f90;color:#000;border:0;padding:4px 12px;border-radius:3px;cursor:pointer;width:100%">${profile.label}</button>`;
+  document.body.appendChild(menu);
+  interactionMenu=menu;
+  setTimeout(()=>{if(interactionMenu===menu){document.body.removeChild(menu);interactionMenu=null;}},5000);
+}
+
+// Click to interact
+window.addEventListener('click',e=>{
+  if(e.target.tagName==='BUTTON')return;
+  if(interactionMenu){document.body.removeChild(interactionMenu);interactionMenu=null;}
+  mouse.x=(e.clientX/window.innerWidth)*2-1;
+  mouse.y=-(e.clientY/window.innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(scene.children,true);
+  for(const hit of hits){
+    let obj=hit.object;
+    while(obj){
+      if(obj.userData.interaction||obj.userData.type==='npc'){
+        const data={interaction:obj.userData.interaction||'npc',name:obj.userData.name||obj.userData.label||(obj.userData.visual||{}).name,area:obj.userData.area,label:obj.userData.label};
+        showInteractionMenu(e,data);
+        return;
+      }
+      obj=obj.parent;
+    }
+  }
+});
+</script>

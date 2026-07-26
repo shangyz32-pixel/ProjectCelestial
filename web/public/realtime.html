@@ -41,6 +41,7 @@ import { createSync } from './modules/sync.js';
 import { createMinimap } from './modules/minimap.js';
 import { createCombatFX } from './modules/combat_fx.js';
 import { moveWithCollision } from './modules/collision.js';
+import { createVisuals, addFlowers } from './modules/visuals.js';
 
 const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
@@ -49,6 +50,7 @@ const player = createPlayer(scene);
 const orbit = createOrbit();
 const minimap = createMinimap();
 const combatFX = createCombatFX(scene);
+const visualFX = createVisuals(scene);
 
 // J key — attack with sword
 
@@ -155,6 +157,7 @@ function loop(now) {
   stepOrientation(delta);
   applySwordAnim(player, delta);
   combatFX.update();
+  visualFX.update(delta);
   followCamera(camera, player.position, orbit);
   renderer.render(scene, camera);
 }

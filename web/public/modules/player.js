@@ -3,19 +3,14 @@
 
 import * as THREE from 'three';
 import { createOrientationController, MODE } from './orientation.js';
+import { createCultivatorModel } from './player_model.js';
 
 const ORIENT = createOrientationController();
 
 export function createPlayer(scene) {
-  const player = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.5, 0.6), new THREE.MeshStandardMaterial({ color: 0x4488ff }));
-  body.position.y = 0.8;
-  player.add(body);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 6, 4), new THREE.MeshStandardMaterial({ color: 0x4488ff }));
-  head.position.y = 1.8;
-  player.add(head);
+  const player = createCultivatorModel();
 
-  // Sword group — allows independent rotation for swing animation
+  // Sword group — attaches to right hand position
   const swordGroup = new THREE.Group();
   const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.4, 0.06), new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.2 }));
   blade.position.y = 0.7;

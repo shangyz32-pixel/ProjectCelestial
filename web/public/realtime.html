@@ -8,19 +8,21 @@ canvas{display:block}
 #hud{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;font-family:monospace}
 #hp{position:absolute;top:10px;left:10px;color:#f44;font-size:14px;font-weight:bold;text-shadow:0 0 6px #000}
 #qi{position:absolute;top:28px;left:10px;color:#66f;font-size:12px;text-shadow:0 0 6px #000}
-#info{position:absolute;top:10px;right:10px;color:#fff;font-size:11px;text-shadow:0 0 6px #000;text-align:right}
+#info{position:absolute;top:10px;right:120px;color:#fff;font-size:11px;text-shadow:0 0 6px #000;text-align:right}
 #bar{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
 .btn{pointer-events:all;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:8px 14px;border-radius:5px;cursor:pointer;font-size:12px}
 .btn:hover{background:rgba(255,255,255,0.15)}
 .btn-gold{border-color:#f90;color:#f90}
 .btn-danger{border-color:#f44;color:#f88}
 #log{position:absolute;bottom:50px;left:10px;color:#ff0;font-size:11px;text-shadow:0 0 6px #000;max-width:500px}
+#region-name{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:24px;font-weight:bold;text-shadow:0 0 10px #000;opacity:0;transition:opacity 0.5s;pointer-events:none}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud">
   <div id="hp">❤ 100/100</div><div id="qi">💠 50/50</div>
   <div id="info"><div id="tick">T0</div><div id="zone">翠竹林</div><div id="ents">Ent: 0</div></div>
   <div id="log">🔗 连接中...</div>
+  <div id="region-name"></div>
   <div id="bar">
     <button class="btn btn-danger" onclick="doAction('cultivate',{mode:'risky'})">⚡修炼</button>
     <button class="btn" onclick="doAction('rest')">🛌休息</button>
@@ -32,8 +34,7 @@ canvas{display:block}
 </script>
 <script type="module">
 import { createScene } from './modules/scene.js';
-import { createTerrain } from './modules/terrain.js';
-import { createTown } from './modules/town.js';
+import { createRegionManager } from './modules/regions.js';
 import { createPlayer, handleInput, followCamera } from './modules/player.js';
 import { syncMonsters } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
@@ -41,19 +42,30 @@ import { createMinimap } from './modules/minimap.js';
 
 const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
-createTerrain(scene);
-createTown(scene);
+const regions = createRegionManager(scene);
 const player = createPlayer(scene);
 const minimap = createMinimap();
 
-// Minimap click → teleport player to region
+// Start in town
+regions.switchTo('town');
+document.getElementById('zone').textContent = '新手村';
+
+// Minimap click → switch region
 window.addEventListener('minimap-click', (e) => {
   const areaMap = { town: 'area_bamboo_grove', bamboo: 'area_bamboo_grove', misty: 'area_misty_peak', thunder: 'area_thunder_valley', dragon: 'area_dragon_vein' };
   const area = areaMap[e.detail.id];
-  if (area) {
-    fetch(B + '/api/game/explore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ area, action: 'move' }) });
-    document.getElementById('log').textContent = '🌀 传送至 ' + (e.detail.label || '区域') + '...';
-  }
+  const sceneMap = { town: 'town', bamboo: 'bamboo', misty: 'misty', thunder: 'thunder', dragon: 'dragon' };
+  const sceneId = sceneMap[e.detail.id] || 'bamboo';
+  const name = regions.switchTo(sceneId);
+  document.getElementById('zone').textContent = name;
+  // Flash region name
+  const rn = document.getElementById('region-name');
+  rn.textContent = name;
+  rn.style.opacity = '1';
+  setTimeout(() => rn.style.opacity = '0', 1500);
+  // Teleport via API
+  if (area) fetch(B + '/api/game/explore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ area, action: 'move' }) });
+  document.getElementById('log').textContent = '🌀 传送至 ' + name;
 });
 
 // WASD
@@ -63,20 +75,16 @@ window.addEventListener('keyup', e => keys[e.key] = false);
 
 // WebSocket sync
 createSync(`ws://localhost:3000/ws`, (state) => {
-  // HUD
   document.getElementById('tick').textContent = 'T' + state.tick;
   document.getElementById('ents').textContent = 'Ent: ' + state.entities;
-  const names = { area_bamboo_grove: '翠竹林', area_misty_peak: '云雾峰', area_thunder_valley: '雷音谷', area_dragon_vein: '龙脉秘境' };
-  document.getElementById('zone').textContent = names[state.player?.area] || '翠竹林';
   if (state.player) {
     document.getElementById('hp').textContent = '❤ ' + (state.player.hp || 100) + '/' + (state.player.hpMax || 100);
   }
   document.getElementById('log').textContent = '🔄 T' + state.tick + ' | 🌿' + state.plants + ' 🦌' + state.animals + ' 🐉' + state.beasts;
-  // Update minimap
+  // Minimap
   const playerArea = state.player?.area || 'area_bamboo_grove';
   const minimapRegions = { area_bamboo_grove: 'bamboo', area_misty_peak: 'misty', area_thunder_valley: 'thunder', area_dragon_vein: 'dragon' };
   minimap.draw(minimapRegions[playerArea] || 'town');
-  // Monsters
   syncMonsters(scene, state.monsters || []);
 });
 
@@ -91,7 +99,6 @@ function loop() {
 }
 loop();
 
-// Actions
 const P = (p, d) => fetch(B + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d || {}) }).then(r => r.json());
 window.doAction = async function (path, data) {
   const r = await P('/api/game/' + path, data);

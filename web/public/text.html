@@ -151,7 +151,10 @@ async function refresh(){
     document.getElementById('qiVal').textContent=(w.qi||1).toFixed(2);
   }
   const p=await G('/api/game/player');
-  if(p&&p.player){updateHUD(p.player);const a=p.player.current_area||'翠竹林';document.getElementById('area').textContent=a;updateMapHighlight(a)}
+  if(p&&p.player){
+    updateHUD(p.player);
+    playerData=p.player;
+    if(!playerData.current_area)playerData.current_area=p.player.area||'area_bamboo_grove';
 }
 
 async function sendCmd(){
@@ -177,8 +180,10 @@ async function sendCmd(){
         break;
       }
       case '探索': case 'explore':{
-        const area=parts[1]||'area_bamboo_grove';
-        const r=await P('/api/game/explore',{area:area.startsWith('area_')?area:'area_'+area});
+        const areaNames={翠竹林:'area_bamboo_grove',bamboo:'area_bamboo_grove',云雾峰:'area_misty_peak',misty:'area_misty_peak',雷音谷:'area_thunder_valley',thunder:'area_thunder_valley',龙脉:'area_dragon_vein',龙脉秘境:'area_dragon_vein',dragon:'area_dragon_vein',新手村:'area_bamboo_grove'};
+        const areaName=parts[1];
+        const area=areaNames[areaName]||playerData?.current_area||'area_bamboo_grove';
+        const r=await P('/api/game/explore',{area});
         if(r.type==='fight')log(`⚔ ${r.monster?.name||'怪物'}出现！造成${r.playerDmg}伤害，受${r.monsterDmg}伤`,part[1]==='victory'?'msg-combat':'msg-combat');
         else if(r.type==='victory')log(`💀 击杀${r.monster?.name}！掉落: ${(r.loot||[]).join(' ')}`,'msg-item');
         else log(`${r.msg||'探索中...'} [第${r.step||'?'}步]`,r.milestone?'msg-milestone':'msg-event');

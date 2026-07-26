@@ -16,6 +16,7 @@ import { npcSectTick } from "../sect/gameplay.js";
 import { QuestSystem, getAvailableQuests, acceptQuest, completeQuest } from "../quest/index.js";
 import { DungeonSystem, generateDungeon, exploreRoom } from "../dungeon/index.js";
 import { ContentEvolutionSystem } from "../content/index.js";
+import { ExplorationSystem } from "../exploration/index.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -408,6 +409,7 @@ export class SimulationEngine {
       { name: "quest",     fn: QuestSystem },
       { name: "dungeon",   fn: DungeonSystem },
       { name: "content",   fn: ContentEvolutionSystem },
+      { name: "explore",   fn: ExplorationSystem },
     ];
   }
   tick(kernel, time) {

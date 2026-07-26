@@ -14,8 +14,29 @@ canvas{display:block}
 import * as THREE from 'three';
 
 const BASE='http://localhost:3000';
-const COLORS={player:0x4488ff, npc:0x44ff44, monster:0xff4444};
 const AREA_OFFSETS={area_bamboo_grove:[0,0],area_misty_peak:[30,20],area_thunder_valley:[60,0],area_dragon_vein:[90,-10]};
+
+// ══════════════════════════════════════
+// Entity Visual Profiles (Renderer-owned, Runtime never imports)
+// Runtime says: "entity type=spirit_wolf at area X"
+// Renderer decides: spirit_wolf → dark box, 1.5x size, eye glow
+// ══════════════════════════════════════
+const ENTITY_VISUALS={
+  // Player
+  player:{ shape:"humanoid", color:0x4488ff, size:1.0, emissive:0x112244, name:"修士" },
+
+  // Monsters
+  wild_beast:    { shape:"box",      color:0x884422, size:1.2, emissive:0x221100, name:"野兽" },
+  spirit_wolf:   { shape:"box",      color:0x555566, size:1.5, emissive:0x111122, name:"灵狼",  eyes:0xffffff },
+  thunder_eagle: { shape:"flat",     color:0xccaa44, size:1.0, emissive:0x332200, name:"雷鹰",  eyes:0xffff00 },
+  demon_serpent: { shape:"long",     color:0x225522, size:1.0, emissive:0x112211, name:"魔蛇",  eyes:0xff0000 },
+  ancient_guard: { shape:"big",      color:0x666644, size:2.0, emissive:0x333322, name:"古卫",  eyes:0xff8800 },
+  boss_wyrm:     { shape:"tall",     color:0x993322, size:2.5, emissive:0x441100, name:"龙蟒",  eyes:0xff0000, crown:true },
+  shadow_dragon: { shape:"tall",     color:0x221133, size:3.0, emissive:0x110022, name:"影龙",  eyes:0xff00ff, crown:true },
+
+  // NPC
+  npc:{ shape:"humanoid", color:0x44ff44, size:0.9, emissive:0x112211, name:"修士" },
+};
 
 // ══════════════════════════════════════
 // Region Visual Profiles (Renderer-owned, Runtime never imports)
@@ -104,18 +125,61 @@ renderer.shadowMap.enabled=true;
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 document.body.appendChild(renderer.domElement);
 
-// ── Entity meshes ──
+// ── Entity meshes — type-driven visuals ──
 const meshes=new Map();
-function createMesh(type,id){
-  const color=COLORS[type]||0x888888;
-  const geo=new THREE.BoxGeometry(1.2,type==='player'?2:1.5,1.2);
-  const mat=new THREE.MeshStandardMaterial({color,roughness:0.5});
-  const mesh=new THREE.Mesh(geo,mat);
-  mesh.castShadow=true;mesh.receiveShadow=true;
-  mesh.userData={id,type};
-  scene.add(mesh);
-  meshes.set(id,mesh);
-  return mesh;
+function createMesh(type,id,entityType){
+  const v=ENTITY_VISUALS[entityType||type]||ENTITY_VISUALS.npc;
+  const s=v.size||1;
+  const group=new THREE.Group();
+  group.userData={id,type:entityType||type,visual:v};
+
+  switch(v.shape){
+    case "humanoid":{
+      const body=new THREE.Mesh(new THREE.BoxGeometry(0.8*s,1.2*s,0.6*s),new THREE.MeshStandardMaterial({color:v.color,roughness:0.4}));
+      body.position.y=1.0*s;body.castShadow=true;
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.35*s,6,4),new THREE.MeshStandardMaterial({color:v.color,roughness:0.3}));
+      head.position.y=1.8*s;
+      group.add(body);group.add(head);
+      break;
+    }
+    case "box":
+      group.add(new THREE.Mesh(new THREE.BoxGeometry(1.2*s,1.2*s,1.2*s),new THREE.MeshStandardMaterial({color:v.color,roughness:0.6,emissive:v.emissive,emissiveIntensity:0.3})));
+      break;
+    case "flat":
+      group.add(new THREE.Mesh(new THREE.BoxGeometry(2*s,0.6*s,1.2*s),new THREE.MeshStandardMaterial({color:v.color,roughness:0.6,emissive:v.emissive,emissiveIntensity:0.3})));
+      break;
+    case "long":
+      group.add(new THREE.Mesh(new THREE.BoxGeometry(0.8*s,0.8*s,2.5*s),new THREE.MeshStandardMaterial({color:v.color,roughness:0.6,emissive:v.emissive,emissiveIntensity:0.3})));
+      break;
+    case "big":
+      group.add(new THREE.Mesh(new THREE.BoxGeometry(1.8*s,2*s,1.8*s),new THREE.MeshStandardMaterial({color:v.color,roughness:0.7,emissive:v.emissive,emissiveIntensity:0.2})));
+      break;
+    case "tall":{
+      const body=new THREE.Mesh(new THREE.CylinderGeometry(0.8*s,1.0*s,3*s,8),new THREE.MeshStandardMaterial({color:v.color,roughness:0.5,emissive:v.emissive,emissiveIntensity:0.4}));
+      body.position.y=1.5*s;body.castShadow=true;
+      group.add(body);
+      // Crown ring for bosses
+      if(v.crown){
+        const ring=new THREE.Mesh(new THREE.TorusGeometry(1.0*s,0.15*s,8,16),new THREE.MeshStandardMaterial({color:0xffaa00,emissive:0xff6600,emissiveIntensity:0.8}));
+        ring.position.y=3.1*s;ring.rotation.x=Math.PI/2;
+        group.add(ring);
+      }
+      break;
+    }
+  }
+
+  // Eye glow
+  if(v.eyes){
+    const eyeGeo=new THREE.SphereGeometry(0.15*s,4,4);
+    const eyeMat=new THREE.MeshStandardMaterial({color:v.eyes,emissive:v.eyes,emissiveIntensity:1.5});
+    const left=new THREE.Mesh(eyeGeo,eyeMat);left.position.set(-0.3*s,0,0.6*s);group.add(left);
+    const right=new THREE.Mesh(eyeGeo,eyeMat);right.position.set(0.3*s,0,0.6*s);group.add(right);
+  }
+
+  group.castShadow=true;group.receiveShadow=true;
+  scene.add(group);
+  meshes.set(id,group);
+  return group;
 }
 
 // ── Runtime Bridge ──
@@ -146,18 +210,23 @@ async function syncWorld(){
       const offset=AREA_OFFSETS[lastArea]||[0,0];
       pm.position.set(offset[0],1,offset[1]);
     }
-
+    // NPCs
     const npcs=await (await fetch(BASE+'/api/npcs')).json();
     const aliveIds=new Set(['player']);
     for(const n of (Array.isArray(npcs)?npcs:[])){
       aliveIds.add(n.id||n.entityId);
       let m=meshes.get(n.id||n.entityId);
-      if(!m)m=createMesh('npc',n.id||n.entityId);
+      if(!m)m=createMesh('npc',n.id||n.entityId,'npc');
       const offset=AREA_OFFSETS[n.area||lastArea||'area_bamboo_grove']||[0,0];
-      m.position.set(offset[0]+(Math.random()-0.5)*8,1,offset[1]+(Math.random()-0.5)*8);
+      m.position.set(offset[0]+(Math.random()-0.5)*8,0,offset[1]+(Math.random()-0.5)*8);
     }
 
-    for(const[id,m]of meshes){if(!aliveIds.has(id)&&id!=='player'){scene.remove(m);meshes.delete(id);}}
+    // Monsters
+    const monsters=await (await fetch(BASE+'/api/npcs')).json();
+    // We read monster types from world state — for now use NPCs only
+    // Future: /api/monsters endpoint
+
+    for(const[id,m] of meshes){if(!aliveIds.has(id)&&id!=='player'){scene.remove(m);meshes.delete(id);}}
 
     if(w.tick!==lastTick){lastTick=w.tick;}
   }catch(e){console.error('sync:',e.message)}

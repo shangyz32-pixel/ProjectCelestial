@@ -20,11 +20,7 @@ export function createPlayer(scene) {
   scene.add(player);
 
   const position = { x: 0, z: 0 };
-  const mouseWorld = new THREE.Vector3();
-  const raycaster = new THREE.Raycaster();
-  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-
-  return { mesh: player, position, sword, raycaster, groundPlane, mouseWorld };
+  return { mesh: player, position, sword };
 }
 
 export function handleInput(keys, pos) {
@@ -67,27 +63,7 @@ export function createOrbit() {
   return orbit;
 }
 
-// Face the player toward the mouse position on the ground plane
-export function faceMouse(playerObj, camera) {
-  const { raycaster, groundPlane, mouseWorld, mesh } = playerObj;
-  if (!playerObj._mouse || !camera) return;
-
-  raycaster.setFromCamera(playerObj._mouse, camera);
-  raycaster.ray.intersectPlane(groundPlane, mouseWorld);
-
-  if (mouseWorld) {
-    const angle = Math.atan2(
-      mouseWorld.x - mesh.position.x,
-      mouseWorld.z - mesh.position.z
-    );
-    mesh.rotation.y = angle;
-  }
-}
-
-// Track mouse position (normalized -1..1)
-export function trackMouse(playerObj, event) {
-  playerObj._mouse = new THREE.Vector2(
-    (event.clientX / window.innerWidth) * 2 - 1,
-    -(event.clientY / window.innerHeight) * 2 + 1
-  );
+// Keep player facing same direction as camera orbit
+export function syncFacingToCamera(playerObj, orbit) {
+  playerObj.mesh.rotation.y = orbit.angle + Math.PI;
 }

@@ -482,7 +482,7 @@ async function doDialogue(data){
 }
 async function doCultivate(){
   try{
-    const r=await (await fetch(BASE+'/api/game/cultivate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'risky'})})).json();
+    const r=await (await fetch(BASE+'/api/game/cultivate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'risky'})})).json();
     const progress=Math.round((r.progress||0)*100);
     document.getElementById('log').innerHTML=`🧘 修炼 +${progress}% ${r.realm?'| Lv'+r.realm:''}`;
     if(r.hp_current)document.getElementById('hp-text').textContent='❤ '+r.hp_current+'/'+(r.hp_max||100);

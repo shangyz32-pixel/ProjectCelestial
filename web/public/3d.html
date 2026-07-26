@@ -273,7 +273,21 @@ async function sendMove(dx,dy){
 
 // ── WASD Controller ──
 const keys={};let playerX=0,playerZ=0;
-window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
+window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;
+  if(e.key.toLowerCase()==='e'){
+    e.preventDefault();
+    const pm=meshes.get('player');
+    if(pm)doExploreAt(pm.position);
+  }
+  if(e.key.toLowerCase()==='i'){
+    e.preventDefault();
+    toggleInventory();
+  }
+  if(e.key.toLowerCase()==='c'){
+    e.preventDefault();
+    doCultivate();
+  }
+});
 window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 function processInput(){
   const speed=0.3;
@@ -377,14 +391,22 @@ let interactionMenu=null;
 function showInteractionMenu(event,entityData){
   if(interactionMenu){document.body.removeChild(interactionMenu);interactionMenu=null;}
   const menu=document.createElement('div');
-  menu.style.cssText='position:absolute;background:rgba(0,0,0,0.85);border:1px solid #f90;border-radius:6px;padding:8px;z-index:100;color:#fff;font-size:12px;min-width:120px';
+  menu.style.cssText='position:absolute;background:rgba(0,0,0,0.9);border:2px solid #f90;border-radius:8px;padding:10px;z-index:100;color:#fff;font-size:12px;min-width:140px';
   menu.style.left=event.clientX+'px';menu.style.top=event.clientY+'px';
-  const profile=INTERACTIONS[entityData.interaction]||INTERACTIONS.npc;
-  menu.innerHTML=`<div style="color:${'#'+profile.color.toString(16)};margin-bottom:4px">${entityData.label||entityData.name}</div>
-    <button style="background:#f90;color:#000;border:0;padding:4px 12px;border-radius:3px;cursor:pointer;width:100%">${profile.label}</button>`;
+  menu.innerHTML=`<div style="color:#f90;margin-bottom:6px;font-weight:bold">${entityData.label||entityData.name}</div>`;
+  // Action buttons
+  const btns=[];
+  if(entityData.interaction==='npc')btns.push({t:'💬 对话',a:()=>doDialogue(entityData)});
+  if(entityData.interaction==='treasure')btns.push({t:'📦 打开宝箱',a:()=>doOpenChest(entityData)});
+  if(entityData.interaction==='furnace')btns.push({t:'🔥 炼丹',a:()=>window.open('/alchemy.html','_blank')});
+  if(entityData.interaction==='platform')btns.push({t:'🧘 修炼',a:()=>doCultivate()});
+  if(entityData.interaction==='blacksmith')btns.push({t:'⚒ 炼器',a:()=>doCraft(entityData)});
+  if(entityData.interaction==='chest')btns.push({t:'📦 存储',a:()=>doStorage(entityData)});
+  if(entityData.interaction==='portal')btns.push({t:'🌀 '+entityData.label,a:()=>doTravel(entityData)});
+  for(const b of btns) menu.innerHTML+=`<button onclick="this.closest('div').remove();(${b.a.toString()})()" style="display:block;width:100%;margin:2px 0;background:#333;color:#fff;border:1px solid #555;padding:6px;border-radius:3px;cursor:pointer;font-size:11px">${b.t}</button>`;
   document.body.appendChild(menu);
   interactionMenu=menu;
-  setTimeout(()=>{if(interactionMenu===menu){document.body.removeChild(menu);interactionMenu=null;}},5000);
+  setTimeout(()=>{if(interactionMenu===menu){document.body.removeChild(menu);interactionMenu=null;}},8000);
 }
 
 // Click to interact
@@ -407,4 +429,87 @@ window.addEventListener('click',e=>{
     }
   }
 });
+
+// ── P5 Vertical Slice: Action Functions ──
+async function doExploreAt(pos){
+  const r=await (await fetch(BASE+'/api/game/explore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area:lastArea||'area_bamboo_grove'})})).json();
+  if(r.type==='fight'||r.type==='victory'){
+    document.getElementById('log').innerHTML=r.msg||'战斗!';
+    if(r.damage)showDamage(pos,r.damage,r.critical);
+    if(r.type==='victory'){
+      // Spawn loot object
+      spawnLootObject(pos,r.loot||[]);
+    }
+  }else{document.getElementById('log').innerHTML=r.msg||'探索中...'}
+  setTimeout(syncWorld,500);
+}
+async function doDialogue(data){
+  try{
+    const r=await (await fetch(BASE+'/api/game/dialogue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:'greeting'})})).json();
+    document.getElementById('log').innerHTML='💬 '+((r.npc||'NPC')+': '+(r.text||'...')).slice(0,80);
+  }catch(e){document.getElementById('log').innerHTML='💬 你好，修士！';}
+}
+async function doCultivate(){
+  try{
+    const r=await (await fetch(BASE+'/api/game/cultivate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'risky'})})).json();
+    document.getElementById('log').innerHTML='🧘 '+((r.msg||'修炼中...')).slice(0,80);
+    setTimeout(syncWorld,500);
+  }catch(e){}
+}
+async function doTravel(data){
+  await fetch(BASE+'/api/game/explore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area:data.area,action:'move'})});
+  document.getElementById('log').innerHTML='🌀 传送至 '+data.label;
+  setTimeout(syncWorld,1000);
+}
+async function doOpenChest(data){
+  document.getElementById('log').innerHTML='📦 打开宝箱...获得灵石!';
+  setTimeout(syncWorld,500);
+}
+async function doCraft(data){document.getElementById('log').innerHTML='⚒ 炼器台已激活';}
+async function doStorage(data){document.getElementById('log').innerHTML='📦 储物箱已打开';}
+function toggleInventory(){
+  const inv=document.getElementById('inv-bar');
+  inv.style.background=inv.style.background==='rgba(0,0,0,0.9)'?'rgba(0,0,0,0.7)':'rgba(0,0,0,0.9)';
+}
+
+// Loot spawning
+function spawnLootObject(pos,lootList){
+  for(const l of lootList){
+    const g=new THREE.Mesh(new THREE.OctahedronGeometry(0.4),new THREE.MeshStandardMaterial({color:0xffaa00,emissive:0xff6600,emissiveIntensity:0.5}));
+    g.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*2,0.5,(Math.random()-0.5)*2));
+    g.userData={interaction:'treasure',label:l};
+    g.castShadow=true;
+    scene.add(g);
+    setTimeout(()=>{scene.remove(g);g.geometry.dispose();g.material.dispose();},15000);
+  }
+}
+
+// ── Interaction Points (placed in world) ──
+function addInteractionPoint(x,z,type,label,color,extraY=0.8){
+  const g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.6,0.3,8),new THREE.MeshStandardMaterial({color:0x444444}));
+  base.position.y=0.15;
+  const icon=new THREE.Mesh(new THREE.SphereGeometry(0.35,8,8),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:0.6}));
+  icon.position.y=extraY;
+  g.add(base);g.add(icon);
+  g.position.set(x,0,z);
+  g.userData={interaction:type,label};
+  g.castShadow=true;
+  scene.add(g);
+  envMeshes.push(g);
+  return g;
+}
+// Furnaces (3)
+addInteractionPoint(-5,8,'furnace','丹炉',0xff6600);
+addInteractionPoint(35,25,'furnace','灵火炉',0xff4400);
+addInteractionPoint(65,5,'furnace','古仙炉',0xff2200);
+// Platforms (3)
+addInteractionPoint(5,-10,'platform','修炼台',0x4488ff,1.0);
+addInteractionPoint(40,15,'platform','聚灵阵',0x00ff88,1.0);
+addInteractionPoint(75,-8,'platform','悟道石',0xff88ff,1.0);
+// Blacksmith (1)
+addInteractionPoint(-10,-15,'blacksmith','铁匠铺',0x888888);
+// Storage chests (2)
+addInteractionPoint(15,15,'chest','储物箱',0x886644,0.6);
+addInteractionPoint(60,10,'chest','储物箱',0x886644,0.6);
 </script>

@@ -8,6 +8,7 @@ import { checkAchievements, getEarnedAchievements } from "../../runtime/achievem
 import { calcCultivationMultiplier, resolveTribulation, calcTribulationResist } from "../../runtime/cultivation/index.js";
 import { MAJOR_REALMS, REGION_HIERARCHY, getRealmForArea } from "../../runtime/world/geography.js";
 import { createEquipment, generateLoot, equipItem, unequipItem, enhanceEquipment, getEquipmentModifiers } from "../../runtime/equipment/index.js";
+import { enterRegion, explore } from "../../runtime/exploration/index.js";
 import { WorldRandom } from "../../runtime/random/index.js";
 import { RECIPES, HERBS, FURNACES, FIRES, refinePill, consumePill, gatherHerb } from "../../runtime/alchemy/index.js";
 import { MATERIALS, CRAFTING_RECIPES, gatherMaterial, forgeEquipment, enchantEquipment, ascendEquipment } from "../../runtime/crafting/index.js";
@@ -275,20 +276,21 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const p = players[0];
       const area = params.area || "area_bamboo_grove";
-      const oldArea = p.getComponent("Location")?.area;
-      kernel.updateComponent(p.id, "Location", { area }, p.version);
-      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      const rng = new WorldRandom(42);
 
-      // Discovery chance: use ExplorationEventSystem
-      let eventData = null;
-      if (area !== oldArea && Math.random() < 0.40) {
-        const exploration = sim.exploration;
-        if (exploration && exploration.generateEvent) {
-          eventData = exploration.generateEvent(area);
-          if (eventData) exploration.activeEvents.set(eventData.eventId, eventData);
-        }
+      // Move action — just change location
+      if (params.action === "move") {
+        const identity = p.getComponent("Identity") || { name:"无名修士" };
+        const result = enterRegion(identity, p, area, kernel);
+        kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+        return send(200, result);
       }
-      return send(200, { area, event: eventData, ok: true });
+
+      // Explore action — encounter generation
+      const identity = p.getComponent("Identity") || { name:"无名修士" };
+      const result = explore(identity, p, kernel, rng);
+      kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+      return send(200, result);
     }
 
     case "/api/game/event/resolve": {

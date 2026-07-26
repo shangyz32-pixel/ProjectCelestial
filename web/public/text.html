@@ -218,10 +218,9 @@ async function sendCmd(){
       }
       case '世界': case 'world':{
         const w=await G('/api/world');
-        const qiTide=await G('/api/world/qi-tide').catch(()=>({}));
         log(`═══ 世界状态 ═══`,'msg-system');
         log(`Tick: ${w.tick}  |  灵气: ${(w.qi||1).toFixed(2)}  |  天气: ${w.weather||'晴'}`,'msg-event');
-        log(`实体: ${w.entities}  |  NPC: ${w.npcs||0}  |  灵潮: ${qiTide.tide||'正常'}`,'msg-system');
+        log(`实体: ${w.entities}  |  灵潮: ${w.qi_tide||'正常'}  |  季节: ${w.season||'?'}`,'msg-system');
         const npcs=await G('/api/npcs');
         if(Array.isArray(npcs)){
           log(`活跃修士: ${npcs.length}人`,'msg-npc');

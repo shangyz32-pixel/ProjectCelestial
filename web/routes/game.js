@@ -737,6 +737,32 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       return send(200, result);
     }
 
+    case "/api/game/breakthrough": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(200, { ok: false, msg: "没有角色" });
+      const p = players[0];
+      const realm = p.getComponent("Realm") || {};
+      if (!realm.breakthrough_ready) return send(200, { ok: false, msg: "还未到突破时机，继续修炼吧" });
+      const bonus = realm.breakthrough_bonus || 0;
+      const success = Math.random() < (0.35 + bonus);
+      if (success) {
+        const newId = (realm.realm_id || 1) + 1;
+        const realms = ["凡人","炼气期","筑基期","金丹期","元婴期","化神期","渡劫期"];
+        kernel.updateComponent(p.id, "Realm", {
+          ...realm, realm_id: newId, cultivation_value: 0,
+          breakthrough_ready: false, breakthrough_bonus: 0, breakthroughs: (realm.breakthroughs||0)+1
+        }, p.version);
+        kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+        return send(200, { ok: true, msg: `突破成功！踏入${realms[newId]||'更高境界'}！` });
+      } else {
+        kernel.updateComponent(p.id, "Realm", {
+          ...realm, breakthrough_ready: false, breakthrough_bonus: 0
+        }, p.version);
+        kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
+        return send(200, { ok: false, msg: "突破失败！天劫将至，继续修炼积累底蕴" });
+      }
+    }
+
     default:
       return null;
   }

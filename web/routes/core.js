@@ -15,6 +15,7 @@ export function registerCoreRoutes(kernel, sim, snap, history, config, send, url
         season: t.season, era: t.era,
         weather: kernel.world.globalState.weather.get("world"),
         qi: kernel.world.globalState.qi.get("world"),
+        qi_tide: kernel.world.globalState.qi_tide?.get?.("world") || "正常",
         entities: kernel.world.entities.size,
         animals: Array.from(kernel.world.entities.values()).filter(e => e.type === "animal" && e.state !== "dead").length,
         plants: Array.from(kernel.world.entities.values()).filter(e => e.type === "plant" && e.state !== "dead").length,

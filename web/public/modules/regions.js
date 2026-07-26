@@ -2,6 +2,7 @@
 // Region-driven scene — each area has its own terrain, sky, fog.
 
 import * as THREE from 'three';
+import { createChineseTown } from './chinese_town.js';
 
 const regionDefs = {
   town: {
@@ -71,7 +72,12 @@ export function createRegionManager(scene) {
     scene.add(gnd);
     meshes.terrain.push(gnd);
 
-    // Trees
+    // Town buildings — Chinese fantasy style
+    if (regionId === 'town') {
+      const townMeshes = createChineseTown(scene);
+      meshes.decorations.push(...townMeshes);
+    } else {
+      // Trees
     for (let i = 0; i < r.trees; i++) {
       const tx = (Math.random() - 0.5) * 60;
       const tz = (Math.random() - 0.5) * 60;
@@ -95,6 +101,7 @@ export function createRegionManager(scene) {
       scene.add(rock);
       meshes.decorations.push(rock);
     }
+    } // end else (non-town regions)
 
     return r.name;
   }

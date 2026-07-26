@@ -277,11 +277,10 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const p = players[0];
       const area = params.area || "area_bamboo_grove";
       const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
-      const identity = p.getComponent("Identity") || { name:"无名修士" };
       // Move action — just change location
       if (params.action === "move") {
-        const identity = p.getComponent("Identity") || { name:"无名修士" };
-        const result = enterRegion(identity, p, area, kernel);
+        const id2 = p.getComponent("Identity") || { name:"无名修士" };
+        const result = enterRegion(id2, p, area, kernel);
         kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
         return send(200, result);
       }

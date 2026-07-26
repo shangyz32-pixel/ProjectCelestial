@@ -293,14 +293,14 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       return send(200, result);
     }
 
-    case \"/api/game/move\": {
-      const players = kernel.queryEntities(\"player\", {}, 1, 0);
-      if (players.length === 0) return send(200, { error: \"No player\" });
+    case "/api/game/move": {
+      const players = kernel.queryEntities("player", {}, 1, 0);
+      if (players.length === 0) return send(200, { error: "No player" });
       const p = players[0];
-      const loc = p.getComponent(\"Location\") || {};
+      const loc = p.getComponent("Location") || {};
       const x = (loc.x||0) + (params.dx||0);
       const y = (loc.y||0) + (params.dy||0);
-      kernel.updateComponent(p.id, \"Location\", { ...loc, x, y }, p.version);
+      kernel.updateComponent(p.id, "Location", { ...loc, x, y }, p.version);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
       return send(200, { ok:true, x, y, area:loc.area });
     }

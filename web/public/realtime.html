@@ -37,12 +37,24 @@ import { createTown } from './modules/town.js';
 import { createPlayer, handleInput, followCamera } from './modules/player.js';
 import { syncMonsters } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
+import { createMinimap } from './modules/minimap.js';
 
 const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
 createTerrain(scene);
 createTown(scene);
 const player = createPlayer(scene);
+const minimap = createMinimap();
+
+// Minimap click → teleport player to region
+window.addEventListener('minimap-click', (e) => {
+  const areaMap = { town: 'area_bamboo_grove', bamboo: 'area_bamboo_grove', misty: 'area_misty_peak', thunder: 'area_thunder_valley', dragon: 'area_dragon_vein' };
+  const area = areaMap[e.detail.id];
+  if (area) {
+    fetch(B + '/api/game/explore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ area, action: 'move' }) });
+    document.getElementById('log').textContent = '🌀 传送至 ' + (e.detail.label || '区域') + '...';
+  }
+});
 
 // WASD
 const keys = {};
@@ -60,6 +72,10 @@ createSync(`ws://localhost:3000/ws`, (state) => {
     document.getElementById('hp').textContent = '❤ ' + (state.player.hp || 100) + '/' + (state.player.hpMax || 100);
   }
   document.getElementById('log').textContent = '🔄 T' + state.tick + ' | 🌿' + state.plants + ' 🦌' + state.animals + ' 🐉' + state.beasts;
+  // Update minimap
+  const playerArea = state.player?.area || 'area_bamboo_grove';
+  const minimapRegions = { area_bamboo_grove: 'bamboo', area_misty_peak: 'misty', area_thunder_valley: 'thunder', area_dragon_vein: 'dragon' };
+  minimap.draw(minimapRegions[playerArea] || 'town');
   // Monsters
   syncMonsters(scene, state.monsters || []);
 });

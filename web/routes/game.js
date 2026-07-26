@@ -276,7 +276,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       if (players.length === 0) return send(400, { error: "No player" });
       const p = players[0];
       const area = params.area || "area_bamboo_grove";
-      const rng = new WorldRandom(42 + kernel.world.tickCount + Math.floor(Date.now()/1000));
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const identity = p.getComponent("Identity") || { name:"无名修士" };
       // Move action — just change location
       if (params.action === "move") {

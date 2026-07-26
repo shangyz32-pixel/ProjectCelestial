@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Celestial — 修仙世界</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a12;color:#ccc;font-family:system-ui,sans-serif;display:flex;height:100vh}
+#game{flex:1;position:relative}
+canvas{display:block}
+#hud{position:absolute;top:10px;left:10px;right:10px;pointer-events:none;z-index:10}
+.bar-row{display:flex;gap:10px;align-items:center;margin-bottom:4px}
+.bar{height:18px;border-radius:3px;overflow:hidden;position:relative;background:rgba(0,0,0,0.6)}
+.bar-fill{height:100%;transition:width 0.3s}
+.bar-text{position:absolute;top:0;left:0;width:100%;text-align:center;line-height:18px;font-size:11px;color:#fff;text-shadow:0 0 3px #000}
+#hp-bar{width:220px}#hp-fill{background:linear-gradient(to top,#700,#f44)}#qi-bar{width:120px}#qi-fill{background:linear-gradient(to top,#007,#44f)}
+#sidebar{width:180px;background:rgba(0,0,0,0.5);border-left:1px solid rgba(255,255,255,0.1);padding:10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+#sidebar h3{color:#f90;font-size:10px;letter-spacing:2px;text-align:center}
+.btn{width:100%;padding:8px;border:1px solid #333;border-radius:4px;cursor:pointer;font-size:11px;color:#fff;text-align:center}
+.btn:hover{opacity:0.8}.btn:active{opacity:0.6}
+.btn-gold{background:#342;border-color:#f90;color:#f90}
+.btn-danger{background:rgba(200,40,40,0.3);border-color:#f44;color:#f88}
+.btn-info{background:rgba(40,40,200,0.3);border-color:#44f;color:#88f}
+.btn-green{background:rgba(40,180,40,0.3);border-color:#4f4;color:#8f8}
+#log{position:absolute;bottom:10px;left:10px;right:190px;font-size:10px;color:#ff0;pointer-events:none;z-index:10;max-height:60px;overflow:hidden}
+#inv-list{font-size:10px;line-height:1.4}
+#inv-list div{padding:2px 0}
+</style></head><body>
+<div id="game">
+  <canvas id="cv"></canvas>
+  <div id="hud">
+    <div class="bar-row">
+      <div id="hp-bar" class="bar"><div id="hp-fill" class="bar-fill"></div><div id="hp-text" class="bar-text">❤ 100/100</div></div>
+      <div id="qi-bar" class="bar"><div id="qi-fill" class="bar-fill"></div><div id="qi-text" class="bar-text">💠 50/50</div></div>
+      <span id="stam" style="font-size:10px;color:#8f8">⚡ 100</span>
+    </div>
+    <div style="font-size:10px;color:#888"><span id="tick"></span> | <span id="area"></span> | Lv<span id="realm"></span> <span id="progress"></span></div>
+  </div>
+  <div id="log"></div>
+</div>
+<div id="sidebar">
+  <h3>◈ 修仙面板 ◈</h3>
+  <button class="btn btn-danger" onclick="cultivate('risky')">⚡ 冒险修炼 +5%</button>
+  <button class="btn btn-info" onclick="cultivate('normal')">✦ 普通修炼 +2%</button>
+  <button class="btn btn-green" onclick="rest()">🛌 休息 +30体力</button>
+  <button class="btn btn-gold" onclick="doExplore()">🔍 探索区域</button>
+  <button class="btn" onclick="gather()">🌿 采集灵草</button>
+  <button class="btn btn-gold" onclick="attemptBreakthrough()">💫 突破</button>
+  <hr style="border-color:rgba(255,255,255,0.1)">
+  <h3 style="color:#ff0">🎒 背包</h3>
+  <div id="inv-list"></div>
+</div>
+<script>
+const B='http://localhost:3000';
+let state={tick:0,area:'翠竹林',realm:1,progress:0,hp:100,hpmax:100,qi:50,qimax:50,stam:100,inv:{}};
+
+async function P(path,data){
+  try{const r=await fetch(B+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data||{})});return await r.json()}catch(e){return{error:e.message}}
+}
+async function G(path){try{return await(await fetch(B+path)).json()}catch(e){return{}}}
+
+function updateHUD(p){
+  if(!p||!p.name)return;
+  state.hp=p.hp_current||100;state.hpmax=p.hp_max||100;state.qi=p.qi||p.qi_current||50;state.qimax=p.qi_max||50;
+  document.getElementById('hp-fill').style.width=(state.hp/state.hpmax*100)+'%';
+  document.getElementById('hp-text').textContent='❤ '+state.hp+'/'+state.hpmax;
+  document.getElementById('qi-fill').style.width=(state.qi/state.qimax*100)+'%';
+  document.getElementById('qi-text').textContent='💠 '+state.qi+'/'+state.qimax;
+  document.getElementById('stam').textContent='⚡ '+(p.stam_current||p.stamina_current||100);
+  document.getElementById('realm').textContent=p.realm_id||1;
+  document.getElementById('progress').textContent=Math.round((p.cultivation||p.progress||0)*100)+'%';
+  const inv=p.inventory||{};
+  const names={spirit_herb:'灵草',jade_shard:'灵石碎片',spirit_stone:'灵石',ancient_jade:'古玉',dragon_scale:'龙鳞',thunder_ore:'雷晶',spirit_grass:'灵草'};
+  let invHTML='';
+  for(const[k,v]of Object.entries(inv))if(v>0)invHTML+='<div>'+(names[k]||k)+' x'+v+'</div>';
+  document.getElementById('inv-list').innerHTML=invHTML||'<span style="color:#888">空空如也</span>';
+}
+
+async function refresh(){
+  const w=await G('/api/world');
+  document.getElementById('tick').textContent='Tick:'+(w.tick||0);
+  const p=await G('/api/game/player');
+  const data=p.player||p;
+  document.getElementById('area').textContent=data.current_area||data.area||'翠竹林';
+  state.area=data.current_area||data.area||'翠竹林';
+  updateHUD(data);
+}
+
+async function cultivate(mode){
+  const r=await P('/api/game/cultivate',{mode});
+  document.getElementById('log').innerHTML=r.ok?('🧘 '+r.msg):('⚠ '+r.msg);
+  setTimeout(refresh,300);
+}
+async function rest(){
+  const r=await P('/api/game/rest');
+  document.getElementById('log').innerHTML=r.msg||'🛌 休息完成';
+  setTimeout(refresh,300);
+}
+async function doExplore(){
+  const r=await P('/api/game/explore',{area:state.area||'area_bamboo_grove'});
+  document.getElementById('log').innerHTML=r.msg||(r.type==='fight'?'⚔ 战斗!':r.type==='victory'?'⚔ 击杀!':'🌲 探索中...');
+  setTimeout(refresh,500);
+}
+async function gather(){
+  const r=await P('/api/game/alchemy/gather',{herb:'spirit_grass'});
+  document.getElementById('log').innerHTML=r.empty?'未找到灵草':'🌿 灵草 +1';
+  setTimeout(refresh,300);
+}
+async function attemptBreakthrough(){
+  const r=await P('/api/game/breakthrough');
+  document.getElementById('log').innerHTML=r.msg||(r.ok?'💫 突破成功!':'💫 '+r.error);
+  setTimeout(refresh,500);
+}
+
+// Canvas
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+function resize(){cv.width=window.innerWidth-180;cv.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+
+let px=200,py=200;
+const keys={};
+window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;e.preventDefault()});
+window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+
+function gameLoop(){
+  // Movement
+  if(keys['w']||keys['arrowup'])py-=2;
+  if(keys['s']||keys['arrowdown'])py+=2;
+  if(keys['a']||keys['arrowleft'])px-=2;
+  if(keys['d']||keys['arrowright'])px+=2;
+  px=Math.max(20,Math.min(cv.width-20,px));
+  py=Math.max(20,Math.min(cv.height-20,py));
+
+  // Draw
+  ctx.fillStyle='#0a1a0a';ctx.fillRect(0,0,cv.width,cv.height);
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.03)';
+  for(let x=0;x<cv.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height);ctx.stroke()}
+  for(let y=0;y<cv.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width,y);ctx.stroke()}
+  // Trees
+  ctx.fillStyle='#1a3a1a';
+  for(let i=0;i<30;i++){const tx=((i*137+50)%(cv.width-40))+20;const ty=((i*263+30)%(cv.height-40))+20;ctx.beginPath();ctx.arc(tx,ty,8,0,Math.PI*2);ctx.fill()}
+  // Area label
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='bold 24px system-ui';
+  ctx.fillText(state.area||'翠竹林',30,cv.height-40);
+  // Player
+  ctx.fillStyle='#4488ff';ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  // Area marker
+  const AREAS={area_bamboo_grove:{x:200,y:200,l:'翠竹林',c:'#3a3'},area_misty_peak:{x:500,y:100,l:'云雾峰',c:'#aaa'},area_thunder_valley:{x:450,y:350,l:'雷音谷',c:'#a4a'},area_dragon_vein:{x:600,y:250,l:'龙脉秘境',c:'#fa0'}};
+  for(const[a,d]of Object.entries(AREAS)){
+    ctx.fillStyle=d.c+'40';ctx.beginPath();ctx.arc(d.x,d.y,25,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=d.c;ctx.font='10px system-ui';ctx.fillText('🌀 '+d.l,d.x-20,d.y-15);
+  }
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+// Auto-create player
+(async()=>{const p=await G('/api/game/player');if(!p.player||!p.player.name){await P('/api/game/player/create',{name:'云游道人'})}refresh()})();
+setInterval(refresh,3000);
+</script></body></html>

@@ -204,9 +204,19 @@ function createMesh(type,id,entityType){
 }
 
 // ── Runtime Bridge ──
-let lastTick=0,lastArea=null;
+let lastTick=0,lastArea=null,playerCreated=false;
 async function syncWorld(){
   try{
+    // Auto-create player if none exists
+    if(!playerCreated){
+      try{
+        const check=await (await fetch(BASE+'/api/game/player')).json();
+        if(!check.player||!check.player.name){
+          await fetch(BASE+'/api/game/player/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'云游道人'})});
+        }
+        playerCreated=true;
+      }catch(e){console.error('player create fail:',e.message)}
+    }
     const w=await (await fetch(BASE+'/api/world')).json();
     document.getElementById('tick').textContent='Tick: '+w.tick;
     document.getElementById('ent').textContent='Ent: '+w.entities;
@@ -228,8 +238,12 @@ async function syncWorld(){
     if(pData&&pData.name){
       let pm=meshes.get('player');
       if(!pm)pm=createMesh('player','player');
-      const offset=AREA_OFFSETS[lastArea]||[0,0];
-      pm.position.set(offset[0],1,offset[1]);
+      // Position from player's actual location
+      const pArea=pData.current_area||pData.area||'area_bamboo_grove';
+      const offset=AREA_OFFSETS[pArea]||[0,0];
+      const px=(pData.x||0)+(offset[0]);
+      const pz=(pData.y||0)+(offset[1]);
+      pm.position.set(px,1,pz);
     }
     // NPCs
     const npcs=await (await fetch(BASE+'/api/npcs')).json();
@@ -447,16 +461,18 @@ window.addEventListener('click',e=>{
 
 // ── P5 Vertical Slice: Action Functions ──
 async function doExploreAt(pos){
-  const r=await (await fetch(BASE+'/api/game/explore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area:lastArea||'area_bamboo_grove'})})).json();
+  const area=lastArea||'area_bamboo_grove';
+  const r=await (await fetch(BASE+'/api/game/explore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area})})).json();
   if(r.type==='fight'||r.type==='victory'){
-    document.getElementById('log').innerHTML=r.msg||'战斗!';
+    document.getElementById('log').innerHTML=r.msg||'⚔ 战斗! '+(r.monster?.name||'');
     if(r.damage)showDamage(pos,r.damage,r.critical);
-    if(r.type==='victory'){
-      // Spawn loot object
-      spawnLootObject(pos,r.loot||[]);
+    if(r.monsterDmg&&lastArea){
+      const offset=AREA_OFFSETS[lastArea]||[0,0];
+      showDamage(new THREE.Vector3(offset[0],1.5,offset[1]),r.monsterDmg,false);
     }
-  }else{document.getElementById('log').innerHTML=r.msg||'探索中...'}
-  setTimeout(syncWorld,500);
+    if(r.type==='victory')spawnLootObject(pos,r.loot||[]);
+  }else{document.getElementById('log').innerHTML=r.msg||'🌲 探索中... (按E继续)'}
+  setTimeout(syncWorld,800);
 }
 async function doDialogue(data){
   try{
@@ -467,25 +483,37 @@ async function doDialogue(data){
 async function doCultivate(){
   try{
     const r=await (await fetch(BASE+'/api/game/cultivate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'risky'})})).json();
-    document.getElementById('log').innerHTML='🧘 '+((r.msg||'修炼中...')).slice(0,80);
+    const progress=Math.round((r.progress||0)*100);
+    document.getElementById('log').innerHTML=`🧘 修炼 +${progress}% ${r.realm?'| Lv'+r.realm:''}`;
+    if(r.hp_current)document.getElementById('hp-text').textContent='❤ '+r.hp_current+'/'+(r.hp_max||100);
     setTimeout(syncWorld,500);
-  }catch(e){}
+  }catch(e){document.getElementById('log').innerHTML='🧘 修炼中...'}
 }
+async function toggleInventory(){
+  let panel=document.getElementById('inv-panel');
+  if(panel){panel.remove();return}
+  panel=document.createElement('div');
+  panel.id='inv-panel';
+  panel.style.cssText='position:absolute;bottom:80px;right:20px;background:rgba(0,0,0,0.9);border:2px solid #f90;border-radius:8px;padding:12px;z-index:100;color:#fff;font-size:12px;min-width:180px;max-height:300px;overflow-y:auto';
+  const entries=[];
+  try{
+    const p=await (await fetch(BASE+'/api/game/player')).json();
+    const inv=(p.player||p).inventory||{};
+    const names={spirit_herb:'灵草',jade_shard:'灵石碎片',spirit_stone:'灵石',ancient_jade:'古玉',dragon_scale:'龙鳞',thunder_ore:'雷晶',spirit_grass:'灵草'};
+    for(const[k,v]of Object.entries(inv))if(v>0)entries.push((names[k]||k)+' x'+v);
+  }catch(e){}
+  panel.innerHTML='<div style="color:#f90;font-weight:bold;margin-bottom:6px">🎒 背包</div>'+(entries.length?entries.map(e=>'<div>'+e+'</div>').join(''):'<div style="color:#888">空空如也...</div>');
+  document.body.appendChild(panel);
+}
+
 async function doTravel(data){
   await fetch(BASE+'/api/game/explore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area:data.area,action:'move'})});
   document.getElementById('log').innerHTML='🌀 传送至 '+data.label;
   setTimeout(syncWorld,1000);
 }
-async function doOpenChest(data){
-  document.getElementById('log').innerHTML='📦 打开宝箱...获得灵石!';
-  setTimeout(syncWorld,500);
-}
-async function doCraft(data){document.getElementById('log').innerHTML='⚒ 炼器台已激活';}
-async function doStorage(data){document.getElementById('log').innerHTML='📦 储物箱已打开';}
-function toggleInventory(){
-  const inv=document.getElementById('inv-bar');
-  inv.style.background=inv.style.background==='rgba(0,0,0,0.9)'?'rgba(0,0,0,0.7)':'rgba(0,0,0,0.9)';
-}
+async function doOpenChest(){document.getElementById('log').innerHTML='📦 打开宝箱...';}
+async function doCraft(){document.getElementById('log').innerHTML='⚒ 炼器台已激活';}
+async function doStorage(){document.getElementById('log').innerHTML='📦 储物箱已打开';}
 
 // Loot spawning
 function spawnLootObject(pos,lootList){

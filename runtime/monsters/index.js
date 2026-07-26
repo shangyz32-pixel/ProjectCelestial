@@ -5,6 +5,7 @@
 
 import { WorldRandom } from "../random/index.js";
 import { getEquipmentModifiers } from "../equipment/index.js";
+import { calcDamage } from "../combat/index.js";
 
 // ══════════════════════════════════════
 // Monster Definitions
@@ -30,17 +31,6 @@ const REGION_HABITATS = {
 
 // Population caps
 const REGION_CAPS = { area_bamboo_grove:4, area_misty_peak:6, area_thunder_valley:8, area_dragon_vein:10 };
-
-// Element reference (single source of truth — matches combat engine)
-const ELEMENT_STRONG = { metal:["wood"],wood:["earth"],water:["fire"],fire:["metal"],earth:["water"],lightning:["water"],ice:["wind"],wind:["lightning"],light:["dark"],dark:["light"] };
-const ELEMENT_WEAK   = { metal:["fire"],wood:["metal"],water:["earth"],fire:["water"],earth:["wood"],lightning:["earth"],ice:["fire"],wind:["ice"],light:[],dark:[] };
-
-function getElementMultiplier(attElement, defElement) {
-  if (!attElement || !defElement) return 1.0;
-  if (ELEMENT_STRONG[attElement]?.includes(defElement)) return 1.3;
-  if (ELEMENT_WEAK[attElement]?.includes(defElement)) return 0.7;
-  return 1.0;
-}
 
 // ══════════════════════════════════════
 // Phase 5 — Boss state tracking
@@ -155,21 +145,8 @@ export const MonsterEncounterSystem = {
       const mHp = m.getComponent("HP") || { current:100, max:100 };
       const tHp = t.getComponent("HP") || { current:100, max:100 };
 
-      // Combat formula — integrated with equipment + element
-      const mRealm = m.getComponent("Realm")?.realm_id || 1;
-      const tRealm = t.getComponent("Realm")?.realm_id || 1;
-      const mAtk = (m.getComponent("Combat")?.attack || 10);
-      const tDef = (t.getComponent("Combat")?.defense || 2);
-      const eqTarget = getEquipmentModifiers(t);
-
-      // Element multiplier — unified with combat engine
-      const mElement = m.getComponent("SpiritualRoot")?.element || "none";
-      const tElement = t.getComponent("SpiritualRoot")?.element || "none";
-      const elemMult = getElementMultiplier(mElement, tElement);
-
-      // Damage calculation
-      const baseDmg = mAtk + (mRealm - tRealm) * 3 - (tDef + (eqTarget.defBonus||0)) * 0.5 + random.nextInt(-3, 5);
-      const damage = Math.max(1, Math.floor(baseDmg * elemMult));
+      // Combat formula — integrated with unified Combat Engine
+      const { damage, critical, elementMultiplier } = calcDamage(m, t, "attack", random);
 
       // Boss check
       const bossComp = m.getComponent("Boss");

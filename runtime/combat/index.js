@@ -24,7 +24,7 @@ const ELEMENT_MATRIX = {
   chaos:  { strong:[], weak:[] },
 };
 
-function getElementMultiplier(attRoot, defRoot) {
+export function getElementMultiplier(attRoot, defRoot) {
   if (!attRoot || !defRoot) return 1.0;
   const defElement = defRoot.element || "none";
   const attElement = attRoot.element || "none";
@@ -136,7 +136,7 @@ function getBuffMultiplier(entity, statType) {
 // ══════════════════════════════════════
 // Damage Formula (enhanced v2.0)
 // ══════════════════════════════════════
-function calcDamage(attacker, defender, action, random) {
+export function calcDamage(attacker, defender, action, random) {
   const aRealm = attacker.getComponent("Realm")?.realm_id || 1;
   const dRealm = defender.getComponent("Realm")?.realm_id || 1;
   const realmDiff = aRealm - dRealm;

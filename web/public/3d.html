@@ -28,6 +28,14 @@ canvas{display:block}
   <div id="qi-bar"><div id="qi-fill"></div><div id="qi-text"></div></div>
   <div id="skill-bar"><div class="skill-slot">⚔</div><div class="skill-slot">🗡</div><div class="skill-slot">🛡</div></div>
   <div id="inv-bar">🎒 空</div>
+  <div id="action-bar" style="position:absolute;right:15px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:50">
+    <button class="abtn" onclick="doCultivateAction('risky')" style="background:#c0392b;color:#fff;border:0;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold">⚡ 冒险修炼</button>
+    <button class="abtn" onclick="doCultivateAction('normal')" style="background:#2980b9;color:#fff;border:0;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:10px">✦ 普通修炼</button>
+    <button class="abtn" onclick="doRest()" style="background:#27ae60;color:#fff;border:0;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:10px">🛌 休息</button>
+    <button class="abtn" onclick="doExploreAt()" style="background:#f39c12;color:#000;border:0;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold">🔍 探索</button>
+    <button class="abtn" onclick="doGather('spirit_grass')" style="background:#8e44ad;color:#fff;border:0;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:10px">🌿 采集灵草</button>
+    <button class="abtn" onclick="doBreakthrough()" style="background:#f1c40f;color:#000;border:0;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold">💫 突破</button>
+  </div>
 </div>
 <div id="log"></div>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
@@ -514,6 +522,40 @@ async function doTravel(data){
 async function doOpenChest(){document.getElementById('log').innerHTML='📦 打开宝箱...';}
 async function doCraft(){document.getElementById('log').innerHTML='⚒ 炼器台已激活';}
 async function doStorage(){document.getElementById('log').innerHTML='📦 储物箱已打开';}
+
+async function doCultivateAction(mode){
+  try{
+    const r=await (await fetch(BASE+'/api/game/cultivate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode})})).json();
+    if(r.ok){
+      document.getElementById('log').innerHTML=`🧘 修炼 +${Math.round((r.progress||0)*100)}%`+(r.hp_current?` | HP:${r.hp_current}`:'');
+    }else{
+      document.getElementById('log').innerHTML='⚠ '+r.msg;
+    }
+    setTimeout(syncWorld,500);
+  }catch(e){document.getElementById('log').innerHTML='🧘 修炼中...'}
+}
+async function doRest(){
+  try{
+    const r=await (await fetch(BASE+'/api/game/rest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})).json();
+    document.getElementById('log').innerHTML=r.msg||'🛌 休息恢复体力';
+    setTimeout(syncWorld,500);
+  }catch(e){document.getElementById('log').innerHTML='🛌 休息完成'}
+}
+async function doGather(herb){
+  try{
+    const r=await (await fetch(BASE+'/api/game/alchemy/gather',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({herb})})).json();
+    document.getElementById('log').innerHTML=r.empty?'未找到药材':`🌿 ${r.name||herb} +1`;
+    setTimeout(syncWorld,500);
+  }catch(e){}
+}
+async function doBreakthrough(){
+  try{
+    const r=await (await fetch(BASE+'/api/game/breakthrough',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})).json();
+    document.getElementById('log').innerHTML=r.msg||(r.ok?'💫 突破成功!':'💫 突破失败');
+    if(r.ok)showDeathEffect(new THREE.Vector3(0,2,0),0xffff00);
+    setTimeout(syncWorld,800);
+  }catch(e){document.getElementById('log').innerHTML='💫 突破...' }
+}
 
 // Loot spawning
 function spawnLootObject(pos,lootList){

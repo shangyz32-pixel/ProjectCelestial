@@ -64,6 +64,25 @@ function applyBuffs(entity, kernel, random) {
 }
 
 // ══════════════════════════════════════
+// Combat Event System (M10 — v2.2 Sprint 4)
+// Unified event bus: all combat state changes emit events.
+// Observer, Narrative, Quest, Replay listen to these.
+// ══════════════════════════════════════
+export const CombatEvents = {
+  _events: [],
+  emit(type, data) {
+    const event = { type, ...data, tick: data.tick||0, ts: Date.now() };
+    this._events.push(event);
+    this._events = this._events.slice(-500); // keep recent
+    return event;
+  },
+  getRecent(n) { return this._events.slice(-(n||50)); },
+  since(tick) { return this._events.filter(e => e.tick >= tick); },
+  clear() { this._events = []; },
+  count() { return this._events.length; },
+};
+
+// ══════════════════════════════════════
 // Combo System (v2.1) — data-driven chains
 // ══════════════════════════════════════
 export const COMBOS = {
@@ -241,7 +260,7 @@ export class CombatEngine {
 
     const attEntity = kernel.getEntity(battle.attacker);
     const defEntity = kernel.getEntity(battle.defender);
-    if (!attEntity || !defEntity) { battle.status = "ended"; return { ...battle, result: "entity_gone" }; }
+    if (!attEntity || !defEntity) { battle.status = "ended"; CombatEvents.emit("CombatEnded",{sessionId:battle.id,result:"entity_gone",tick:kernel.world?.tickCount}); return { ...battle, result: "entity_gone" }; }
 
     const attName = (attEntity.getComponent("Identity") || {}).name || battle.attacker;
     const defName = (defEntity.getComponent("Identity") || {}).name || battle.defender;
@@ -294,13 +313,11 @@ export class CombatEngine {
         practiceSkill(attEntity, skillId, kernel);
         // Apply cooldown
         applyCooldown(skillId, attEntity, kernel);
-        if (newHP <= 0) { battle.status = "ended"; battle.victor = attEntity.id; entry.result = "kill"; entry.message += " — 击杀！"; }
+        if (newHP <= 0) { battle.status = "ended"; battle.victor = attEntity.id; entry.result = "kill"; entry.message += " — 击杀！"; CombatEvents.emit("EntityDied",{sessionId:battle.id,victim:defName,killer:attName,tick:kernel.world?.tickCount}); }
         battle.log.push(entry); break;
       }
-
       case "defend":
         entry.result = "defended"; entry.message = `${attName} 转为防御姿态`; battle.log.push(entry); break;
-
       case "flee":
         if (checkFlee(attEntity, defEntity, this.random)) {
           battle.status = "ended"; battle.result = "fled"; entry.result = "fled"; entry.message = `${attName} 成功逃脱！`;

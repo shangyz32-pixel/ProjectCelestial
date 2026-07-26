@@ -35,7 +35,7 @@ canvas{display:block}
 <script type="module">
 import { createScene } from './modules/scene.js';
 import { createRegionManager } from './modules/regions.js';
-import { createPlayer, handleInput, followCamera, faceMouse, trackMouse } from './modules/player.js';
+import { createPlayer, handleInput, followCamera, faceMouse, trackMouse, createOrbit } from './modules/player.js';
 import { syncMonsters } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
 import { createMinimap } from './modules/minimap.js';
@@ -44,6 +44,7 @@ const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
 const regions = createRegionManager(scene);
 const player = createPlayer(scene);
+const orbit = createOrbit();
 const minimap = createMinimap();
 
 // Start in town
@@ -96,7 +97,7 @@ function loop() {
   player.mesh.position.x = player.position.x;
   player.mesh.position.z = player.position.z;
   faceMouse(player, camera);
-  followCamera(camera, player.position);
+  followCamera(camera, player.position, orbit);
   renderer.render(scene, camera);
 }
 loop();

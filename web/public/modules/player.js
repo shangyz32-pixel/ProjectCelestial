@@ -36,10 +36,35 @@ export function handleInput(keys, pos) {
   pos.z = Math.max(-45, Math.min(45, pos.z));
 }
 
-export function followCamera(camera, pos) {
-  camera.position.x += (pos.x - camera.position.x) * 0.05;
-  camera.position.z += (pos.z + 20 - camera.position.z) * 0.05;
-  camera.lookAt(pos.x, 0, pos.z);
+export function followCamera(camera, pos, orbit) {
+  const { angle, distance, height } = orbit;
+  const tx = pos.x + Math.cos(angle) * distance;
+  const tz = pos.z + Math.sin(angle) * distance;
+  camera.position.x += (tx - camera.position.x) * 0.08;
+  camera.position.y += (height - camera.position.y) * 0.08;
+  camera.position.z += (tz - camera.position.z) * 0.08;
+  camera.lookAt(pos.x, 1, pos.z);
+}
+
+// Mouse drag orbit state
+export function createOrbit() {
+  const orbit = { angle: -0.8, distance: 22, height: 18 };
+  let dragging = false, lastX = 0;
+
+  window.addEventListener('mousedown', e => {
+    if (e.button === 2) { dragging = true; lastX = e.clientX; e.preventDefault(); }
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  window.addEventListener('mousemove', e => {
+    if (dragging) { orbit.angle += (e.clientX - lastX) * 0.005; lastX = e.clientX; }
+  });
+  window.addEventListener('wheel', e => {
+    orbit.distance = Math.max(8, Math.min(50, orbit.distance + e.deltaY * 0.03));
+    orbit.height = Math.max(8, Math.min(40, orbit.height + e.deltaY * 0.02));
+  });
+  window.addEventListener('contextmenu', e => e.preventDefault());
+
+  return orbit;
 }
 
 // Face the player toward the mouse position on the ground plane

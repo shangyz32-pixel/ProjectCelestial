@@ -5,6 +5,7 @@
 import { WorldRandom } from "../random/index.js";
 import { SKILLS, getSkillDamage, practiceSkill, applyCooldown } from "../skills/index.js";
 import { getEquipmentModifiers } from "../equipment/index.js";
+import { createParticipant } from "./participant.js";
 
 // ══════════════════════════════════════
 // Element System (v2.0)

@@ -232,15 +232,37 @@ async function syncWorld(){
   }catch(e){console.error('sync:',e.message)}
 }
 
+async function sendMove(dx,dy){
+  try{await fetch(BASE+'/api/game/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dx,dy})});}catch(e){}
+}
+
+// ── WASD Controller ──
+const keys={};let playerX=0,playerZ=0;
+window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
+window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+function processInput(){
+  const speed=0.3;
+  if(keys['w']||keys['arrowup'])    sendMove(0,-1);
+  if(keys['s']||keys['arrowdown'])  sendMove(0,1);
+  if(keys['a']||keys['arrowleft'])  sendMove(-1,0);
+  if(keys['d']||keys['arrowright']) sendMove(1,0);
+}
+setInterval(processInput,150);
+
 // ── Animation ──
 let time=0;
 function animate(){
   requestAnimationFrame(animate);
   time+=0.01;
-  camera.position.x=20+Math.sin(time*0.3)*5;
-  camera.position.z=40+Math.cos(time*0.3)*5;
-  camera.lookAt(20,0,0);
+
+  // Camera follow player
   const pm=meshes.get('player');
+  const tx=pm?pm.position.x:20;
+  const tz=pm?pm.position.z:40;
+  camera.position.x+=(tx-camera.position.x)*0.05;
+  camera.position.z+=(tz+25-camera.position.z)*0.05;
+  camera.lookAt(tx,0,tz);
+
   if(pm)pm.position.y=1+Math.abs(Math.sin(time*2))*0.5;
   // Animate trees
   envMeshes.forEach(m=>{if(m.userData?.tree)m.rotation.y+=0.002;});

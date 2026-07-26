@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="zh"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Project Celestial — 光明之魂</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;image-rendering:pixelated}
+canvas{display:block}
+#hud{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;font-family:"Courier New",monospace}
+#hp-bar{position:absolute;top:10px;left:10px;width:200px;height:14px;border:2px solid #fff;background:rgba(0,0,0,0.7)}
+#hp-fill{height:100%;background:#e44;transition:width 0.2s}
+#hp-num{position:absolute;top:8px;left:220px;color:#fff;font-size:12px;text-shadow:0 0 4px #000}
+#qi-bar{position:absolute;top:30px;left:10px;width:120px;height:10px;border:1px solid #fff;background:rgba(0,0,0,0.7)}
+#qi-fill{height:100%;background:#46f;transition:width 0.2s}
+#gold{position:absolute;top:8px;right:10px;color:#ff0;font-size:14px;text-shadow:0 0 4px #000}
+#log{position:absolute;bottom:8px;left:10px;color:#fff;font-size:11px;text-shadow:0 0 4px #000;max-width:500px}
+#buttons{position:absolute;bottom:8px;right:10px;display:flex;gap:6px}
+.btn{pointer-events:all;background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 10px;font-size:11px;font-family:"Courier New",monospace;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,0.1)}
+.btn-atk{border-color:#f44;color:#f44}
+.btn-skill{border-color:#f90;color:#f90}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="hp-bar"><div id="hp-fill" style="width:100%"></div></div><div id="hp-num">100/100</div>
+  <div id="qi-bar"><div id="qi-fill" style="width:100%"></div></div>
+  <div id="gold">⚔ Lv1 | ⚡0</div>
+  <div id="log">🌲 翠竹林 — 按 WASD 移动，接近怪物自动战斗</div>
+  <div id="buttons">
+    <button class="btn btn-atk" onclick="attack()">⚔ 攻击</button>
+    <button class="btn btn-skill" onclick="skill()">🔥 技能</button>
+    <button class="btn" onclick="rest()">🛌 休息</button>
+    <button class="btn" onclick="cultivate()">🧘 修炼</button>
+  </div>
+</div>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const B='http://localhost:3000';
+const G=p=>fetch(B+p).then(r=>r.json()).catch(()=>({}));
+const P=(p,d)=>fetch(B+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d||{})}).then(r=>r.json()).catch(()=>({}));
+
+// Scene — isometric view
+const sc=new THREE.Scene();
+sc.background=new THREE.Color(0x1a2a1a);
+const cam=new THREE.OrthographicCamera(-20,20,15,-15,1,100);
+cam.position.set(20,25,20);cam.lookAt(0,0,0);
+
+const ren=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:false});
+ren.setPixelRatio(1);ren.setSize(innerWidth,innerHeight);
+window.addEventListener('resize',()=>ren.setSize(innerWidth,innerHeight));
+
+// Lighting
+sc.add(new THREE.AmbientLight(0x445566,1));
+const sun=new THREE.DirectionalLight(0xffeecc,1.5);sun.position.set(15,20,10);sc.add(sun);
+
+// Ground tiles
+for(let x=-10;x<10;x++)for(let z=-10;z<10;z++){
+  const tile=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.MeshStandardMaterial({color:(x+z)%2?0x335533:0x2a4a2a,roughness:0.9}));
+  tile.rotation.x=-Math.PI/2;tile.position.set(x*2,0,z*2);tile.receiveShadow=true;sc.add(tile);
+}
+
+// Trees
+for(let i=0;i<20;i++){
+  const g=new THREE.Group();
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.3,2,4),new THREE.MeshStandardMaterial({color:0x663311}));
+  trunk.position.y=1;g.add(trunk);
+  g.add(new THREE.Mesh(new THREE.ConeGeometry(1,2.5,6),new THREE.MeshStandardMaterial({color:0x338833})));
+  g.children[1].position.y=2.5;
+  g.position.set((Math.random()-0.5)*30,0,(Math.random()-0.5)*30);sc.add(g);
+}
+
+// Rocks
+for(let i=0;i<8;i++){
+  const r=new THREE.Mesh(new THREE.IcosahedronGeometry(0.5,0),new THREE.MeshStandardMaterial({color:0x666666}));
+  r.position.set((Math.random()-0.5)*30,0.2,(Math.random()-0.5)*30);sc.add(r);
+}
+
+// Player
+const player=new THREE.Group();
+const body=new THREE.Mesh(new THREE.BoxGeometry(0.8,1.2,0.6),new THREE.MeshStandardMaterial({color:0x4488ff}));
+body.position.y=0.8;player.add(body);
+const phead=new THREE.Mesh(new THREE.SphereGeometry(0.3,6,4),new THREE.MeshStandardMaterial({color:0x4488ff}));
+phead.position.y=1.6;player.add(phead);
+// Sword
+const sword=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.2,0.1),new THREE.MeshStandardMaterial({color:0xcccccc}));
+sword.position.set(0.5,0.9,0);player.add(sword);player.userData.sword=sword;
+player.position.set(0,0.5,0);sc.add(player);
+
+// Monsters array
+const monsters=[];
+function spawnMonster(name,color,x,z,hp=50){
+  const g=new THREE.Group();
+  const mb=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color}));
+  mb.position.y=0.8;g.add(mb);
+  const me=new THREE.Mesh(new THREE.BoxGeometry(1,0.3,0.3),new THREE.MeshStandardMaterial({color:0xff0000}));
+  me.position.y=1.3;me.name='eyes';g.add(me);
+  // HP bar
+  const hbar=new THREE.Mesh(new THREE.PlaneGeometry(1,0.1),new THREE.MeshBasicMaterial({color:0xff0000,side:THREE.DoubleSide}));
+  hbar.position.y=2;hbar.name='hpbar';g.add(hbar);
+  g.position.set(x,0.5,z);g.userData={name,hp,hpMax:hp};sc.add(g);
+  monsters.push(g);return g;
+}
+
+// Spawn initial monsters
+for(let i=0;i<5;i++){
+  const types=[{n:'野兽',c:0x884422,h:40},{n:'灵狼',c:0x666677,h:60},{n:'魔蛇',c:0x335533,h:80}];
+  const t=types[(i+Math.floor(Math.random()*3))%3];
+  spawnMonster(t.n,t.c,(Math.random()-0.5)*25,(Math.random()-0.5)*25,t.h);
+}
+
+// State
+let px=0,pz=0,comboTime=0;
+const keys={};
+window.addEventListener('keydown',e=>keys[e.key]=true);
+window.addEventListener('keyup',e=>keys[e.key]=false);
+
+async function syncHUD(){
+  const p=await G('/api/game/player');
+  const d=p.player||p;
+  if(d&&d.name){
+    const hp=d.hp_current||100,hpMax=d.hp_max||100;
+    document.getElementById('hp-fill').style.width=(hp/hpMax*100)+'%';
+    document.getElementById('hp-num').textContent=hp+'/'+hpMax;
+    document.getElementById('gold').textContent='⚔ Lv'+(d.realm_id||1)+' | 🔋'+(d.stam_current||0);
+  }
+}
+
+async function doAction(path,data){
+  const r=await P('/api/game/'+path,data);
+  document.getElementById('log').textContent=r.msg||(r.type==='fight'?'⚔ '+r.monster?.name:'✅');
+  syncHUD();
+}
+
+// Sword swing animation
+function swingSword(){
+  sword.rotation.z=-0.8;
+  setTimeout(()=>{sword.rotation.z=0},150);
+}
+
+function attack(){
+  swingSword();
+  // Find nearest monster
+  let nearest=null,minDist=3;
+  for(const m of monsters){
+    const dx=m.position.x-px,dz=m.position.z-pz;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<minDist){minDist=d;nearest=m;}
+  }
+  if(nearest){
+    const ud=nearest.userData;
+    const dmg=8+Math.floor(Math.random()*5);
+    ud.hp-=dmg;
+    // Update HP bar
+    const bar=nearest.children.find(c=>c.name==='hpbar');
+    if(bar)bar.scale.x=Math.max(0,ud.hp/ud.hpMax);
+    document.getElementById('log').textContent='⚔ '+dmg+' 伤害 → '+ud.name+' ['+Math.max(0,ud.hp)+'/'+ud.hpMax+']';
+    if(ud.hp<=0){
+      sc.remove(nearest);monsters.splice(monsters.indexOf(nearest),1);
+      document.getElementById('log').textContent='💀 '+ud.name+' 被击败!';
+      // Respawn
+      const types=[{n:'野兽',c:0x884422,h:40},{n:'灵狼',c:0x666677,h:60},{n:'魔蛇',c:0x335533,h:80}];
+      const t=types[Math.floor(Math.random()*3)];
+      const sx=(Math.random()-0.5)*25,sz=(Math.random()-0.5)*25;
+      setTimeout(()=>spawnMonster(t.n,t.c,sx,sz,t.h),3000);
+    }
+    comboTime=1;
+  }else{document.getElementById('log').textContent='附近没有敌人'}
+}
+
+function skill(){
+  swingSword();
+  doAction('cultivate',{mode:'risky'});
+}
+
+function rest(){doAction('rest',{});}
+function cultivate(){doAction('cultivate',{mode:'risky'});}
+
+// Hover name tags
+function drawNameTags(){
+  // We rely on CSS overlay instead of 3D sprites for clarity
+}
+
+function gameLoop(){
+  requestAnimationFrame(gameLoop);
+  // Movement
+  if(keys['w']||keys['ArrowUp'])pz-=0.12;
+  if(keys['s']||keys['ArrowDown'])pz+=0.12;
+  if(keys['a']||keys['ArrowLeft'])px-=0.12;
+  if(keys['d']||keys['ArrowRight'])px+=0.12;
+  player.position.x=px;player.position.z=pz;
+  // Monsters drift toward player
+  for(const m of monsters){
+    const dx=px-m.position.x,dz=pz-m.position.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<4&&d>1.5){m.position.x+=dx/d*0.03;m.position.z+=dz/d*0.03;}
+    m.lookAt(px,m.position.y,pz);
+  }
+  // Combo timer
+  if(comboTime>0)comboTime-=0.016;
+  ren.render(sc,cam);
+}
+
+(async()=>{
+  const p=await G('/api/game/player');
+  if(!p.player||!p.player.name)await P('/api/game/player/create',{name:'云游道人'});
+  syncHUD();
+})();
+setInterval(syncHUD,5000);
+gameLoop();
+</script></body></html>

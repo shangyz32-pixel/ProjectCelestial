@@ -327,17 +327,32 @@ function showDeathEffect(pos,color){
 
 // ── Animation ──
 let time=0;
+const cameraTarget=new THREE.Vector3(20,0,0);
+const cameraAngle={x:30,y:45};
+let cameraDistance=30;
+let isDragging=false,lastMouse={x:0,y:0};
+
+window.addEventListener('mousedown',e=>{if(e.button===2||e.ctrlKey){isDragging=true;lastMouse.x=e.clientX;lastMouse.y=e.clientY;e.preventDefault();}});
+window.addEventListener('mousemove',e=>{if(!isDragging)return;cameraAngle.x-=(e.clientX-lastMouse.x)*0.3;cameraAngle.y+=(e.clientY-lastMouse.y)*0.3;cameraAngle.y=Math.max(-60,Math.min(80,cameraAngle.y));lastMouse.x=e.clientX;lastMouse.y=e.clientY;});
+window.addEventListener('mouseup',()=>{isDragging=false;});
+window.addEventListener('wheel',e=>{cameraDistance+=e.deltaY*0.1;e.preventDefault();},{passive:false});
+window.addEventListener('contextmenu',e=>e.preventDefault());
+
 function animate(){
   requestAnimationFrame(animate);
   time+=0.01;
-
-  // Camera follow player
   const pm=meshes.get('player');
-  const tx=pm?pm.position.x:20;
-  const tz=pm?pm.position.z:40;
-  camera.position.x+=(tx-camera.position.x)*0.05;
-  camera.position.z+=(tz+25-camera.position.z)*0.05;
-  camera.lookAt(tx,0,tz);
+  const tx=pm?pm.position.x:cameraTarget.x;
+  const tz=pm?pm.position.z:cameraTarget.z;
+  cameraTarget.x+=(tx-cameraTarget.x)*0.05;
+  cameraTarget.z+=(tz-cameraTarget.z)*0.05;
+  const radX=cameraAngle.x*(Math.PI/180);
+  const radY=cameraAngle.y*(Math.PI/180);
+  const dist=Math.max(5,Math.min(80,cameraDistance));
+  camera.position.x=cameraTarget.x+Math.sin(radX)*Math.cos(radY)*dist;
+  camera.position.y=Math.max(3,cameraTarget.y+Math.sin(radY)*dist);
+  camera.position.z=cameraTarget.z+Math.cos(radX)*Math.cos(radY)*dist;
+  camera.lookAt(cameraTarget.x,cameraTarget.y,cameraTarget.z);
 
   if(pm)pm.position.y=1+Math.abs(Math.sin(time*2))*0.5;
   // Animate trees

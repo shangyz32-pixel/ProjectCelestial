@@ -14,10 +14,22 @@ export function createPlayer(scene) {
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 6, 4), new THREE.MeshStandardMaterial({ color: 0x4488ff }));
   head.position.y = 1.8;
   player.add(head);
-  const sword = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.1), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-  sword.position.set(0.5, 0.9, 0);
-  sword.name = 'sword';
-  player.add(sword);
+
+  // Sword group — allows independent rotation for swing animation
+  const swordGroup = new THREE.Group();
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.4, 0.06), new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.2 }));
+  blade.position.y = 0.7;
+  swordGroup.add(blade);
+  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.15), new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.3 }));
+  guard.position.y = 0.1;
+  swordGroup.add(guard);
+  const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0x553311, roughness: 0.5 }));
+  hilt.position.y = -0.1;
+  swordGroup.add(hilt);
+  swordGroup.position.set(0.5, 0.9, 0);
+  swordGroup.name = 'sword';
+  player.add(swordGroup);
+
   player.position.set(0, 0.5, 0);
   player.castShadow = true;
   scene.add(player);
@@ -26,7 +38,35 @@ export function createPlayer(scene) {
   const entityId = 'player';
   ORIENT.register(entityId, player);
 
-  return { mesh: player, position, sword, entityId };
+  return { mesh: player, position, swordGroup, entityId };
+}
+
+// Sword swing animation — rotates sword group forward
+let swingTimer = 0;
+export function swingSword(playerObj) {
+  if (swingTimer > 0) return; // still swinging
+  swingTimer = 0.4;
+}
+export function updateSword(delta) {
+  if (swingTimer > 0) {
+    swingTimer -= delta;
+    const progress = 1 - (swingTimer / 0.4); // 0→1
+    const angle = Math.sin(progress * Math.PI) * 2.5; // swing arc
+    // Find sword group on any player object
+    // (accessed via the closure — we set it globally)
+  }
+}
+
+// Apply sword rotation if timer active
+export function applySwordAnim(playerObj, delta) {
+  if (!playerObj.swordGroup) return;
+  if (swingTimer > 0) {
+    swingTimer -= delta;
+    const angle = -Math.sin((1 - swingTimer / 0.4) * Math.PI) * 2.2;
+    playerObj.swordGroup.rotation.x = angle;
+  } else {
+    playerObj.swordGroup.rotation.x += (0 - playerObj.swordGroup.rotation.x) * 0.2;
+  }
 }
 
 export function handleInput(keys, pos) {

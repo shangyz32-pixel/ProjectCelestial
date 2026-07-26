@@ -35,10 +35,11 @@ canvas{display:block}
 <script type="module">
 import { createScene } from './modules/scene.js';
 import { createRegionManager } from './modules/regions.js';
-import { createPlayer, handleInput, followCamera, createOrbit, updateOrientation, stepOrientation } from './modules/player.js';
-import { syncMonsters } from './modules/monsters.js';
+import { createPlayer, handleInput, followCamera, createOrbit, updateOrientation, stepOrientation, swingSword, applySwordAnim } from './modules/player.js';
+import { syncMonsters, monsterMeshes } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
 import { createMinimap } from './modules/minimap.js';
+import { createCombatFX } from './modules/combat_fx.js';
 
 const B = 'http://localhost:3000';
 const { scene, camera, renderer } = createScene(document.getElementById('c'));
@@ -46,6 +47,9 @@ const regions = createRegionManager(scene);
 const player = createPlayer(scene);
 const orbit = createOrbit();
 const minimap = createMinimap();
+const combatFX = createCombatFX(scene);
+
+// J key — attack with sword
 
 // Start in town
 regions.switchTo('town');
@@ -71,7 +75,43 @@ window.addEventListener('minimap-click', (e) => {
 
 // WASD
 const keys = {};
-window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  // J — attack
+  if (e.key === 'j' || e.key === 'J') {
+    e.preventDefault();
+    swingSword(player);
+    // Damage to nearest monster
+    const monsters = monsterMeshes;
+    let nearest = null, minDist = 3;
+    for (const [, m] of monsters) {
+      const d = Math.hypot(m.position.x - player.position.x, m.position.z - player.position.z);
+      if (d < minDist) { minDist = d; nearest = m; }
+    }
+    if (nearest) {
+      const dmg = 8 + Math.floor(Math.random() * 8);
+      const crit = Math.random() < 0.15;
+      const finalDmg = crit ? dmg * 2 : dmg;
+      combatFX.showDamage(nearest.position.clone().add(new THREE.Vector3(0, 1.5, 0)), finalDmg, crit ? '#ffaa00' : '#ff4444');
+      combatFX.showSlash(nearest.position.clone(), player.mesh.rotation.y);
+      if (nearest.userData.hp) {
+        nearest.userData.hp -= finalDmg;
+        if (nearest.userData.hp <= 0) {
+          combatFX.showDeathBurst(nearest.position.clone(), '#ff8800');
+          scene.remove(nearest);
+          monsterMeshes.delete(nearest.userData.id);
+        }
+      }
+      document.getElementById('log').textContent = '⚔ ' + finalDmg + (crit ? ' 暴击!' : '');
+    } else {
+      // Slash in the air
+      const airPos = player.mesh.position.clone();
+      airPos.z -= 2;
+      combatFX.showSlash(airPos, player.mesh.rotation.y, '#88ccff');
+      document.getElementById('log').textContent = '⚔ 挥砍!';
+    }
+  }
+});
 window.addEventListener('keyup', e => keys[e.key] = false);
 
 // WebSocket sync
@@ -108,6 +148,8 @@ function loop(now) {
   updateOrientation(player.entityId, dx !== 0 || dz !== 0, orbit, dx, dz);
 
   stepOrientation(delta);
+  applySwordAnim(player, delta);
+  combatFX.update();
   followCamera(camera, player.position, orbit);
   renderer.render(scene, camera);
 }

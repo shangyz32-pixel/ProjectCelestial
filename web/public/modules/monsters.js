@@ -19,6 +19,13 @@ export function syncMonsters(scene, monsters) {
       mesh = createMonsterMesh(m);
       scene.add(mesh);
       monsterMeshes.set(m.id, mesh);
+    } else {
+      // Update HP from server
+      mesh.userData.hp = m.hp || mesh.userData.hp || 50;
+      mesh.userData.hpMax = m.hpMax || mesh.userData.hpMax || 50;
+      if (mesh.userData.hpBar) {
+        mesh.userData.hpBar.scale.x = Math.max(0, mesh.userData.hp / mesh.userData.hpMax);
+      }
     }
     // Position from area (simplified: random offset per area)
     const areaOffsets = { area_bamboo_grove: [0, 0], area_misty_peak: [15, 10], area_thunder_valley: [30, 0], area_dragon_vein: [45, -10] };
@@ -46,7 +53,7 @@ function createMonsterMesh(m) {
   const hbar = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.1), new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide }));
   hbar.position.y = 2;
   group.add(hbar);
-  group.userData = { id: m.id, type: m.type, hpBar: hbar };
+  group.userData = { id: m.id, type: m.type, hpBar: hbar, hp: m.hp || 50, hpMax: m.hpMax || 50 };
   return group;
 }
 

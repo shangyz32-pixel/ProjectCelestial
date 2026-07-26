@@ -21,7 +21,16 @@ body{background:#0a0a0f;color:#c8c8d0;font-family:"Courier New",monospace;height
 .msg-rumor{color:#888;font-style:italic}
 .msg-milestone{color:#ff0;font-weight:bold}
 .msg-danger{color:#f00;font-weight:bold}
-#input-row{background:#111118;border-top:1px solid #333;padding:6px 14px;display:flex;gap:10px;align-items:center}
+#input-row{background:#111118;border-top:1px solid #333;padding:6px 14px;display:flex;gap:8px;align-items:center}
+#btn-row{background:#111118;border-top:1px solid #222;padding:6px 14px;display:flex;gap:6px;flex-wrap:wrap}
+.act-btn{background:rgba(255,255,255,0.06);color:#ccc;border:1px solid rgba(255,255,255,0.15);padding:6px 14px;font-family:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.act-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+.act-btn.cult{color:#aaf;border-color:rgba(100,100,255,0.4)}
+.act-btn.rest{color:#8f8;border-color:rgba(100,255,100,0.4)}
+.act-btn.explore{color:#fa0;border-color:rgba(255,170,0,0.4)}
+.act-btn.combat{color:#e44;border-color:rgba(255,80,80,0.4)}
+.act-btn.item{color:#4f4;border-color:rgba(80,255,80,0.4)}
+.act-btn.info{color:#888;border-color:rgba(255,255,255,0.2)}
 #input-row input{flex:1;background:transparent;border:none;color:#fff;font-family:inherit;font-size:13px;outline:none}
 #input-row input::placeholder{color:#555}
 #input-row button{background:#222;color:#aaa;border:1px solid #444;padding:5px 12px;font-family:inherit;font-size:12px;cursor:pointer}
@@ -36,9 +45,18 @@ body{background:#0a0a0f;color:#c8c8d0;font-family:"Courier New",monospace;height
 <div id="status">
   <span id="tick">T0</span><span id="weather">晴</span><span id="area">翠竹林</span><span id="season">春</span><span>灵气:<span id="qiVal">1.0</span></span><span id="ents">0体</span>
 </div>
+<div id="btn-row">
+  <button class="act-btn cult" onclick="doCmd('修炼')">🧘 修炼</button>
+  <button class="act-btn explore" onclick="doCmd('探索')">🔍 探索</button>
+  <button class="act-btn rest" onclick="doCmd('休息')">🛌 休息</button>
+  <button class="act-btn item" onclick="doCmd('采集')">🌿 采集</button>
+  <button class="act-btn combat" onclick="doCmd('突破')">💫 突破</button>
+  <button class="act-btn info" onclick="doCmd('状态')">📋 状态</button>
+  <button class="act-btn info" onclick="doCmd('世界')">🌍 世界</button>
+</div>
 <div id="input-row">
-  <span style="color:#fa0">▸</span>
-  <input id="cmd" placeholder="输入命令: 修炼 / 探索 / 休息 / 查看 / 帮助 ..." autofocus>
+  <span style="color:#888">▸</span>
+  <input id="cmd" placeholder="其他命令...">
   <button onclick="sendCmd()">↵</button>
 </div>
 <script>
@@ -47,6 +65,11 @@ const out=document.getElementById('output');
 const cmd=document.getElementById('cmd');
 
 let playerData=null,worldState={tick:0};
+
+function doCmd(action){
+  cmd.value=action;
+  sendCmd();
+}
 
 function log(msg,cls=''){
   const d=document.createElement('div');d.className='msg'+(cls?' '+cls:'');

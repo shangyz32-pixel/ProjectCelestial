@@ -35,7 +35,7 @@ canvas{display:block}
 <script type="module">
 import { createScene } from './modules/scene.js';
 import { createRegionManager } from './modules/regions.js';
-import { createPlayer, handleInput, followCamera } from './modules/player.js';
+import { createPlayer, handleInput, followCamera, faceMouse, trackMouse } from './modules/player.js';
 import { syncMonsters } from './modules/monsters.js';
 import { createSync } from './modules/sync.js';
 import { createMinimap } from './modules/minimap.js';
@@ -72,6 +72,7 @@ window.addEventListener('minimap-click', (e) => {
 const keys = {};
 window.addEventListener('keydown', e => keys[e.key] = true);
 window.addEventListener('keyup', e => keys[e.key] = false);
+window.addEventListener('mousemove', e => trackMouse(player, e));
 
 // WebSocket sync
 createSync(`ws://localhost:3000/ws`, (state) => {
@@ -94,6 +95,7 @@ function loop() {
   handleInput(keys, player.position);
   player.mesh.position.x = player.position.x;
   player.mesh.position.z = player.position.z;
+  faceMouse(player, camera);
   followCamera(camera, player.position);
   renderer.render(scene, camera);
 }

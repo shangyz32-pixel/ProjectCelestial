@@ -1,6 +1,8 @@
 // web/routes/core.js
 // Core observation APIs — world, npcs, events, entities, systems, perf, snapshots, alerts
 
+import { getRecentNews } from "../../runtime/world_news.js";
+
 export function registerCoreRoutes(kernel, sim, snap, history, config, send, url) {
 
   switch (url.pathname) {
@@ -14,14 +16,17 @@ export function registerCoreRoutes(kernel, sim, snap, history, config, send, url
         weather: kernel.world.globalState.weather.get("world"),
         qi: kernel.world.globalState.qi.get("world"),
         entities: kernel.world.entities.size,
-        npcs: Array.from(kernel.world.entities.values()).filter(e => e.type === "npc" && e.state === "active").length,
-        beasts: Array.from(kernel.world.entities.values()).filter(e => e.type === "spirit_beast" && e.state !== "dead").length,
         animals: Array.from(kernel.world.entities.values()).filter(e => e.type === "animal" && e.state !== "dead").length,
         plants: Array.from(kernel.world.entities.values()).filter(e => e.type === "plant" && e.state !== "dead").length,
         monsters: Array.from(kernel.world.entities.values()).filter(e => e.type === "monster" && e.state !== "dead").length,
         snapshots: snap ? snap.list().length : 0,
         sim_state: sim ? sim.state : "unknown",
       });
+    }
+
+    case "/api/news": {
+      const news = getRecentNews(30);
+      return send(200, { news, count: news.length });
     }
 
     case "/api/npcs": {

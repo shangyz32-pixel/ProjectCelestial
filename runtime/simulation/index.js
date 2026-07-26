@@ -17,6 +17,7 @@ import { QuestSystem, getAvailableQuests, acceptQuest, completeQuest } from "../
 import { DungeonSystem, generateDungeon, exploreRoom } from "../dungeon/index.js";
 import { ContentEvolutionSystem } from "../content/index.js";
 import { ExplorationSystem } from "../exploration/index.js";
+import { generateWorldNews, addToHistory, getRecentNews } from "../world_news.js";
 
 // Weather System
 export const WeatherSystem = {
@@ -417,6 +418,11 @@ export class SimulationEngine {
       try { sys.fn.tick(kernel, time, this.random); }
       catch (err) { this.log.error(`System "${sys.name}" failed: ${err.message}`); }
     }
+    // Generate world news from simulation state
+    try {
+      const news = generateWorldNews(kernel, this, this.random);
+      if (news.length > 0) addToHistory(news);
+    } catch (err) {}
   }
   getRandomState() { return this.random.getState(); }
   setRandomState(state) { this.random.setState(state); }

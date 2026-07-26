@@ -618,7 +618,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/equipment/enhance": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const result = enhanceEquipment(players[0], params.slot, kernel, rng);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -629,7 +629,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
       const realm = players[0].getComponent("Realm")?.realm_id || 1;
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const items = generateLoot(kernel, params.source || "explore", realm, rng);
       return send(200, { items, count: items.length });
     }
@@ -646,7 +646,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/alchemy/refine": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const result = refinePill(params.recipe, players[0], kernel, rng);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -665,7 +665,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/alchemy/gather": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const area = players[0].getComponent("Location")?.area || "area_bamboo_grove";
       const region = { area_bamboo_grove:"forest", area_misty_peak:"mountain", area_thunder_valley:"storm", area_dragon_vein:"ancient" }[area] || "forest";
       const herb = gatherHerb(players[0], params.herb, region, kernel, rng);
@@ -686,7 +686,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/crafting/forge": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const result = forgeEquipment(params.recipe, players[0], kernel, rng);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -696,7 +696,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/crafting/enchant": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const result = enchantEquipment(players[0], params.slot, kernel, rng);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -706,7 +706,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/crafting/ascend": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const result = ascendEquipment(players[0], params.slot, kernel, rng);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());
@@ -730,7 +730,7 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
     case "/api/game/quest/complete": {
       const players = kernel.queryEntities("player", {}, 1, 0);
       if (players.length === 0) return send(400, { error: "No player" });
-      const rng = new WorldRandom(42);
+      const rng = new WorldRandom(kernel.world.tickCount * 7 + process.hrtime()[1]);
       const result = completeQuest(players[0], params.questId, kernel, rng);
       if (result.error) return send(400, result);
       kernel.world.tickCount++; sim.tick(kernel.getWorldTime());

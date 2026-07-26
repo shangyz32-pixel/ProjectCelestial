@@ -32,6 +32,14 @@ const REGION_HABITATS = {
 // Population caps
 const REGION_CAPS = { area_bamboo_grove:4, area_misty_peak:6, area_thunder_valley:8, area_dragon_vein:10 };
 
+// Region danger/encounter data (v2.2 Sprint 4.5)
+export const REGION_DATA = {
+  area_bamboo_grove:  { name:"翠竹林",   danger:1, monsterPool:["wild_beast","spirit_wolf"],     lootTier:"common",    qiMod:0.8,  desc:"一片宁静的竹林，偶有野兽出没" },
+  area_misty_peak:    { name:"云雾峰",   danger:3, monsterPool:["spirit_wolf","thunder_eagle","demon_serpent"], lootTier:"uncommon", qiMod:1.0, desc:"云雾缭绕的山峰，灵兽活跃" },
+  area_thunder_valley:{ name:"雷音谷",   danger:5, monsterPool:["thunder_eagle","demon_serpent","ancient_guard"], lootTier:"rare", qiMod:1.2, desc:"雷鸣不止的深谷，古兽潜伏" },
+  area_dragon_vein:   { name:"龙脉秘境", danger:8, monsterPool:["ancient_guard","boss_wyrm","shadow_dragon"], lootTier:"epic", qiMod:1.5, desc:"传说中龙脉汇聚之地，极度危险" },
+};
+
 // ══════════════════════════════════════
 // Phase 5 — Boss state tracking
 // ══════════════════════════════════════

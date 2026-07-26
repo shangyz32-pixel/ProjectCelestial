@@ -282,8 +282,8 @@ export function registerGameRoutes(kernel, sim, send, url, params) {
       // Discovery chance: use ExplorationEventSystem
       let eventData = null;
       if (area !== oldArea && Math.random() < 0.40) {
-        const exploration = sim.engine?.exploration;
-        if (exploration) {
+        const exploration = sim.exploration;
+        if (exploration && exploration.generateEvent) {
           eventData = exploration.generateEvent(area);
           if (eventData) exploration.activeEvents.set(eventData.eventId, eventData);
         }

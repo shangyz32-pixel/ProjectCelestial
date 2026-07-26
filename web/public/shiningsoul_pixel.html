@@ -1,0 +1,307 @@
+<!DOCTYPE html><html lang="zh"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>光明之魂 — Shining Soul</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;display:flex;justify-content:center;align-items:center;height:100vh}
+canvas{image-rendering:pixelated;border:2px solid #333}
+</style></head><body>
+<canvas id="c" width="320" height="240"></canvas>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=320,H=240;
+
+// ═══ Pixel Art Tiles ═══
+// 16x16 tiles — grass, dirt, stone, water
+const TILES={
+  grass: 0,
+  dirt:  1,
+  stone: 2,
+  water: 3,
+  brick: 4,
+};
+const TILE_COLORS={
+  0:['#4a8c3f','#3d7234','#5a9c4f','#3d7234'], // grass
+  1:['#8b7355','#7a6348','#9b8365','#7a6348'], // dirt
+  2:['#888','#777','#999','#666'],               // stone
+  3:['#3366aa','#2a5599','#4477bb','#2255aa'],   // water
+  4:['#664422','#553311','#775533','#553311'],   // brick
+};
+
+// Isometric map — diamond grid
+const MAP_W=15,MAP_H=15;
+const map=[];
+for(let y=0;y<MAP_H;y++){map[y]=[];for(let x=0;x<MAP_W;x++){
+  const r=Math.random();
+  if(x===0||y===0||x===MAP_W-1||y===MAP_W-1)map[y][x]=3; // water border
+  else if(r<0.05)map[y][x]=2;  // stone
+  else if(r<0.15)map[y][x]=1; // dirt
+  else map[y][x]=0;            // grass
+}}
+
+// Town zone (center)
+for(let y=5;y<9;y++)for(let x=5;x<9;x++)map[y][x]=4;
+
+// ISO math
+function isoToScreen(mx,my){return{x:(mx-my)*16+W/2,y:(mx+my)*8+30}};
+const TILE_W=32,TILE_H=16;
+
+// Draw tile with pixel noise
+function drawTile(tx,ty,type,cx,cy){
+  const colors=TILE_COLORS[type]||TILE_COLORS[0];
+  ctx.fillStyle=colors[0];
+  ctx.beginPath();ctx.moveTo(cx,cy-8);ctx.lineTo(cx+16,cy);ctx.lineTo(cx,cy+8);ctx.lineTo(cx-16,cy);ctx.closePath();ctx.fill();
+  ctx.fillStyle=colors[1];
+  ctx.beginPath();ctx.moveTo(cx,cy-8);ctx.lineTo(cx+16,cy);ctx.lineTo(cx,cy);ctx.closePath();ctx.fill();
+  // Edge
+  ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx,cy-8);ctx.lineTo(cx+16,cy);ctx.lineTo(cx,cy+8);ctx.lineTo(cx-16,cy);ctx.closePath();ctx.stroke();
+  // Grass detail
+  if(type===0){
+    for(let i=0;i<2;i++){
+      const gx=cx-12+Math.random()*24,gy=cy-6+Math.random()*8;
+      ctx.fillStyle='#5aad5f';ctx.fillRect(gx,gy,1,2);
+    }
+  }
+  if(type===3){ // water sparkle
+    for(let i=0;i<1;i++){const sx=cx-8+Math.random()*16,sy=cy-3+Math.random()*4;ctx.fillStyle='#88ccff';ctx.fillRect(sx,sy,1,1)}
+  }
+}
+
+// ═══ Player ═══
+const P={
+  x:7,y:7,       // map coords
+  hp:80,hpmax:80,
+  mp:30,mpmax:30,
+  atk:12,def:5,
+  lv:1,exp:0,
+  gold:0,
+  facing:0,      // 0=S 1=SW 2=W 3=NW 4=N 5=NE 6=E 7=SE
+  swingTime:0,
+};
+
+function drawPlayer(){
+  const s=isoToScreen(P.x,P.y);
+  const px=s.x,py=s.y-8;
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(px,py+12,8,4,0,0,Math.PI*2);ctx.fill();
+  // Body
+  ctx.fillStyle='#4488cc';
+  ctx.fillRect(px-4,py-12,8,12);
+  // Head
+  ctx.fillStyle='#ffcc88';
+  ctx.fillRect(px-3,py-16,6,6);
+  // Hair
+  ctx.fillStyle='#553311';
+  ctx.fillRect(px-4,py-18,8,3);ctx.fillRect(px-5,py-16,2,5);ctx.fillRect(px+3,py-16,2,5);
+  // Eyes
+  ctx.fillStyle='#000';ctx.fillRect(px-2,py-13,1,1);ctx.fillRect(px+1,py-13,1,1);
+  // Sword
+  const swing=P.swingTime>0?Math.sin(P.swingTime*12)*1.5:0;
+  ctx.fillStyle='#ccc';
+  if(P.facing>=3&&P.facing<=5){ // facing left
+    ctx.fillRect(px-10,py-16+swing,2,14);
+    ctx.fillStyle='#ff0';ctx.fillRect(px-9,py-11+swing,1,4); // guard
+  }else{
+    ctx.fillRect(px+8,py-16+swing,2,14);
+    ctx.fillStyle='#ff0';ctx.fillRect(px+8,py-11+swing,1,4);
+  }
+  // Legs
+  ctx.fillStyle='#333';
+  ctx.fillRect(px-3,py,3,4);ctx.fillRect(px+1,py,3,4);
+}
+
+// ═══ Monsters ═══
+const MONSTERS=[
+  {type:'slime',x:5,y:5,hp:20,maxHp:20,atk:6,color:'#88dd44',name:'史莱姆',gold:5},
+  {type:'wolf',x:10,y:3,hp:35,maxHp:35,atk:10,color:'#885522',name:'森林狼',gold:12},
+  {type:'bat',x:3,y:10,hp:25,maxHp:25,atk:8,color:'#664488',name:'蝙蝠',gold:8},
+  {type:'skeleton',x:11,y:9,hp:50,maxHp:50,atk:14,color:'#ccccaa',name:'骷髅兵',gold:20},
+  {type:'boss',x:7,y:3,hp:120,maxHp:120,atk:20,color:'#ff4444',name:'兽人首领',gold:100},
+];
+
+function drawMonster(m){
+  if(m.hp<=0)return;
+  const s=isoToScreen(m.x,m.y);
+  const mx=s.x,my=s.y-2;
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(mx,my+6,7,3,0,0,Math.PI*2);ctx.fill();
+  // Body (shape by type)
+  ctx.fillStyle=m.color;
+  switch(m.type){
+    case'slime':ctx.beginPath();ctx.arc(mx,my-2,6,0,Math.PI*2);ctx.fill();break;
+    case'wolf':ctx.fillRect(mx-8,my-10,16,12);break;
+    case'bat':ctx.fillRect(mx-6,my-8,12,8);ctx.fillRect(mx-12,my-10,6,4);ctx.fillRect(mx+6,my-10,6,4);break;
+    case'skeleton':ctx.fillRect(mx-5,my-14,10,16);ctx.fillRect(mx-3,my-18,6,6);break;
+    case'boss':ctx.fillRect(mx-9,my-16,18,18);ctx.fillRect(mx-5,my-24,10,10);break;
+  }
+  // Eyes
+  ctx.fillStyle='#fff';ctx.fillRect(mx-3,my-6,2,2);ctx.fillRect(mx+1,my-6,2,2);
+  ctx.fillStyle='#000';ctx.fillRect(mx-2,my-5,1,1);ctx.fillRect(mx+2,my-5,1,1);
+  // HP bar
+  if(m.hp<m.maxHp){
+    const bw=14,ratio=m.hp/m.maxHp;
+    ctx.fillStyle='#400';ctx.fillRect(mx-7,my-14,bw,2);
+    ctx.fillStyle='#f00';ctx.fillRect(mx-7,my-14,bw*ratio,2);
+  }
+  // Name
+  ctx.fillStyle='#fff';ctx.font='7px monospace';
+  ctx.fillText(m.name,mx-ctx.measureText(m.name).width/2,my-16);
+}
+
+// ═══ HUD ═══
+function drawHUD(){
+  // HP
+  ctx.fillStyle='#222';ctx.fillRect(5,5,90,18);
+  ctx.fillStyle='#400';ctx.fillRect(6,6,88,16);
+  ctx.fillStyle='#a00';ctx.fillRect(6,6,88*(P.hp/P.hpmax),16);
+  ctx.fillStyle='#fff';ctx.font='bold 10px monospace';
+  ctx.fillText('HP:'+P.hp+'/'+P.hpmax,12,17);
+  // MP
+  ctx.fillStyle='#004';ctx.fillRect(5,25,90,18);
+  ctx.fillStyle='#00a';ctx.fillRect(6,26,88*(P.mp/P.mpmax),16);
+  ctx.fillText('MP:'+P.mp+'/'+P.mpmax,12,37);
+  // HUD frame
+  ctx.strokeStyle='#888';ctx.lineWidth=1;
+  ctx.strokeRect(5,5,90,36);
+  // Gold
+  ctx.fillStyle='#ff0';ctx.font='bold 10px monospace';
+  ctx.fillText('💰'+P.gold,W-50,12);
+  // Lv
+  ctx.fillStyle='#fff';ctx.font='bold 12px monospace';
+  ctx.fillText('Lv.'+P.lv,W-50,26);
+  // Buttons
+  drawButton(W-55,H-30,50,24,'⚔攻击','#a00');
+  drawButton(W-105,H-30,48,24,'🔥技能','#a60');
+}
+
+function drawButton(x,y,w,h,text,color){
+  ctx.fillStyle='#333';ctx.fillRect(x,y,w,h);
+  ctx.fillStyle=color;ctx.fillRect(x+1,y+1,w-2,h-2);
+  ctx.fillStyle='#fff';ctx.font='bold 10px monospace';
+  ctx.fillText(text,x+6,y+16);
+}
+
+// ═══ Game Loop ═══
+let msgTimer=0,msgText='';
+const keys={};
+window.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if(e.key===' '||e.key==='j'){attackNearby();e.preventDefault()}
+  if(e.key==='k'){useSkill();e.preventDefault()}
+  if(e.key==='r'){restPlayer();e.preventDefault()}
+});
+window.addEventListener('keyup',e=>keys[e.key]=false);
+
+function attackNearby(){
+  P.swingTime=0.5;
+  let best=null,bestDist=1.5;
+  for(const m of MONSTERS){
+    if(m.hp<=0)continue;
+    const d=Math.sqrt((m.x-P.x)**2+(m.y-P.y)**2);
+    if(d<bestDist){bestDist=d;best=m}
+  }
+  if(best){
+    const dmg=Math.max(1,P.atk+Math.floor(Math.random()*6)-3);
+    best.hp-=dmg;
+    showMsg(best.name+' -'+dmg);
+    if(best.hp<=0){
+      P.gold+=best.gold||5;
+      P.exp+=10;
+      showMsg(best.name+' 击败! 💰+'+best.gold);
+    }
+  }else{showMsg('附近无敌人')}
+}
+
+function useSkill(){
+  if(P.mp<8){showMsg('MP不足!');return}
+  P.mp-=8;
+  P.swingTime=0.5;
+  let hit=0;
+  for(const m of MONSTERS){
+    if(m.hp<=0)continue;
+    const d=Math.sqrt((m.x-P.x)**2+(m.y-P.y)**2);
+    if(d<2.5){const dmg=Math.max(3,P.atk*1.5+Math.floor(Math.random()*8));m.hp-=dmg;hit++;if(m.hp<=0){P.gold+=m.gold;m.hp=0;P.exp+=10}}
+  }
+  showMsg('🔥 火球术! 击中 '+hit+' 体');
+}
+
+function showMsg(t){msgText=t;msgTimer=2}
+
+function restPlayer(){
+  P.hp=Math.min(P.hpmax,P.hp+15);
+  P.mp=Math.min(P.mpmax,P.mp+10);
+  showMsg('🛌 休息恢复');
+}
+
+function gameLoop(ts){
+  // Movement
+  let moved=false;
+  if(keys['w']||keys['ArrowUp']){P.y-=0.06;P.facing=4;moved=true}
+  if(keys['s']||keys['ArrowDown']){P.y+=0.06;P.facing=0;moved=true}
+  if(keys['a']||keys['ArrowLeft']){P.x-=0.06;P.facing=6;moved=true}
+  if(keys['d']||keys['ArrowRight']){P.x+=0.06;P.facing=2;moved=true}
+  P.x=Math.max(0.5,Math.min(MAP_W-1.5,P.x));
+  P.y=Math.max(0.5,Math.min(MAP_H-1.5,P.y));
+
+  // Swing timer  
+  if(P.swingTime>0)P.swingTime-=0.016;
+
+  // Monster AI
+  for(const m of MONSTERS){
+    if(m.hp<=0)continue;
+    const d=Math.sqrt((m.x-P.x)**2+(m.y-P.y)**2);
+    if(d<3&&d>0.8){ // chase
+      m.x+=(P.x-m.x)*0.02;
+      m.y+=(P.y-m.y)*0.02;
+    }
+  }
+
+  // Draw
+  ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);
+
+  // Sort by Y for isometric depth
+  const all=[];
+  for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++)all.push({type:'tile',x,y});
+  all.push({type:'player'});
+  for(const m of MONSTERS)if(m.hp>0)all.push({type:'monster',m});
+
+  all.sort((a,b)=>{
+    const ay=a.type==='tile'?a.y:a.type==='player'?P.y:a.m.y;
+    const by=b.type==='tile'?b.y:b.type==='player'?P.y:b.m.y;
+    return ay-by;
+  });
+
+  for(const e of all){
+    if(e.type==='tile'){
+      const s=isoToScreen(e.x,e.y);
+      if(s.x>-40&&s.x<W+40&&s.y>-20&&s.y<H+20)drawTile(e.x,e.y,map[e.y][e.x],s.x,s.y);
+    }
+    if(e.type==='player')drawPlayer();
+    if(e.type==='monster')drawMonster(e.m);
+  }
+
+  drawHUD();
+
+  // Message
+  if(msgTimer>0){
+    msgTimer-=0.016;
+    ctx.fillStyle='#fff';ctx.font='10px monospace';
+    ctx.fillText(msgText,W/2-ctx.measureText(msgText).width/2,H-8);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Click handlers on canvas
+cv.addEventListener('click',e=>{
+  const r=cv.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const sx=W/cv.clientWidth,sy=H/cv.clientHeight;
+  const cx=mx*sx,cy=my*sy;
+  if(cx>W-55&&cx<W-5&&cy>H-30&&cy<H-6)attackNearby();
+  if(cx>W-105&&cx<W-57&&cy>H-30&&cy<H-6)useSkill();
+});
+
+requestAnimationFrame(gameLoop);
+</script></body></html>
